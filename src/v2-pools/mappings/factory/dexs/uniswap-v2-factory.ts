@@ -1,5 +1,5 @@
 import { UniswapV2Factory } from "generated";
-import { SupportedProtocol } from "../../../../common/supported-protocol";
+import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
 import { TokenService } from "../../../../common/token-service";
 import { handleV2PoolCreated } from "../v2-factory";
 

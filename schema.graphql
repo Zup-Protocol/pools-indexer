@@ -35,6 +35,7 @@ type Pool {
   v4PoolData: V4PoolData
   v3PoolData: V3PoolData
   v2PoolData: V2PoolData
+  algebraPoolData: AlgebraPoolData
   chainId: Int! @index
 }
 
@@ -58,6 +59,11 @@ type V4PoolData {
   permit2: Bytes!
   poolManager: Bytes!
   stateView: Bytes
+}
+
+type AlgebraPoolData {
+  id: ID!
+  deployer: String!
 }
 
 type PoolHourlyData {

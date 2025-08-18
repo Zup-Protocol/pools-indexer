@@ -1,6 +1,6 @@
 import { PancakeSwapV4CLPoolManager } from "generated";
+import { SupportedProtocol } from "../../../../../common/enums/supported-protocol";
 import { PoolSetters } from "../../../../../common/pool-setters";
-import { SupportedProtocol } from "../../../../../common/supported-protocol";
 import { TokenService } from "../../../../../common/token-service";
 import { handleV4PoolInitialize } from "../../v4-pool-initialize";
 import { getPoolTickSpacingFromParameters } from "./pancakeswap-v4-cl-utils";

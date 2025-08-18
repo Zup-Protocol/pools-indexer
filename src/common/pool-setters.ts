@@ -1,6 +1,6 @@
 import { BigDecimal, HandlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
 import { ZERO_BIG_DECIMAL, ZERO_BIG_INT } from "./constants";
-import { IndexerNetwork } from "./indexer-network";
+import { IndexerNetwork } from "./enums/indexer-network";
 import {
   findNativeToken,
   findStableToken,
@@ -44,12 +44,11 @@ export class PoolSetters {
   }
 
   getPricesForPoolWhitelistedTokens(
-    poolEntity: PoolEntity,
     poolToken0Entity: TokenEntity,
     poolToken1Entity: TokenEntity,
     poolPrices: PoolPrices
   ): { token0UpdatedPrice: BigDecimal; token1UpdatedPrice: BigDecimal } {
-    if (isVariableWithStablePool(poolEntity, this.network)) {
+    if (isVariableWithStablePool(poolToken0Entity, poolToken1Entity, this.network)) {
       let stableToken = findStableToken(poolToken0Entity, poolToken1Entity, this.network);
 
       if (stableToken.id == poolToken0Entity.id) {
@@ -63,7 +62,7 @@ export class PoolSetters {
       }
 
       const newToken0Price = poolPrices.token1PerToken0;
-      const newToken1Price = poolPrices.token0PerToken1.times(poolToken0Entity.usdPrice);
+      const newToken1Price = poolPrices.token0PerToken1.times(newToken0Price);
 
       return {
         token0UpdatedPrice: newToken0Price.decimalPlaces(poolToken0Entity.decimals),
@@ -71,7 +70,7 @@ export class PoolSetters {
       };
     }
 
-    if (isWrappedNativePool(poolEntity, this.network)) {
+    if (isWrappedNativePool(poolToken0Entity, poolToken1Entity, this.network)) {
       if (findWrappedNative(poolToken0Entity, poolToken1Entity, this.network).id == poolToken0Entity.id) {
         const newToken1Price = poolPrices.token0PerToken1.times(poolToken0Entity.usdPrice);
 
@@ -89,7 +88,7 @@ export class PoolSetters {
       };
     }
 
-    if (isNativePool(poolEntity)) {
+    if (isNativePool(poolToken0Entity, poolToken1Entity)) {
       if (findNativeToken(poolToken0Entity, poolToken1Entity).id == poolToken0Entity.id) {
         const newToken1Price = poolPrices.token0PerToken1.times(poolToken0Entity.usdPrice);
 
@@ -107,7 +106,7 @@ export class PoolSetters {
       };
     }
 
-    if (isStablePool(poolEntity, this.network)) {
+    if (isStablePool(poolToken0Entity, poolToken1Entity, this.network)) {
       const newToken1Price = poolPrices.token0PerToken1;
       const newToken0Price = poolPrices.token1PerToken0;
 
@@ -120,12 +119,12 @@ export class PoolSetters {
     let newToken0Price = poolToken0Entity.usdPrice;
     let newToken1Price = poolToken1Entity.usdPrice;
 
-    if (poolToken1Entity.usdPrice != ZERO_BIG_DECIMAL) {
-      newToken0Price = poolPrices.token1PerToken0.times(poolToken1Entity.usdPrice);
+    if (newToken1Price != ZERO_BIG_DECIMAL) {
+      newToken0Price = poolPrices.token1PerToken0.times(newToken1Price);
     }
 
-    if (poolToken0Entity.usdPrice != ZERO_BIG_DECIMAL) {
-      newToken1Price = poolPrices.token0PerToken1.times(poolToken0Entity.usdPrice);
+    if (newToken0Price != ZERO_BIG_DECIMAL) {
+      newToken1Price = poolPrices.token0PerToken1.times(newToken0Price);
     }
 
     return {

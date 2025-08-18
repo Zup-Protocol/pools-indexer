@@ -1,5 +1,5 @@
 import { UniswapV2Pool } from "generated";
-import { IndexerNetwork } from "../../../../../common/indexer-network";
+import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV2PoolBurn } from "../../v2-pool-burn";
 

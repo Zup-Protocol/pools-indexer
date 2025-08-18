@@ -1,46 +1,47 @@
 import { createHash } from "crypto";
-import { Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { Pool as PoolEntity, Token, Token as TokenEntity } from "generated";
+import "../../src/common/string.extension";
 import { ONE_HOUR_IN_SECONDS, ZERO_ADDRESS } from "./constants";
-import { IndexerNetwork } from "./indexer-network";
+import { IndexerNetwork } from "./enums/indexer-network";
 
-export function isVariableWithStablePool(pool: PoolEntity, network: IndexerNetwork): boolean {
+export function isVariableWithStablePool(token0: TokenEntity, token1: TokenEntity, network: IndexerNetwork): boolean {
   const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses(network).map<string>((address) =>
     address.toLowerCase()
   );
 
-  const isToken0Stable = stablecoinsAddressesLowercased.includes(pool.token0_id.toLowerCase());
-  const isToken1Stable = stablecoinsAddressesLowercased.includes(pool.token1_id.toLowerCase());
+  const isToken0Stable = stablecoinsAddressesLowercased.includes(token0.tokenAddress.toLowerCase());
+  const isToken1Stable = stablecoinsAddressesLowercased.includes(token1.tokenAddress.toLowerCase());
 
   if ((isToken0Stable && !isToken1Stable) || (!isToken0Stable && isToken1Stable)) return true;
 
   return false;
 }
 
-export function isStablePool(pool: PoolEntity, network: IndexerNetwork): boolean {
+export function isStablePool(token0: Token, token1: TokenEntity, network: IndexerNetwork): boolean {
   const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses(network).map<string>((address) =>
     address.toLowerCase()
   );
 
-  const isToken0Stable = stablecoinsAddressesLowercased.includes(pool.token0_id.toLowerCase());
-  const isToken1Stable = stablecoinsAddressesLowercased.includes(pool.token1_id.toLowerCase());
+  const isToken0Stable = stablecoinsAddressesLowercased.includes(token0.tokenAddress.toLowerCase());
+  const isToken1Stable = stablecoinsAddressesLowercased.includes(token1.tokenAddress.toLowerCase());
 
   if (isToken0Stable && isToken1Stable) return true;
 
   return false;
 }
 
-export function isWrappedNativePool(pool: PoolEntity, network: IndexerNetwork): boolean {
-  const isToken0WrappedNative = pool.token0_id.lowercasedEquals(IndexerNetwork.wrappedNativeAddress(network));
-  const isToken1WrappedNative = pool.token1_id.lowercasedEquals(IndexerNetwork.wrappedNativeAddress(network));
+export function isWrappedNativePool(token0: TokenEntity, token1: TokenEntity, network: IndexerNetwork): boolean {
+  const isToken0WrappedNative = token0.tokenAddress.lowercasedEquals(IndexerNetwork.wrappedNativeAddress(network));
+  const isToken1WrappedNative = token1.tokenAddress.lowercasedEquals(IndexerNetwork.wrappedNativeAddress(network));
 
   if (isToken0WrappedNative || isToken1WrappedNative) return true;
 
   return false;
 }
 
-export function isNativePool(pool: PoolEntity): boolean {
-  const isToken0Native = pool.token0_id.lowercasedEquals(ZERO_ADDRESS);
-  const isToken1Native = pool.token1_id.lowercasedEquals(ZERO_ADDRESS);
+export function isNativePool(token0: TokenEntity, token1: TokenEntity): boolean {
+  const isToken0Native = token0.tokenAddress.lowercasedEquals(ZERO_ADDRESS);
+  const isToken1Native = token1.tokenAddress.lowercasedEquals(ZERO_ADDRESS);
 
   if (isToken0Native || isToken1Native) return true;
 

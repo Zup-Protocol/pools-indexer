@@ -14,7 +14,6 @@ export async function handleV3PoolInitialize(
   let v3PoolEntity = await context.V3PoolData.getOrThrow(poolEntity.id);
 
   const newPrices = v3PoolSetters.getPricesForPoolWhitelistedTokens(
-    poolEntity,
     poolToken0Entity,
     poolToken1Entity,
     sqrtPriceX96toPrice(sqrtPriceX96, poolToken0Entity, poolToken1Entity)
