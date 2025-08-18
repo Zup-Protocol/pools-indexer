@@ -1,6 +1,6 @@
 import { BigDecimal, HandlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
 import { ZERO_BIG_DECIMAL, ZERO_BIG_INT } from "./constants";
-import { IndexerNetwork } from "./indexer-network";
+import { IndexerNetwork } from "./enums/indexer-network";
 import {
   findNativeToken,
   findStableToken,
@@ -44,7 +44,6 @@ export class PoolSetters {
   }
 
   getPricesForPoolWhitelistedTokens(
-    poolEntity: PoolEntity,
     poolToken0Entity: TokenEntity,
     poolToken1Entity: TokenEntity,
     poolPrices: PoolPrices
@@ -63,7 +62,7 @@ export class PoolSetters {
       }
 
       const newToken0Price = poolPrices.token1PerToken0;
-      const newToken1Price = poolPrices.token0PerToken1.times(poolToken0Entity.usdPrice);
+      const newToken1Price = poolPrices.token0PerToken1.times(newToken0Price);
 
       return {
         token0UpdatedPrice: newToken0Price.decimalPlaces(poolToken0Entity.decimals),
@@ -120,12 +119,12 @@ export class PoolSetters {
     let newToken0Price = poolToken0Entity.usdPrice;
     let newToken1Price = poolToken1Entity.usdPrice;
 
-    if (poolToken1Entity.usdPrice != ZERO_BIG_DECIMAL) {
-      newToken0Price = poolPrices.token1PerToken0.times(poolToken1Entity.usdPrice);
+    if (newToken1Price != ZERO_BIG_DECIMAL) {
+      newToken0Price = poolPrices.token1PerToken0.times(newToken1Price);
     }
 
-    if (poolToken0Entity.usdPrice != ZERO_BIG_DECIMAL) {
-      newToken1Price = poolPrices.token0PerToken1.times(poolToken0Entity.usdPrice);
+    if (newToken0Price != ZERO_BIG_DECIMAL) {
+      newToken1Price = poolPrices.token0PerToken1.times(newToken0Price);
     }
 
     return {

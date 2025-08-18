@@ -1,5 +1,5 @@
 import { AerodromeV3Pool } from "generated";
-import { IndexerNetwork } from "../../../../../common/indexer-network";
+import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV3PoolCollect } from "../../v3-pool-collect";
 

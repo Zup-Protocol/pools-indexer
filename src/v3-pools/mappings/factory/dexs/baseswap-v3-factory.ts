@@ -1,5 +1,5 @@
 import { BaseSwapV3Factory } from "generated";
-import { SupportedProtocol } from "../../../../common/supported-protocol";
+import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
 import { TokenService } from "../../../../common/token-service";
 import { handleV3PoolCreated } from "../v3-factory";
 

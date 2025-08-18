@@ -1,4 +1,4 @@
-import { IndexerNetwork } from "../../common/indexer-network";
+import { IndexerNetwork } from "../../common/enums/indexer-network";
 
 export class V2PositionManagerAddress {
   static uniswap(network: IndexerNetwork): string {

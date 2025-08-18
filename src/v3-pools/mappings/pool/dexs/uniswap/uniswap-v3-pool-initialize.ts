@@ -1,5 +1,5 @@
 import { UniswapV3Pool } from "generated";
-import { IndexerNetwork } from "../../../../../common/indexer-network";
+import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV3PoolInitialize } from "../../v3-pool-initialize";
 

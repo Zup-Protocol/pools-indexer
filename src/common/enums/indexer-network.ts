@@ -1,18 +1,19 @@
-import { ETHER_NATIVE_TOKEN } from "./constants";
-import { NativeToken } from "./types";
+import { NativeToken } from "../types";
+import { NetworkToken } from "./network-token";
 
 export enum IndexerNetwork {
-  MAINNET = 1,
+  ETHEREUM = 1,
   SCROLL = 534352,
   UNICHAIN = 130,
   BASE = 8453,
   SEPOLIA = 11155111,
+  HYPER_EVM = 999,
 }
 
 export namespace IndexerNetwork {
   export function getRpcUrl(network: IndexerNetwork): string {
     switch (network) {
-      case IndexerNetwork.MAINNET:
+      case IndexerNetwork.ETHEREUM:
         return `https://eth-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
       case IndexerNetwork.BASE:
         return `https://base-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
@@ -22,6 +23,8 @@ export namespace IndexerNetwork {
         return `https://unichain-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
       case IndexerNetwork.SEPOLIA:
         return `https://eth-sepolia.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+      case IndexerNetwork.HYPER_EVM:
+        return `https://hyperliquid-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
     }
   }
 
@@ -32,21 +35,23 @@ export namespace IndexerNetwork {
   export function nativeToken(network: IndexerNetwork): NativeToken {
     switch (network) {
       case IndexerNetwork.BASE:
-        return ETHER_NATIVE_TOKEN;
-      case IndexerNetwork.MAINNET:
-        return ETHER_NATIVE_TOKEN;
+        return NetworkToken.metadata(NetworkToken.ETH);
+      case IndexerNetwork.ETHEREUM:
+        return NetworkToken.metadata(NetworkToken.ETH);
       case IndexerNetwork.UNICHAIN:
-        return ETHER_NATIVE_TOKEN;
+        return NetworkToken.metadata(NetworkToken.ETH);
       case IndexerNetwork.SCROLL:
-        return ETHER_NATIVE_TOKEN;
+        return NetworkToken.metadata(NetworkToken.ETH);
       case IndexerNetwork.SEPOLIA:
-        return ETHER_NATIVE_TOKEN;
+        return NetworkToken.metadata(NetworkToken.ETH);
+      case IndexerNetwork.HYPER_EVM:
+        return NetworkToken.metadata(NetworkToken.HYPE);
     }
   }
 
   export function stablecoinsAddresses(network: IndexerNetwork): string[] {
     switch (network) {
-      case IndexerNetwork.MAINNET:
+      case IndexerNetwork.ETHEREUM:
         return [
           "0xdac17f958d2ee523a2206206994597c13d831ec7", // USDT
           "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // USDC
@@ -76,6 +81,13 @@ export namespace IndexerNetwork {
         return [
           "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // USDC
         ];
+      case IndexerNetwork.HYPER_EVM:
+        return [
+          "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb", // USDT0
+          "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34", // USDe
+          "0xb50A96253aBDF803D85efcDce07Ad8becBc52BD5", // USDHL
+          "0x9ab96A4668456896d45c301Bc3A15Cee76AA7B8D", // rUSDC
+        ];
     }
   }
 
@@ -83,7 +95,7 @@ export namespace IndexerNetwork {
     switch (network) {
       case IndexerNetwork.BASE:
         return "0x4200000000000000000000000000000000000006";
-      case IndexerNetwork.MAINNET:
+      case IndexerNetwork.ETHEREUM:
         return "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
       case IndexerNetwork.UNICHAIN:
         return "0x4200000000000000000000000000000000000006";
@@ -91,6 +103,8 @@ export namespace IndexerNetwork {
         return "0x5300000000000000000000000000000000000004";
       case IndexerNetwork.SEPOLIA:
         return "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14";
+      case IndexerNetwork.HYPER_EVM:
+        return "0x5555555555555555555555555555555555555555";
     }
   }
 }

@@ -1,5 +1,5 @@
 import { UniswapV4PoolManager } from "generated";
-import { IndexerNetwork } from "../../../../../common/indexer-network";
+import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV4PoolSwap } from "../../v4-pool-swap";
 

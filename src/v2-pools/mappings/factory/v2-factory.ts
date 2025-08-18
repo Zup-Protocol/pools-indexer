@@ -1,8 +1,8 @@
 import { HandlerContext, Pool as PoolEntity, V2PoolData as V2PoolDataEntity } from "generated";
 
 import { ZERO_BIG_DECIMAL } from "../../../common/constants";
-import { IndexerNetwork } from "../../../common/indexer-network";
-import { SupportedProtocol } from "../../../common/supported-protocol";
+import { IndexerNetwork } from "../../../common/enums/indexer-network";
+import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { TokenService } from "../../../common/token-service";
 
 export async function handleV2PoolCreated(
@@ -41,6 +41,7 @@ export async function handleV2PoolCreated(
     v2PoolData_id: v2PoolEntity.id,
     v3PoolData_id: undefined,
     v4PoolData_id: undefined,
+    algebraPoolData_id: undefined,
     chainId: chainId,
     poolAddress: poolAddress.toLowerCase(),
   };

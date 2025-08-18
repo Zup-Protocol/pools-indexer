@@ -1,7 +1,8 @@
 import { createHash } from "crypto";
 import { Pool as PoolEntity, Token, Token as TokenEntity } from "generated";
+import "../../src/common/string.extension";
 import { ONE_HOUR_IN_SECONDS, ZERO_ADDRESS } from "./constants";
-import { IndexerNetwork } from "./indexer-network";
+import { IndexerNetwork } from "./enums/indexer-network";
 
 export function isVariableWithStablePool(token0: TokenEntity, token1: TokenEntity, network: IndexerNetwork): boolean {
   const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses(network).map<string>((address) =>

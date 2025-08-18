@@ -1,7 +1,7 @@
-import { HandlerContext, Pool as PoolEntity, V3PoolData as V3PoolDataEntity } from "generated";
+import { AlgebraPoolData, HandlerContext, Pool as PoolEntity, V3PoolData as V3PoolDataEntity } from "generated";
 import { ZERO_BIG_DECIMAL, ZERO_BIG_INT } from "../../../common/constants";
-import { IndexerNetwork } from "../../../common/indexer-network";
-import { SupportedProtocol } from "../../../common/supported-protocol";
+import { IndexerNetwork } from "../../../common/enums/indexer-network";
+import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { TokenService } from "../../../common/token-service";
 
 export async function handleV3PoolCreated(
@@ -14,7 +14,8 @@ export async function handleV3PoolCreated(
   eventTimestamp: bigint,
   chainId: number,
   protocol: SupportedProtocol,
-  tokenService: TokenService
+  tokenService: TokenService,
+  algebraPoolData?: AlgebraPoolData
 ): Promise<PoolEntity> {
   const token0Entity = await tokenService.getOrCreateTokenEntity(token0Address);
   const token1Entity = await tokenService.getOrCreateTokenEntity(token1Address);
@@ -46,6 +47,7 @@ export async function handleV3PoolCreated(
     v4PoolData_id: undefined,
     v3PoolData_id: v3PoolEntity.id,
     chainId: chainId,
+    algebraPoolData_id: algebraPoolData?.id,
   };
 
   context.V3PoolData.set(v3PoolEntity);

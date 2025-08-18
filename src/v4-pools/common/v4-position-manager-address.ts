@@ -1,9 +1,9 @@
-import { IndexerNetwork } from "../../common/indexer-network";
+import { IndexerNetwork } from "../../common/enums/indexer-network";
 
 export class V4PositionManagerAddress {
   static uniswap(network: IndexerNetwork): string {
     switch (network) {
-      case IndexerNetwork.MAINNET:
+      case IndexerNetwork.ETHEREUM:
         return "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e";
       case IndexerNetwork.BASE:
         return "0x7c5f5a4bbd8fd63184577525326123b519429bdc";
@@ -13,6 +13,8 @@ export class V4PositionManagerAddress {
         throw Error(`Uniswap V4 position manager is not implemented on Scroll`);
       case IndexerNetwork.SEPOLIA:
         return "0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4";
+      case IndexerNetwork.HYPER_EVM:
+        throw Error(`Uniswap V4 position manager is not implemented on HyperEVM`);
     }
   }
 
@@ -20,7 +22,7 @@ export class V4PositionManagerAddress {
     switch (network) {
       case IndexerNetwork.BASE:
         return "0x55f4c8abA71A1e923edC303eb4fEfF14608cC226";
-      case IndexerNetwork.MAINNET:
+      case IndexerNetwork.ETHEREUM:
         throw Error(`PancakeSwap V4 position manager is not implemented on Mainnet`);
       case IndexerNetwork.UNICHAIN:
         throw Error(`PancakeSwap V4 position manager is not implemented on Unichain`);
@@ -28,6 +30,8 @@ export class V4PositionManagerAddress {
         throw Error(`PancakeSwap V4 position manager is not implemented on Scroll`);
       case IndexerNetwork.SEPOLIA:
         throw Error(`PancakeSwap V4 position manager is not implemented on Sepolia`);
+      case IndexerNetwork.HYPER_EVM:
+        throw Error(`PancakeSwap V4 position manager is not implemented on HyperEVM`);
     }
   }
 }

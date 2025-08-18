@@ -29,6 +29,42 @@ contracts:
     events:
       - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
 
+  - name: HyperSwapV3Factory
+    abi_file_path: ./abis/factories/UniswapV3Factory.json
+    handler: ./src/v3-pools/mappings/factory/dexs/hyperswap-v3-factory.ts
+    events:
+      - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
+
+  - name: HybraV3Factory
+    abi_file_path: ./abis/factories/UniswapV3Factory.json
+    handler: ./src/v3-pools/mappings/factory/dexs/hybra-v3-factory.ts
+    events:
+      - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
+
+  - name: ProjectXV3Factory
+    abi_file_path: ./abis/factories/UniswapV3Factory.json
+    handler: ./src/v3-pools/mappings/factory/dexs/projectx-v3-factory.ts
+    events:
+      - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
+
+  - name: GLiquidAlgebraFactory
+    abi_file_path: ./abis/factories/AlgebraFactory_1_2_1.json
+    handler: ./src/v3-pools/mappings/factory/dexs/gliquid-algebra-factory.ts
+    events:
+      - event: Pool(address indexed token0, address indexed token1, address pool)
+      - event: CustomPool(address indexed deployer, address indexed token0, address indexed token1, address pool)
+
+  - name: AlgebraPool_1_2_1
+    abi_file_path: ./abis/pools/AlgebraPool_1_2_1.json
+    handler: ./src/v3-pools/mappings/pool/algebra/v1.2.1/index.ts
+    events:
+      - event: Mint(address sender, address indexed owner, int24 indexed bottomTick, int24 indexed topTick, uint128 liquidityAmount, uint256 amount0, uint256 amount1)
+      - event: Initialize(uint160 price, int24 tick)
+      - event: Collect(address indexed owner, address recipient, int24 indexed bottomTick, int24 indexed topTick, uint128 amount0, uint128 amount1)
+      - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 price, uint128 liquidity, int24 tick, uint24 overrideFee, uint24 pluginFee)
+      - event: Fee(uint16 fee)
+      - event: TickSpacing(int24 newTickSpacing)
+
   - name: UniswapV3Pool
     abi_file_path: ./abis/pools/UniswapV3Pool.json
     handler: ./src/v3-pools/mappings/pool/dexs/uniswap/index.ts
@@ -130,6 +166,7 @@ contracts:
 networks:
   - id: 11155111 # Ethereum Sepolia
     start_block: 3518269
+    confirmed_block_threshold: 12
     contracts:
       - name: UniswapV3Factory
         address: 0x0227628f3F023bb0B980b67D528571c95c6DaC1c
@@ -141,6 +178,7 @@ networks:
         address: 0xE03A1074c86CFeDd5C142C4F04F1a1536e203543
   - id: 1 # Ethereum Mainnet
     start_block: 12369621
+    confirmed_block_threshold: 12
     contracts:
       - name: UniswapV3Factory
         address: 0x1F98431c8aD98523631AE4a59f267346ea31F984
@@ -154,6 +192,7 @@ networks:
       - name: UniswapV3Pool
   - id: 534352 # Scroll Mainnet
     start_block: 1367
+    confirmed_block_threshold: 5
     contracts:
       - name: ZebraProtocolV3Factory
         address: 0x96a7F53f7636c93735bf85dE416A4Ace94B56Bd9
@@ -166,6 +205,7 @@ networks:
       - name: UniswapV3Pool
   - id: 130 # Unichain
     start_block: 0
+    confirmed_block_threshold: 200
     contracts:
       - name: UniswapV4PoolManager
         address: 0x1f98400000000000000000000000000000000004
@@ -175,8 +215,25 @@ networks:
         address: 0x04625B046C69577EfC40e6c0Bb83CDBAfab5a55F
       - name: UniswapV3Pool
       - name: AerodromeV3Pool
+  - id: 999 # HyperEVM
+    start_block: 11648
+    confirmed_block_threshold: 6
+    hypersync_config:
+      url: https://hyperliquid.hypersync.xyz/
+    contracts:
+      - name: HyperSwapV3Factory
+        address: 0xB1c0fa0B789320044A6F623cFe5eBda9562602E3
+      - name: ProjectXV3Factory
+        address: 0xFf7B3e8C00e57ea31477c32A5B52a58Eea47b072
+      - name: HybraV3Factory
+        address: 0x2dC0Ec0F0db8bAF250eCccF268D7dFbF59346E5E
+      - name: GLiquidAlgebraFactory
+        address: 0x10253594A832f967994b44f33411940533302ACb
+      - name: UniswapV3Pool
+      - name: AlgebraPool_1_2_1
   - id: 8453 # Base
     start_block: 1371680
+    confirmed_block_threshold: 200
     contracts:
       - name: AerodromeV3Factory
         address: 0x5e7BB104d84c7CB9B682AaC2F3d509f5F406809A

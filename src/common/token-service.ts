@@ -1,7 +1,7 @@
 import { HandlerContext, Token as TokenEntity } from "generated";
 import { ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "./constants";
 import { getTokenMetadataEffect } from "./effects";
-import { IndexerNetwork } from "./indexer-network";
+import { IndexerNetwork } from "./enums/indexer-network";
 
 export class TokenService {
   constructor(readonly context: HandlerContext, readonly network: IndexerNetwork) {}

@@ -1,8 +1,9 @@
 import { experimental_createEffect, S } from "envio";
 import { AerodromeV3Pool } from "generated";
-import { createPublicClient, getContract, http } from "viem";
-import { IndexerNetwork } from "../../../../../common/indexer-network";
+import { getContract } from "viem";
+import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
+import { ViemService } from "../../../../../common/viem-service";
 import { handleV3PoolSwap } from "../../v3-pool-swap";
 
 AerodromeV3Pool.Swap.handler(async ({ event, context }) => {
@@ -13,19 +14,19 @@ AerodromeV3Pool.Swap.handler(async ({ event, context }) => {
 
   const swapFee = await context.effect(swapFeeEffect, { chainId: event.chainId, poolAddress: event.srcAddress });
 
-  await handleV3PoolSwap(
+  await handleV3PoolSwap({
     context,
     poolEntity,
     token0Entity,
     token1Entity,
-    event.params.amount0,
-    event.params.amount1,
-    event.params.sqrtPriceX96,
-    BigInt(event.params.tick),
-    BigInt(event.block.timestamp),
-    new PoolSetters(context, event.chainId),
-    swapFee
-  );
+    amount0: event.params.amount0,
+    amount1: event.params.amount1,
+    sqrtPriceX96: event.params.sqrtPriceX96,
+    tick: BigInt(event.params.tick),
+    eventTimestamp: BigInt(event.block.timestamp),
+    v3PoolSetters: new PoolSetters(context, event.chainId),
+    newFeeTier: swapFee,
+  });
 });
 
 const SwapFeeSchemaInput = S.tuple((t) => ({
@@ -51,9 +52,8 @@ const swapFeeEffect = experimental_createEffect(
 );
 
 async function _getPoolSwapFee(network: IndexerNetwork, poolAddress: string): Promise<number> {
-  const client = createPublicClient({
-    transport: http(IndexerNetwork.getRpcUrl(network), { batch: true }),
-  });
+  const client = ViemService.shared.getClient(network);
+
   const contract = getContract({
     abi: aerodromeV3PoolSwapFeeAbi,
     client,

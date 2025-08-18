@@ -1,9 +1,10 @@
 import { experimental_createEffect, S } from "envio";
-import { createPublicClient, getContract, http, PublicClient } from "viem";
+import { getContract } from "viem";
 
-import { ERC20_ABI } from "./constants";
-import { IndexerNetwork } from "./indexer-network";
+import { ERC20_ABI } from "./abis";
+import { IndexerNetwork } from "./enums/indexer-network";
 import "./string.extension";
+import { ViemService } from "./viem-service";
 
 enum Effects {
   GET_TOKEN_METADATA = "getTokenMetadata",
@@ -38,25 +39,6 @@ export const getTokenMetadataEffect = experimental_createEffect(
   }
 );
 
-const clients: Record<string, PublicClient> = {};
-
-let getClient = (network: IndexerNetwork) => {
-  let client = clients[network.toString()];
-
-  if (client) return client;
-
-  client = createPublicClient({
-    batch: {
-      multicall: true,
-    },
-    transport: http(IndexerNetwork.getRpcUrl(network), { batch: true }),
-  });
-
-  clients[network.toString()] = client;
-
-  return client;
-};
-
 type TokenMetadataSchemaOutput = S.Output<typeof TokenMetadataSchemaOutput>;
 type TokenMetadataSchemaInput = S.Input<typeof TokenMetadataSchemaInput>;
 
@@ -64,7 +46,7 @@ async function _getRemoteTokenMetadata(
   tokenAddress: string,
   network: IndexerNetwork
 ): Promise<TokenMetadataSchemaOutput> {
-  const client = getClient(network);
+  const client = ViemService.shared.getClient(network);
 
   const contract = getContract({
     abi: ERC20_ABI,
