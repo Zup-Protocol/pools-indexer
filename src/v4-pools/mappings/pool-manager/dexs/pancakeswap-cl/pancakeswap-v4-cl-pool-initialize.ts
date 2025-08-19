@@ -1,7 +1,7 @@
 import { PancakeSwapV4CLPoolManager } from "generated";
 import { SupportedProtocol } from "../../../../../common/enums/supported-protocol";
 import { PoolSetters } from "../../../../../common/pool-setters";
-import { TokenService } from "../../../../../common/token-service";
+import { TokenService } from "../../../../../common/services/token-service";
 import { handleV4PoolInitialize } from "../../v4-pool-initialize";
 import { getPoolTickSpacingFromParameters } from "./pancakeswap-v4-cl-utils";
 
@@ -21,6 +21,6 @@ PancakeSwapV4CLPoolManager.Initialize.handler(async ({ event, context }) => {
     event.chainId,
     event.srcAddress,
     new PoolSetters(context, event.chainId),
-    new TokenService(context, event.chainId)
+    TokenService.shared
   );
 });

@@ -1,6 +1,6 @@
 import { OkuV3Factory } from "generated";
 import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
-import { TokenService } from "../../../../common/token-service";
+import { TokenService } from "../../../../common/services/token-service";
 import { handleV3PoolCreated } from "../v3-factory";
 
 OkuV3Factory.PoolCreated.contractRegister(({ event, context }) => {
@@ -18,6 +18,6 @@ OkuV3Factory.PoolCreated.handler(async ({ event, context }) => {
     BigInt(event.block.timestamp),
     event.chainId,
     SupportedProtocol.OKU_TRADE_V3,
-    new TokenService(context, event.chainId)
+    TokenService.shared
   );
 });

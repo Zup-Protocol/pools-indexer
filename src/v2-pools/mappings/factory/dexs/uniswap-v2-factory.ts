@@ -1,6 +1,6 @@
 import { UniswapV2Factory } from "generated";
 import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
-import { TokenService } from "../../../../common/token-service";
+import { TokenService } from "../../../../common/services/token-service";
 import { handleV2PoolCreated } from "../v2-factory";
 
 UniswapV2Factory.PairCreated.contractRegister(({ event, context }) => {
@@ -17,6 +17,6 @@ UniswapV2Factory.PairCreated.handler(async ({ event, context }) => {
     event.params.pair,
     3000,
     SupportedProtocol.UNISWAP_V2,
-    new TokenService(context, event.chainId)
+    TokenService.shared
   );
 });

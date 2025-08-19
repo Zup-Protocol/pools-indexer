@@ -5,8 +5,8 @@ import { algebraPool1_2_1FactoryAbi } from "../../../../common/abis";
 import { ZERO_ADDRESS } from "../../../../common/constants";
 import { IndexerNetwork } from "../../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
-import { TokenService } from "../../../../common/token-service";
-import { ViemService } from "../../../../common/viem-service";
+import { TokenService } from "../../../../common/services/token-service";
+import { ViemService } from "../../../../common/services/viem-service";
 import { handleV3PoolCreated } from "../v3-factory";
 
 GLiquidAlgebraFactory.Pool.contractRegister(({ event, context }) => {
@@ -38,7 +38,7 @@ GLiquidAlgebraFactory.Pool.handler(async ({ event, context }) => {
     BigInt(event.block.timestamp),
     event.chainId,
     SupportedProtocol.GLIQUID_V3,
-    new TokenService(context, event.chainId),
+    TokenService.shared,
     algebraPoolData
   );
 });
@@ -64,7 +64,7 @@ GLiquidAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
     BigInt(event.block.timestamp),
     event.chainId,
     SupportedProtocol.GLIQUID_V3,
-    new TokenService(context, event.chainId),
+    TokenService.shared,
     algebraPoolData
   );
 
