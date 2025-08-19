@@ -3,7 +3,7 @@ import { ZERO_BIG_DECIMAL } from "../../../common/constants";
 import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { PoolSetters } from "../../../common/pool-setters";
-import { TokenService } from "../../../common/token-service";
+import { TokenService } from "../../../common/services/token-service";
 import { sqrtPriceX96toPrice } from "../../../v3-pools/common/v3-v4-pool-converters";
 
 export async function handleV4PoolInitialize(
@@ -23,8 +23,8 @@ export async function handleV4PoolInitialize(
   v4PoolSetters: PoolSetters,
   tokenService: TokenService
 ): Promise<void> {
-  let token0Entity = await tokenService.getOrCreateTokenEntity(token0Address);
-  let token1Entity = await tokenService.getOrCreateTokenEntity(token1Address);
+  let token0Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token0Address);
+  let token1Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token1Address);
   const poolId = IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress);
 
   const v4PoolEntity: V4PoolEntity = {

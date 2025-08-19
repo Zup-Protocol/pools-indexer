@@ -3,7 +3,7 @@ import { AerodromeV3Pool } from "generated";
 import { getContract } from "viem";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
-import { ViemService } from "../../../../../common/viem-service";
+import { ViemService } from "../../../../../common/services/viem-service";
 import { handleV3PoolSwap } from "../../v3-pool-swap";
 
 AerodromeV3Pool.Swap.handler(async ({ event, context }) => {

@@ -1,5 +1,5 @@
 import { Client, createPublicClient, http } from "viem";
-import { IndexerNetwork } from "./enums/indexer-network";
+import { IndexerNetwork } from "../enums/indexer-network";
 
 export class ViemService {
   private static _instance: ViemService;

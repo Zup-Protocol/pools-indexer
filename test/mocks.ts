@@ -1,23 +1,30 @@
 import { HandlerContext } from "generated";
-import { PoolDailyData_t } from "generated/src/db/Entities.gen";
+import { PoolDailyData_t, Token_t } from "generated/src/db/Entities.gen";
 
-let handlerContextSaves: Record<string, any> = {};
+export const HandlerContextCustomMock = (): HandlerContext => {
+  let handlerContextSaves: Record<string, any> = {};
 
-export const HandlerContextMock = (): HandlerContext => {
+  function getOrCreateEntity<T>(entity: T): T {
+    if (!handlerContextSaves[(entity as any).id]) {
+      handlerContextSaves[(entity as any).id] = entity;
+
+      return entity;
+    }
+
+    return handlerContextSaves[(entity as any).id];
+  }
+
   return {
+    Token: {
+      getOrCreate: getOrCreateEntity,
+      get: async (id: string) => handlerContextSaves[id],
+      set: (entity: Token_t) => {
+        handlerContextSaves[entity.id] = entity;
+      },
+    },
     PoolDailyData: {
-      getOrCreate: async (entity: PoolDailyData_t) => {
-        if (!handlerContextSaves[entity.id]) {
-          handlerContextSaves[entity.id] = entity;
-
-          return entity;
-        }
-
-        return handlerContextSaves[entity.id];
-      },
-      get: async (id: string) => {
-        return handlerContextSaves[id];
-      },
+      getOrCreate: getOrCreateEntity,
+      get: async (id: string) => handlerContextSaves[id],
       set: (entity: PoolDailyData_t) => {
         handlerContextSaves[entity.id] = entity;
       },

@@ -1,6 +1,6 @@
 import { VelodromeV3Factory } from "generated";
 import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
-import { TokenService } from "../../../../common/token-service";
+import { TokenService } from "../../../../common/services/token-service";
 import { handleV3PoolCreated } from "../v3-factory";
 
 VelodromeV3Factory.PoolCreated.contractRegister(async ({ event, context }) => {
@@ -18,6 +18,6 @@ VelodromeV3Factory.PoolCreated.handler(async ({ event, context }) => {
     BigInt(event.block.timestamp),
     event.chainId,
     SupportedProtocol.VELODROME_V3,
-    new TokenService(context, event.chainId)
+    TokenService.shared
   );
 });

@@ -2,7 +2,7 @@ import { AlgebraPoolData, HandlerContext, Pool as PoolEntity, V3PoolData as V3Po
 import { ZERO_BIG_DECIMAL, ZERO_BIG_INT } from "../../../common/constants";
 import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
-import { TokenService } from "../../../common/token-service";
+import { TokenService } from "../../../common/services/token-service";
 
 export async function handleV3PoolCreated(
   context: HandlerContext,
@@ -17,8 +17,8 @@ export async function handleV3PoolCreated(
   tokenService: TokenService,
   algebraPoolData?: AlgebraPoolData
 ): Promise<PoolEntity> {
-  const token0Entity = await tokenService.getOrCreateTokenEntity(token0Address);
-  const token1Entity = await tokenService.getOrCreateTokenEntity(token1Address);
+  const token0Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token0Address);
+  const token1Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token1Address);
   const poolId = IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress);
 
   const v3PoolEntity: V3PoolDataEntity = {

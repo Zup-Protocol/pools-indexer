@@ -5,7 +5,7 @@ import { IndexerNetwork } from "../../src/common/enums/indexer-network";
 import { getPoolDailyDataId } from "../../src/common/pool-commons";
 import { PoolSetters } from "../../src/common/pool-setters";
 import { sqrtPriceX96toPrice } from "../../src/v3-pools/common/v3-v4-pool-converters";
-import { HandlerContextMock } from "../mocks";
+import { HandlerContextCustomMock } from "../mocks";
 
 describe("PoolSetters", () => {
   let sut: PoolSetters;
@@ -13,7 +13,7 @@ describe("PoolSetters", () => {
   let network = IndexerNetwork.ETHEREUM;
 
   beforeEach(() => {
-    context = HandlerContextMock();
+    context = HandlerContextCustomMock();
     sut = new PoolSetters(context, network);
   });
 
@@ -182,156 +182,147 @@ describe("PoolSetters", () => {
     assert.equal(newPrices.token1UpdatedPrice.toString(), "1");
   });
 
-  //   it(`When calling 'setPricesForV3PoolWhitelistedTokens' with a pool of
-  //     token0 wrapped native and token1 non-wrapped native it should correctly set the
-  //     token1 price based on the wrapped native price`, () => {
-  //     let sqrtPriceX96 = BigInt.fromString("2448752485024712708594653706276");
+  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
+      token0 wrapped native and token1 non-wrapped native it should correctly 
+      return the token1 price based on the wrapped native price.
+      The wrapped native token should remain unchanged`, () => {
+    let sqrtPriceX96 = BigInt("2448752485024712708594653706276");
+    const network = IndexerNetwork.ETHEREUM;
+    let token0Price = BigDecimal("3340.53");
+    const token0: Token = {
+      id: "toko-0",
+      tokenAddress: IndexerNetwork.wrappedNativeAddress(network),
+      decimals: 18,
+      usdPrice: token0Price,
+    } as Token;
 
-  //     let wrappedNative = new TokenMock(Address.fromString(CurrentNetwork.wrappedNativeAddress));
-  //     wrappedNative.decimals = 18;
-  //     wrappedNative.usdPrice = BigDecimal.fromString("3340.53");
-  //     wrappedNative.save();
+    const token1: Token = {
+      id: "toko-1",
+      tokenAddress: "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83",
+      decimals: 18,
+    } as Token;
 
-  //     let nonWrappedNative = new TokenMock(Address.fromString("0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83"));
-  //     nonWrappedNative.decimals = 18;
-  //     nonWrappedNative.save();
+    let tokenPrices = sut.getPricesForPoolWhitelistedTokens(
+      token0,
+      token1,
+      sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
+    );
 
-  //     let pool = new PoolMock();
+    assert.equal(tokenPrices.token1UpdatedPrice.toString(), "3.4969124908482705");
+    assert.equal(tokenPrices.token0UpdatedPrice.toString(), token0Price.toString());
+  });
 
-  //     pool.token0 = wrappedNative.id;
-  //     pool.token1 = nonWrappedNative.id;
-  //     pool.save();
+  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
+      token1 wrapped native and token0 non-wrapped native it should correctly
+      return the token0 price based on the wrapped native price.
+      The token 1 price should remain unchanged`, async () => {
+    const sqrtPriceX96 = BigInt("41900264649575989012484016231357126");
+    const token1USDPrice = BigDecimal("3340.53");
 
-  //     new PoolSettersMock().setPricesForPoolWhitelistedTokens(
-  //       pool,
-  //       wrappedNative,
-  //       nonWrappedNative,
-  //       sqrtPriceX96toPrice(sqrtPriceX96, wrappedNative, nonWrappedNative)
-  //     );
+    const token0: Token = {
+      id: "toko-0",
+      tokenAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      decimals: 8,
+    } as Token;
 
-  //     assert.fieldEquals("Token", nonWrappedNative.id.toHexString(), "usdPrice", "3.496912490848270512206851599806777");
-  //   });
+    const token1: Token = {
+      id: "toko-1",
+      tokenAddress: IndexerNetwork.wrappedNativeAddress(network),
+      decimals: 18,
+      usdPrice: token1USDPrice,
+    } as Token;
 
-  //   it(`When calling 'setPricesForV3PoolWhitelistedTokens' with a pool of
-  //     token1 wrapped native and token0 non-wrapped native it should correctly set the
-  //     token0 price based on the wrapped native price`, () => {
-  //     let sqrtPriceX96 = BigInt.fromString("41900264649575989012484016231357126");
+    const newPrices = sut.getPricesForPoolWhitelistedTokens(
+      token0,
+      token1,
+      sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
+    );
 
-  //     let wrappedNative = new TokenMock(Address.fromString(CurrentNetwork.wrappedNativeAddress));
-  //     wrappedNative.decimals = 18;
-  //     wrappedNative.usdPrice = BigDecimal.fromString("3340.53");
-  //     wrappedNative.save();
+    assert.equal(newPrices.token0UpdatedPrice.toString(), "93430.72975104");
+    assert.equal(newPrices.token1UpdatedPrice.toString(), token1USDPrice.toString());
+  });
 
-  //     let nonWrappedNative = new TokenMock(Address.fromString("0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"));
-  //     nonWrappedNative.decimals = 8;
-  //     nonWrappedNative.save();
+  it(`when calling 'getPricesForPoolWhitelistedTokens' with a pool of token0
+      stable and token1 stable it should correctly
+      retutn the new token0 and token1 price`, async () => {
+    const sqrtPriceX96 = BigInt("79308353598837787813110990092");
+    const token0: Token = {
+      tokenAddress: IndexerNetwork.stablecoinsAddresses(network)[0],
+      decimals: 6,
+    } as Token;
 
-  //     let pool = new PoolMock();
+    const token1: Token = {
+      tokenAddress: IndexerNetwork.stablecoinsAddresses(network)[1],
+      decimals: 6,
+    } as Token;
 
-  //     pool.token0 = nonWrappedNative.id;
-  //     pool.token1 = wrappedNative.id;
-  //     pool.save();
+    let newPrices = sut.getPricesForPoolWhitelistedTokens(
+      token0,
+      token1,
+      sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
+    );
 
-  //     new PoolSettersMock().setPricesForPoolWhitelistedTokens(
-  //       pool,
-  //       nonWrappedNative,
-  //       wrappedNative,
-  //       sqrtPriceX96toPrice(sqrtPriceX96, nonWrappedNative, wrappedNative)
-  //     );
+    assert.equal(newPrices.token0UpdatedPrice.toString(), "1.002025");
+    assert.equal(newPrices.token1UpdatedPrice.toString(), "0.997979");
+  });
 
-  //     assert.fieldEquals("Token", nonWrappedNative.id.toHexString(), "usdPrice", "93430.72975104423786494759603164283");
-  //   });
+  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of token0
+    that is not mapped, and a token1 that is not mapped, but the token0 has its usd
+    price set by some reason, the token1 usd price should be returned based on the token0 price.
+    While the token0 usd price should remain unchanged`, () => {
+    const token0UsdPrice = BigDecimal("103017.8940225187751271430272797843");
+    const sqrtPriceX96 = BigInt("79141063853680822898128351609");
 
-  //   it(`when calling 'setPricesForV3PoolWhitelistedTokens' with a pool of token0
-  //     stable and token1 wrapped native it should correctly set the token0 and token1 price`, () => {
-  //     let sqrtPriceX96 = BigInt.fromString("79308353598837787813110990092");
-  //     let token0 = new TokenMock(Address.fromString(CurrentNetwork.stablecoinsAddresses[0]));
-  //     token0.decimals = 6;
-  //     token0.save();
+    const token0: Token = {
+      id: "toko-0",
+      tokenAddress: "0x0000000000000000000000000000000000000000",
+      decimals: 8,
+      usdPrice: token0UsdPrice,
+    } as Token;
 
-  //     let token1 = new TokenMock(Address.fromString(CurrentNetwork.stablecoinsAddresses[1]));
-  //     token1.decimals = 6;
-  //     token1.save();
+    const token1: Token = {
+      id: "toko-1",
+      tokenAddress: "0x0000000000000000000000000000000000000001",
+      decimals: 8,
+    } as Token;
 
-  //     let pool = new PoolMock();
+    const newPrices = sut.getPricesForPoolWhitelistedTokens(
+      token0,
+      token1,
+      sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
+    );
 
-  //     pool.token0 = token0.id;
-  //     pool.token1 = token1.id;
-  //     pool.save();
+    assert.equal(newPrices.token0UpdatedPrice.toString(), token0UsdPrice.toString());
+    assert.equal(newPrices.token1UpdatedPrice.toString(), "103244.77138833");
+  });
 
-  //     new PoolSettersMock().setPricesForPoolWhitelistedTokens(
-  //       pool,
-  //       token0,
-  //       token1,
-  //       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
-  //     );
+  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of token0
+    that is not mapped, and a token1 that is not mapped, but the token1 has its usd
+    price set by some reason, the token0 usd price should be return
+    based on the token1 price. While the token1 usd price should remain unchanged`, () => {
+    const token1UsdPrice = BigDecimal("1.002");
+    const sqrtPriceX96 = BigInt("58252955171373273082115870408");
 
-  //     assert.fieldEquals("Token", token0.id.toHexString(), "usdPrice", "1.00202533202543717719096334135079");
-  //     assert.fieldEquals("Token", token1.id.toHexString(), "usdPrice", "0.9979787616533174007690719676506302");
-  //   });
+    const token0: Token = {
+      id: "toko-0",
+      tokenAddress: "0x0000000000000000000000000000000000000001",
+      decimals: 18,
+    } as Token;
 
-  //   it(`When calling 'setPricesForV3PoolWhitelistedTokens' with a pool of token0
-  //   that is not mapped, and a token1 that is not mapped, but the token0 has its usd
-  //   price set by some reason, the token1 usd price should be set based on the token0 price.
-  //   While the token0 usd price should remain unchanged`, () => {
-  //     let token0UsdPrice = BigDecimal.fromString("103017.8940225187751271430272797843");
-  //     let sqrtPriceX96 = BigInt.fromString("79141063853680822898128351609");
-  //     let token0 = new TokenMock(Address.fromString("0x0000000000000000000000000000000000000001"));
-  //     token0.decimals = 8;
-  //     token0.usdPrice = token0UsdPrice;
-  //     token0.save();
+    const token1: Token = {
+      id: "toko-1",
+      tokenAddress: "0x0000000000000000000000000000000000000002",
+      decimals: 18,
+      usdPrice: token1UsdPrice,
+    } as Token;
 
-  //     let token1 = new TokenMock(Address.fromString("0x0000000000000000000000000000000000000002"));
-  //     token1.decimals = 8;
-  //     token1.save();
+    const newPrices = sut.getPricesForPoolWhitelistedTokens(
+      token0,
+      token1,
+      sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
+    );
 
-  //     let pool = new PoolMock();
-
-  //     pool.token0 = token0.id;
-  //     pool.token1 = token1.id;
-  //     pool.save();
-
-  //     new PoolSettersMock().setPricesForPoolWhitelistedTokens(
-  //       pool,
-  //       token0,
-  //       token1,
-  //       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
-  //     );
-
-  //     assert.fieldEquals("Token", token0.id.toHexString(), "usdPrice", token0UsdPrice.toString());
-  //     assert.fieldEquals("Token", token1.id.toHexString(), "usdPrice", "103244.7713883273314787832311543079");
-  //   });
-
-  //   it(`When calling 'setPricesForV3PoolWhitelistedTokens' with a pool of token0
-  //   that is not mapped, and a token1 that is not mapped, but the token1 has its usd
-  //   price set by some reason, the token0 usd price should be set based on the token1 price.
-  //   While the token1 usd price should remain unchanged`, () => {
-  //     let token1UsdPrice = BigDecimal.fromString("1.002");
-  //     let sqrtPriceX96 = BigInt.fromString("58252955171373273082115870408");
-  //     let token0 = new TokenMock(Address.fromString("0x0000000000000000000000000000000000000001"));
-  //     token0.decimals = 18;
-
-  //     token0.save();
-
-  //     let token1 = new TokenMock(Address.fromString("0x0000000000000000000000000000000000000002"));
-  //     token1.decimals = 18;
-  //     token1.usdPrice = token1UsdPrice;
-  //     token1.save();
-
-  //     let pool = new PoolMock();
-
-  //     pool.token0 = token0.id;
-  //     pool.token1 = token1.id;
-  //     pool.save();
-
-  //     new PoolSettersMock().setPricesForPoolWhitelistedTokens(
-  //       pool,
-  //       token0,
-  //       token1,
-  //       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
-  //     );
-
-  //     assert.fieldEquals("Token", token0.id.toHexString(), "usdPrice", "0.5416820920078591274742823691740816");
-  //     assert.fieldEquals("Token", token1.id.toHexString(), "usdPrice", token1UsdPrice.toString());
-  //   });
+    assert.equal(newPrices.token1UpdatedPrice.toString(), token1UsdPrice.toString());
+    assert.equal(newPrices.token0UpdatedPrice.toString(), "0.541682092007859127");
+  });
 });
