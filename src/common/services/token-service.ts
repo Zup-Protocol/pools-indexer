@@ -88,9 +88,9 @@ export class TokenService {
     });
 
     let [name, symbol, decimals] = await Promise.all([
-      contract.read.name().catch(() => "ERROR_NAME"),
-      contract.read.symbol().catch(() => "ERROR_SYMBOL"),
-      contract.read.decimals().catch(() => 0),
+      contract.read.name().catch(() => ""),
+      contract.read.symbol().catch(() => ""),
+      contract.read.decimals().catch(() => 18),
     ]);
 
     if (decimals > 255) decimals = 0;
