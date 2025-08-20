@@ -270,20 +270,21 @@ describe("PoolSetters", () => {
     that is not mapped, and a token1 that is not mapped, but the token0 has its usd
     price set by some reason, the token1 usd price should be returned based on the token0 price.
     While the token0 usd price should remain unchanged`, () => {
-    const token0UsdPrice = BigDecimal("103017.8940225187751271430272797843");
-    const sqrtPriceX96 = BigInt("79141063853680822898128351609");
+    const token0UsdPrice = BigDecimal("113848.2042535");
+    const sqrtPriceX96 = BigInt("79489222257038229567344314831");
 
     const token0: Token = {
       id: "toko-0",
-      tokenAddress: "0x0000000000000000000000000000000000000000",
+      tokenAddress: "0x0000000000000000000000000000000000000001",
       decimals: 8,
       usdPrice: token0UsdPrice,
     } as Token;
 
     const token1: Token = {
       id: "toko-1",
-      tokenAddress: "0x0000000000000000000000000000000000000001",
+      tokenAddress: "0x0000000000000000000000000000000000000002",
       decimals: 8,
+      usdPrice: BigDecimal(0),
     } as Token;
 
     const newPrices = sut.getPricesForPoolWhitelistedTokens(
@@ -293,7 +294,7 @@ describe("PoolSetters", () => {
     );
 
     assert.equal(newPrices.token0UpdatedPrice.toString(), token0UsdPrice.toString());
-    assert.equal(newPrices.token1UpdatedPrice.toString(), "103244.77138833");
+    assert.equal(newPrices.token1UpdatedPrice.toString(), "113101.6281344");
   });
 
   it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of token0
