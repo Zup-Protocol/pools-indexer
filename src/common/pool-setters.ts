@@ -119,11 +119,11 @@ export class PoolSetters {
     let newToken0Price = poolToken0Entity.usdPrice;
     let newToken1Price = poolToken1Entity.usdPrice;
 
-    if (newToken1Price != ZERO_BIG_DECIMAL) {
+    if (!newToken1Price.eq(ZERO_BIG_DECIMAL)) {
       newToken0Price = poolPrices.token1PerToken0.times(newToken1Price);
     }
 
-    if (newToken0Price != ZERO_BIG_DECIMAL) {
+    if (!newToken0Price.eq(ZERO_BIG_DECIMAL)) {
       newToken1Price = poolPrices.token0PerToken1.times(newToken0Price);
     }
 
