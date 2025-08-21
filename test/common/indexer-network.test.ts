@@ -31,32 +31,35 @@ describe("IndexerNetworkTests", () => {
 
   it("should return the correct rpc url for ethereum", () => {
     assert.equal(
-      IndexerNetwork.getRpcUrl(IndexerNetwork.ETHEREUM),
+      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.ETHEREUM),
       `https://eth-mainnet.g.alchemy.com/v2/${envioRpcKey}`
     );
   });
 
   it("should return the correct rpc url for base", () => {
-    assert.equal(IndexerNetwork.getRpcUrl(IndexerNetwork.BASE), `https://base-mainnet.g.alchemy.com/v2/${envioRpcKey}`);
+    assert.equal(
+      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.BASE),
+      `https://base-mainnet.g.alchemy.com/v2/${envioRpcKey}`
+    );
   });
 
   it("should return the correct rpc url for scroll", () => {
     assert.equal(
-      IndexerNetwork.getRpcUrl(IndexerNetwork.SCROLL),
+      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.SCROLL),
       `https://scroll-mainnet.g.alchemy.com/v2/${envioRpcKey}`
     );
   });
 
   it("should return the correct rpc url for unichain", () => {
     assert.equal(
-      IndexerNetwork.getRpcUrl(IndexerNetwork.UNICHAIN),
+      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.UNICHAIN),
       `https://unichain-mainnet.g.alchemy.com/v2/${envioRpcKey}`
     );
   });
 
   it("should return the correct rpc url for sepolia", () => {
     assert.equal(
-      IndexerNetwork.getRpcUrl(IndexerNetwork.SEPOLIA),
+      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.SEPOLIA),
       `https://eth-sepolia.g.alchemy.com/v2/${envioRpcKey}`
     );
   });

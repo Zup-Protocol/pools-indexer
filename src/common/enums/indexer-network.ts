@@ -11,7 +11,7 @@ export enum IndexerNetwork {
 }
 
 export namespace IndexerNetwork {
-  export function getRpcUrl(network: IndexerNetwork): string {
+  export function getFreeRPCUrl(network: IndexerNetwork): string {
     switch (network) {
       case IndexerNetwork.ETHEREUM:
         return "https://mainnet.gateway.tenderly.co";
@@ -26,20 +26,23 @@ export namespace IndexerNetwork {
       case IndexerNetwork.HYPER_EVM:
         return "https://hyperliquid.drpc.org";
     }
-    // switch (network) {
-    //   case IndexerNetwork.ETHEREUM:
-    //     return `https://eth-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
-    //   case IndexerNetwork.BASE:
-    //     return `https://base-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
-    //   case IndexerNetwork.SCROLL:
-    //     return `https://scroll-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
-    //   case IndexerNetwork.UNICHAIN:
-    //     return `https://unichain-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
-    //   case IndexerNetwork.SEPOLIA:
-    //     return `https://eth-sepolia.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
-    //   case IndexerNetwork.HYPER_EVM:
-    //     return `https://hyperliquid-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
-    // }
+  }
+
+  export function getPaidRPCUrl(network: IndexerNetwork): string {
+    switch (network) {
+      case IndexerNetwork.ETHEREUM:
+        return `https://eth-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+      case IndexerNetwork.BASE:
+        return `https://base-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+      case IndexerNetwork.SCROLL:
+        return `https://scroll-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+      case IndexerNetwork.UNICHAIN:
+        return `https://unichain-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+      case IndexerNetwork.SEPOLIA:
+        return `https://eth-sepolia.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+      case IndexerNetwork.HYPER_EVM:
+        return `https://hyperliquid-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+    }
   }
 
   export function getEntityIdFromAddress(network: IndexerNetwork, address: string): string {

@@ -57,7 +57,7 @@ describe("ViemService", () => {
 
     assert(createdClient === fakeClient, "client was not created");
     assert(receivedBatch!, "client was not batched");
-    assert.equal(receivedUrl!, IndexerNetwork.getRpcUrl(IndexerNetwork.HYPER_EVM), "url was not correct");
+    assert.equal(receivedUrl!, IndexerNetwork.getFreeRPCUrl(IndexerNetwork.HYPER_EVM), "url was not correct");
   });
 
   it(`should cache a new created instance, and return in new calls to getClient`, () => {

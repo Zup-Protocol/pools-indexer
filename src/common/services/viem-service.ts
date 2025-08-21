@@ -24,7 +24,17 @@ export class ViemService {
       batch: {
         multicall: true,
       },
-      transport: this.viemModule.http(IndexerNetwork.getRpcUrl(forNetwork), { batch: true }),
+      transport: this.viemModule.fallback(
+        [
+          viem.http(IndexerNetwork.getFreeRPCUrl(forNetwork), { batch: true }),
+          viem.http(IndexerNetwork.getPaidRPCUrl(forNetwork), { batch: true }),
+        ],
+        {
+          rank: false,
+          retryCount: 5,
+          retryDelay: 10000,
+        }
+      ),
     });
 
     this.clients[forNetwork] = client;
