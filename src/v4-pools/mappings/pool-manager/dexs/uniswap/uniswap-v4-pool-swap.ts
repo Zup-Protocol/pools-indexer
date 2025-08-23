@@ -5,7 +5,14 @@ import { handleV4PoolSwap } from "../../v4-pool-swap";
 
 UniswapV4PoolManager.Swap.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.params.id);
-  const poolEntity = await context.Pool.getOrThrow(poolId);
+  const poolEntity = await context.Pool.get(poolId);
+
+  if (!poolEntity) {
+    context.log.warn(`Pool ${poolId} not found, skipping event...`);
+
+    return;
+  }
+
   const token0 = await context.Token.getOrThrow(poolEntity.token0_id);
   const token1 = await context.Token.getOrThrow(poolEntity.token1_id);
 
