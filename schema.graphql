@@ -29,8 +29,8 @@ type Pool {
   createdAtTimestamp: BigInt!
   hourlyData: [PoolHourlyData!]! @derivedFrom(field: "pool")
   dailyData: [PoolDailyData!]! @derivedFrom(field: "pool")
-  protocol: Protocol!
-  poolType: PoolType!
+  protocol: Protocol! @index
+  poolType: PoolType! @index
   isStablePool: Boolean
   v4PoolData: V4PoolData
   v3PoolData: V3PoolData
@@ -69,20 +69,20 @@ type AlgebraPoolData {
 type PoolHourlyData {
   id: ID!
   pool: Pool!
-  feesUSD: BigDecimal!
+  feesUSD: BigDecimal! @index
   feesToken0: BigDecimal!
   feesToken1: BigDecimal!
-  hourStartTimestamp: BigInt!
+  hourStartTimestamp: BigInt! @index
 }
 
 type PoolDailyData {
   id: ID!
   pool: Pool!
-  feesUSD: BigDecimal!
+  feesUSD: BigDecimal! @index
   feesToken0: BigDecimal!
   feesToken1: BigDecimal!
-  dayStartTimestamp: BigInt!
-  totalValueLockedUSD: BigDecimal!
+  dayStartTimestamp: BigInt! @index
+  totalValueLockedUSD: BigDecimal! @index
   totalValueLockedToken0: BigDecimal!
   totalValueLockedToken1: BigDecimal!
 }
