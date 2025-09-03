@@ -1,9 +1,8 @@
 import { AlgebraPool_1_2_2 } from "generated";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
-import { getRawFeeFromTokenAmount } from "../../../../../common/pool-commons";
 import { PoolSetters } from "../../../../../common/pool-setters";
-import { formatFromTokenAmount } from "../../../../../common/token-commons";
 import { handleV3PoolSwap } from "../../v3-pool-swap";
+import { getPoolUpdatedWithAlgebraFees } from "../common/algebra-pool-common";
 
 let overrideSwapFee: number | undefined = undefined;
 let pluginFee: number = 0;
@@ -17,29 +16,20 @@ AlgebraPool_1_2_2.Swap.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
   let poolEntity = await context.Pool.getOrThrow(poolId);
 
+  const algebraPoolData = await context.AlgebraPoolData.getOrThrow(poolId);
   const token0Entity = await context.Token.getOrThrow(poolEntity.token0_id);
   const token1Entity = await context.Token.getOrThrow(poolEntity.token1_id);
 
-  // deduct algebra fees for the plugin, which is removed from the pool
-  if (event.params.amount0 > 0n) {
-    const pluginFeeForAmount0 = getRawFeeFromTokenAmount(event.params.amount0, pluginFee);
-
-    poolEntity = {
-      ...poolEntity,
-      totalValueLockedToken0: poolEntity.totalValueLockedToken0.minus(
-        formatFromTokenAmount(pluginFeeForAmount0, token0Entity)
-      ),
-    };
-  } else {
-    const pluginFeeForAmount1 = getRawFeeFromTokenAmount(event.params.amount1, pluginFee);
-
-    poolEntity = {
-      ...poolEntity,
-      totalValueLockedToken1: poolEntity.totalValueLockedToken1.minus(
-        formatFromTokenAmount(pluginFeeForAmount1, token1Entity)
-      ),
-    };
-  }
+  poolEntity = getPoolUpdatedWithAlgebraFees({
+    amount0SwapAmount: event.params.amount0,
+    amount1SwapAmount: event.params.amount1,
+    communityFee: algebraPoolData.communityFee,
+    currentPoolEntity: poolEntity,
+    pluginFee: pluginFee,
+    token0: token0Entity,
+    token1: token1Entity,
+    overrideSwapFee: overrideSwapFee,
+  });
 
   await handleV3PoolSwap({
     context,

@@ -64,6 +64,7 @@ type V4PoolData {
 type AlgebraPoolData {
   id: ID!
   deployer: String!
+  communityFee: Int!
 }
 
 type PoolHourlyData {
