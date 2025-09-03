@@ -39,7 +39,7 @@ GLiquidAlgebraFactory.Pool.handler(async ({ event, context }) => {
     defaultTickSpacing,
     BigInt(event.block.timestamp),
     event.chainId,
-    SupportedProtocol.GLIQUID_V3,
+    SupportedProtocol.GLIQUID_ALGEBRA,
     TokenService.shared,
     algebraPoolData
   );
@@ -60,7 +60,7 @@ GLiquidAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
     defaultTickSpacing,
     BigInt(event.block.timestamp),
     event.chainId,
-    SupportedProtocol.GLIQUID_V3,
+    SupportedProtocol.GLIQUID_ALGEBRA,
     TokenService.shared,
     algebraPoolData
   );

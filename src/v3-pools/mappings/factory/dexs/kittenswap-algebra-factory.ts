@@ -39,7 +39,7 @@ KittenSwapAlgebraFactory.Pool.handler(async ({ event, context }) => {
     defaultTickSpacing,
     BigInt(event.block.timestamp),
     event.chainId,
-    SupportedProtocol.KITTENSWAP_V3,
+    SupportedProtocol.KITTENSWAP_ALGEBRA,
     TokenService.shared,
     algebraPoolData
   );
@@ -60,7 +60,7 @@ KittenSwapAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
     defaultTickSpacing,
     BigInt(event.block.timestamp),
     event.chainId,
-    SupportedProtocol.KITTENSWAP_V3,
+    SupportedProtocol.KITTENSWAP_ALGEBRA,
     TokenService.shared,
     algebraPoolData
   );
