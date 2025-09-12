@@ -1,7 +1,7 @@
 import { BigDecimal, HandlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { sqrtPriceX96toPrice } from "../../../common/cl-pool-converters";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount } from "../../../common/token-commons";
-import { sqrtPriceX96toPrice } from "../../../v3-pools/common/v3-v4-pool-converters";
 
 export async function handleV4PoolSwap(
   context: HandlerContext,

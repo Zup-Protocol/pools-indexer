@@ -200,6 +200,7 @@ export class PoolSetters {
     customFee: number = pool.currentFeeTier
   ): Promise<void> {
     let hourlyPoolDataId = getPoolHourlyDataId(eventTimestamp, pool);
+
     let userInputToken = this._findUserInputToken(amount0, token0, token1);
     let poolHourlyDataEntity = (await context.PoolHourlyData.getOrCreate({
       id: hourlyPoolDataId,

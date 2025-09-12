@@ -16,7 +16,6 @@ AlgebraPool_1_2_2.Swap.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
   let poolEntity = await context.Pool.getOrThrow(poolId);
 
-  const swapFee = overrideSwapFee ?? poolEntity.currentFeeTier;
   const algebraPoolData = await context.AlgebraPoolData.getOrThrow(poolId);
   const token0Entity = await context.Token.getOrThrow(poolEntity.token0_id);
   const token1Entity = await context.Token.getOrThrow(poolEntity.token1_id);

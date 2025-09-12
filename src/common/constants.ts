@@ -1,11 +1,10 @@
 import { BigDecimal } from "generated";
-import { hexToBigInt } from "./math";
 
 export const ZERO_BIG_DECIMAL = BigDecimal(0);
 
 export const ZERO_BIG_INT = BigInt(0);
 
-export const MAX_UINT256 = hexToBigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+export const MAX_UINT256 = BigInt(2) ** BigInt(256) - BigInt(1);
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 

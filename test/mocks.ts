@@ -3,6 +3,8 @@ import {
   BigDecimal,
   HandlerContext,
   Pool,
+  PoolDailyData,
+  PoolHourlyData,
   Protocol,
   Token,
   V2PoolData,
@@ -12,12 +14,14 @@ import {
 import {
   Pool_t,
   PoolDailyData_t,
+  PoolHourlyData_t,
   Token_t,
   V2PoolData_t,
   V3PoolData_t,
   V4PoolData_t,
 } from "generated/src/db/Entities.gen";
 import { PoolType_t } from "generated/src/db/Enums.gen";
+import { getPoolHourlyDataId } from "../src/common/pool-commons";
 
 let lastMockReturnEffectCall: any;
 
@@ -57,8 +61,17 @@ export const HandlerContextCustomMock = (): HandlerContext => {
     effect: (effect: any, args: any[]) => {
       return lastMockReturnEffectCall;
     },
+    Protocol: {
+      getOrCreate: async (entity: Protocol) => getOrCreateEntity(entity, protocolSaves),
+      getOrThrow: (id: string) => getOrThrow(id, protocolSaves),
+      get: async (id: string) => protocolSaves[id],
+      set: (entity: Protocol) => {
+        protocolSaves[entity.id] = entity;
+      },
+    },
     V3PoolData: {
       getOrCreate: async (entity: V3PoolData_t) => getOrCreateEntity(entity, v3PoolDataSaves),
+      getOrThrow: (id: string) => getOrThrow(id, v3PoolDataSaves),
       get: async (id: string) => v3PoolDataSaves[id],
       set: (entity: V3PoolData) => {
         v3PoolDataSaves[entity.id] = entity;
@@ -89,6 +102,7 @@ export const HandlerContextCustomMock = (): HandlerContext => {
     },
     Token: {
       getOrCreate: async (entity: Token_t) => getOrCreateEntity(entity, tokenSaves),
+      getOrThrow: (id: string) => getOrThrow(id, tokenSaves),
       get: async (id: string) => tokenSaves[id],
       set: (entity: Token_t) => {
         tokenSaves[entity.id] = entity;
@@ -96,24 +110,38 @@ export const HandlerContextCustomMock = (): HandlerContext => {
     },
     PoolDailyData: {
       getOrCreate: async (entity: PoolDailyData_t) => getOrCreateEntity(entity, poolDailyDataSaves),
+      getOrThrow: (id: string) => getOrThrow(id, poolDailyDataSaves),
       get: async (id: string) => poolDailyDataSaves[id],
       set: (entity: PoolDailyData_t) => {
         poolDailyDataSaves[entity.id] = entity;
+      },
+    },
+    PoolHourlyData: {
+      getOrCreate: async (entity: PoolHourlyData_t) => getOrCreateEntity(entity, poolhourlyDataSaves),
+      getOrThrow: (id: string) => getOrThrow(id, poolhourlyDataSaves),
+      get: async (id: string) => poolhourlyDataSaves[id],
+      set: (entity: PoolHourlyData_t) => {
+        poolhourlyDataSaves[entity.id] = entity;
       },
     },
   } as HandlerContext;
 };
 
 export class ProtocolMock implements Protocol {
-  id: string = "mock-protocol-id";
+  constructor(readonly customId: string = "mock-protocol-id") {}
+
+  id: string = this.customId;
   logo: string = "https://example.com/logo.png";
   name: string = "Mock Protocol";
   url: string = "https://example.com";
 }
 
 export class TokenMock implements Token {
+  constructor(readonly customId: string = "mock-token-id") {
+    this.id = customId;
+  }
   decimals: number = 18;
-  id: string = "mock-token-id";
+  id: string = this.customId;
   name: string = "Mock Token";
   symbol: string = "MTK";
   tokenAddress: string = "0x0000000000000000000000000000000000000001";
@@ -123,8 +151,11 @@ export class TokenMock implements Token {
 }
 
 export class AlgebraPoolDataMock implements AlgebraPoolData {
+  constructor(readonly customId: string = "mock-algebra-pool-data-id") {}
+
+  id: string = this.customId;
   deployer: string = "0x0000000000000000000000000000000000000001";
-  id: string = "mock-algebra-pool-data-id";
+  communityFee: number = 0;
 }
 
 export class V2PoolDataMock implements V2PoolData {
@@ -132,16 +163,20 @@ export class V2PoolDataMock implements V2PoolData {
 }
 
 export class V3PoolDataMock implements V3PoolData {
-  id: string = "mock-v3-pool-data-id";
+  constructor(readonly customId: string = "mock-v3-pool-data-id") {}
+
+  id: string = this.customId;
   sqrtPriceX96: bigint = BigInt("4024415889252221097743020");
   tick: bigint = BigInt("-197765");
   tickSpacing: number = 100;
 }
 
 export class V4PoolDataMock implements V4PoolData {
+  constructor(readonly customId: string = "mock-v4-pool-data-id") {}
+
   poolManager: string = "0x0000000000000000000000000000000000000001";
   stateView: string | undefined = "0x0000000000000000000000000000000000000001";
-  id: string = "mock-v4-pool-data-id";
+  id: string = this.customId;
   sqrtPriceX96: bigint = BigInt("4024415889252221097743020");
   tick: bigint = BigInt("-197765");
   tickSpacing: number = 100;
@@ -169,4 +204,25 @@ export class PoolMock implements Pool {
   v2PoolData_id: string | undefined = new V2PoolDataMock().id;
   v3PoolData_id: string | undefined = new V3PoolDataMock().id;
   v4PoolData_id: string | undefined = new V4PoolDataMock().id;
+}
+
+export class PoolHourlyDataMock implements PoolHourlyData {
+  feesToken0: BigDecimal = BigDecimal("0");
+  feesToken1: BigDecimal = BigDecimal("0");
+  feesUSD: BigDecimal = BigDecimal("0");
+  hourStartTimestamp: bigint = BigInt((Date.now() / 1000).toFixed(0));
+  id: string = getPoolHourlyDataId(BigInt((Date.now() / 1000).toFixed(0)), new PoolMock());
+  pool_id: string = new PoolMock().id;
+}
+
+export class PoolDailyDataMock implements PoolDailyData {
+  dayStartTimestamp: bigint = BigInt((Date.now() / 1000).toFixed(0));
+  totalValueLockedToken0: BigDecimal = BigDecimal("0");
+  totalValueLockedToken1: BigDecimal = BigDecimal("0");
+  totalValueLockedUSD: BigDecimal = BigDecimal("0");
+  feesToken0: BigDecimal = BigDecimal("0");
+  feesToken1: BigDecimal = BigDecimal("0");
+  feesUSD: BigDecimal = BigDecimal("0");
+  id: string = getPoolHourlyDataId(BigInt((Date.now() / 1000).toFixed(0)), new PoolMock());
+  pool_id: string = new PoolMock().id;
 }

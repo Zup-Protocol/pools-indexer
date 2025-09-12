@@ -1,10 +1,10 @@
 import { HandlerContext, Pool as PoolEntity, V4PoolData as V4PoolEntity } from "generated";
+import { sqrtPriceX96toPrice } from "../../../common/cl-pool-converters";
 import { ZERO_BIG_DECIMAL } from "../../../common/constants";
 import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { PoolSetters } from "../../../common/pool-setters";
 import { TokenService } from "../../../common/services/token-service";
-import { sqrtPriceX96toPrice } from "../../../v3-pools/common/v3-v4-pool-converters";
 
 export async function handleV4PoolInitialize(
   context: HandlerContext,

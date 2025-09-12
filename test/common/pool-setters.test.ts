@@ -1,16 +1,25 @@
 import assert from "assert";
 import { BigDecimal, HandlerContext, Pool, PoolDailyData, Token } from "generated";
+import { sqrtPriceX96toPrice } from "../../src/common/cl-pool-converters";
 import { ONE_HOUR_IN_SECONDS, ZERO_BIG_DECIMAL } from "../../src/common/constants";
 import { IndexerNetwork } from "../../src/common/enums/indexer-network";
-import { getPoolDailyDataId } from "../../src/common/pool-commons";
+import { getPoolDailyDataId, getPoolHourlyDataId } from "../../src/common/pool-commons";
 import { PoolSetters } from "../../src/common/pool-setters";
-import { sqrtPriceX96toPrice } from "../../src/v3-pools/common/v3-v4-pool-converters";
-import { HandlerContextCustomMock } from "../mocks";
+import { formatFromTokenAmount } from "../../src/common/token-commons";
+import {
+  HandlerContextCustomMock,
+  PoolDailyDataMock,
+  PoolHourlyDataMock,
+  PoolMock,
+  TokenMock,
+  V4PoolDataMock,
+} from "../mocks";
 
 describe("PoolSetters", () => {
   let sut: PoolSetters;
   let context: HandlerContext;
   let network = IndexerNetwork.ETHEREUM;
+  let eventTimestamp = BigInt(Math.floor(Date.now() / 1000));
 
   beforeEach(() => {
     context = HandlerContextCustomMock();
@@ -39,7 +48,7 @@ describe("PoolSetters", () => {
     } as PoolDailyData;
 
     context.PoolDailyData.set(oldPoolDailyData);
-    await sut.setPoolDailyDataTVL(BigInt(eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS)), pool);
+    await sut.setPoolDailyDataTVL(BigInt(eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS * 2)), pool);
 
     let updatedDailyData = await context.PoolDailyData.get(oldPoolDailyData.id);
 
@@ -325,5 +334,881 @@ describe("PoolSetters", () => {
 
     assert.equal(newPrices.token1UpdatedPrice.toString(), token1UsdPrice.toString());
     assert.equal(newPrices.token0UpdatedPrice.toString(), "0.541682092007859127");
+  });
+
+  it(`When calling set hourly data, with the amount0 negative
+    annd amount 1 positive, the feesToken1 field should be updated,
+    suming up the swap fee`, async () => {
+    let token0Id = "0x0000000000000000000000000000000000000012";
+    let token1Id = "0x0000000000000000000000000000000000000002";
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let amount1 = BigInt(21785) * BigInt(10) ** BigInt(token1.decimals);
+    let amount0 = BigInt(199) * BigInt(10) ** BigInt(token0.decimals) * -1n;
+    let swapFee = 100;
+    let currentFees = BigDecimal("1832.3");
+    let poolHourlyData = new PoolHourlyDataMock();
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0Id,
+      token1_id: token1Id,
+    };
+
+    poolHourlyData = {
+      ...poolHourlyData,
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      feesToken1: currentFees,
+    };
+
+    context.Pool.set(pool);
+    context.PoolHourlyData.set(poolHourlyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+
+    const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    const expectedNewFees = currentFees.plus(formatFromTokenAmount((amount1 * BigInt(swapFee)) / 1000000n, token1));
+
+    assert.deepEqual(updatedPoolHourlyData.feesToken1, expectedNewFees);
+  });
+
+  it(`When calling set hourly data, with the amount0 positive
+    annd amount 1 negative, the feesToken0 field should be updated,
+    suming up the swap fee`, async () => {
+    let token0Id = "0x0000000000000000000000000000000000000012";
+    let token1Id = "0x0000000000000000000000000000000000000002";
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let amount0 = BigInt(199) * BigInt(10) ** BigInt(token0.decimals);
+    let amount1 = BigInt(21785) * BigInt(10) ** BigInt(token1.decimals) * -1n;
+    let swapFee = 1000;
+    let currentFees = BigDecimal("9798798.3");
+    let poolHourlyData = new PoolHourlyDataMock();
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0Id,
+      token1_id: token1Id,
+    };
+
+    poolHourlyData = {
+      ...poolHourlyData,
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      feesToken0: currentFees,
+    };
+
+    token0 = {
+      ...token0,
+      id: token0Id,
+      decimals: 6,
+    };
+
+    token1 = {
+      ...token1,
+      id: token1Id,
+      decimals: 18,
+    };
+
+    context.Pool.set(pool);
+    context.PoolHourlyData.set(poolHourlyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+
+    const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    const expectedNewFees = currentFees.plus(formatFromTokenAmount((amount0 * BigInt(swapFee)) / 1000000n, token0));
+
+    assert.deepEqual(updatedPoolHourlyData.feesToken0, expectedNewFees);
+  });
+
+  it(`When calling set hourly data with the amount1 negative
+    and amount0 positive, the feesUSD field should be updated
+    suming up the swap fee`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+    let swapFee = 1000;
+    let poolHourlyData = new PoolHourlyDataMock();
+    let currentFeesToken0 = BigDecimal("2112.3");
+    let currentFeesToken1 = BigDecimal("2.3");
+
+    token0 = {
+      ...token0,
+      decimals: 18,
+      usdPrice: BigDecimal("18.32"),
+    };
+
+    token1 = {
+      ...token1,
+      decimals: 18,
+      usdPrice: BigDecimal("18271.97"),
+    };
+
+    let amount0 = BigInt(190) * BigInt(10) ** BigInt(token0.decimals);
+    let amount1 = BigInt(2) * BigInt(10) ** BigInt(token1.decimals) * -1n;
+    let currentUSDFees = currentFeesToken0.times(token0.usdPrice).plus(currentFeesToken1.times(token1.usdPrice));
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    poolHourlyData = {
+      ...poolHourlyData,
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      feesToken0: currentFeesToken0,
+      feesToken1: currentFeesToken1,
+      feesUSD: currentUSDFees,
+    };
+
+    context.Pool.set(pool);
+    context.PoolHourlyData.set(poolHourlyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+
+    const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    const token0ExpectedSwapFee = formatFromTokenAmount((amount0 * BigInt(swapFee)) / 1000000n, token0);
+    const expectedUpdatedFeeUsd = currentFeesToken0
+      .plus(token0ExpectedSwapFee)
+      .times(token0.usdPrice)
+      .plus(currentFeesToken1.times(token1.usdPrice));
+
+    assert.deepEqual(updatedPoolHourlyData.feesUSD, expectedUpdatedFeeUsd);
+  });
+
+  it(`When calling set hourly data with the amount1 positive
+    and amount0 negative, the feesUSD field should be updated
+    suming up the swap fee`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+    let swapFee = 1000;
+    let poolHourlyData = new PoolHourlyDataMock();
+    let currentFeesToken0 = BigDecimal("2112.3");
+    let currentFeesToken1 = BigDecimal("2.3");
+
+    token0 = {
+      ...token0,
+      decimals: 18,
+      usdPrice: BigDecimal("18.32"),
+    };
+
+    token1 = {
+      ...token1,
+      decimals: 18,
+      usdPrice: BigDecimal("18271.97"),
+    };
+
+    let amount0 = BigInt(190) * BigInt(10) ** BigInt(token0.decimals) * -1n;
+    let amount1 = BigInt(2) * BigInt(10) ** BigInt(token1.decimals);
+    let currentUSDFees = currentFeesToken0.times(token0.usdPrice).plus(currentFeesToken1.times(token1.usdPrice));
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    poolHourlyData = {
+      ...poolHourlyData,
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      feesToken0: currentFeesToken0,
+      feesToken1: currentFeesToken1,
+      feesUSD: currentUSDFees,
+    };
+
+    context.Pool.set(pool);
+    context.PoolHourlyData.set(poolHourlyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+
+    const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    const token1ExpectedSwapFee = formatFromTokenAmount((amount1 * BigInt(swapFee)) / 1000000n, token1);
+    const expectedUpdatedFeeUsd = currentFeesToken1
+      .plus(token1ExpectedSwapFee)
+      .times(token1.usdPrice)
+      .plus(currentFeesToken0.times(token0.usdPrice));
+
+    assert.deepEqual(updatedPoolHourlyData.feesUSD, expectedUpdatedFeeUsd);
+  });
+
+  it(`When calling set hourly data, with the amount0 negative and amount1 positive,
+    multiple times, in less than 1 hour, it should update the same pool hourly data,
+    just suming up the swap fee`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+    let v4PoolData = new V4PoolDataMock(pool.id);
+
+    token0 = {
+      ...token0,
+      usdPrice: BigDecimal("0.022"),
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: BigDecimal("1.21"),
+    };
+
+    let amount0 = BigInt(189269) * BigInt(10) ** BigInt(token0.decimals) * -1n;
+    let amount1 = BigInt(198621) * BigInt(10) ** BigInt(token1.decimals);
+    let poolHourlyData = new PoolHourlyDataMock();
+    let currentFeesToken0 = BigDecimal("21023896.3");
+    let currentFeesToken1 = BigDecimal("32987.3");
+    let currentUSDFees = currentFeesToken0.times(token0.usdPrice).plus(currentFeesToken1.times(token1.usdPrice));
+    let currentHourlyId = getPoolHourlyDataId(eventTimestamp, pool);
+    let callTimes = 4;
+    let swapFee = 500;
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    poolHourlyData = {
+      ...poolHourlyData,
+      id: currentHourlyId,
+      feesToken0: currentFeesToken0,
+      feesToken1: currentFeesToken1,
+      feesUSD: currentUSDFees,
+    };
+
+    let token1ExpectedSwapFee = formatFromTokenAmount((amount1 * BigInt(pool.currentFeeTier)) / 1000000n, token1);
+
+    context.Pool.set(pool);
+    context.PoolHourlyData.set(poolHourlyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V4PoolData.set(v4PoolData);
+
+    for (let i = 0; i < callTimes; i++) {
+      await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    }
+
+    const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(currentHourlyId);
+    const expectedFeesToken1 = currentFeesToken1.plus(
+      formatFromTokenAmount((amount1 * BigInt(pool.currentFeeTier)) / BigInt(1000000), token1).times(
+        BigDecimal(callTimes)
+      )
+    );
+    const expectedFeesUsd = currentFeesToken0
+      .times(token0.usdPrice)
+      .plus(currentFeesToken1.plus(token1ExpectedSwapFee.times(BigDecimal(callTimes))).times(token1.usdPrice));
+
+    assert.deepEqual(updatedPoolHourlyData.feesToken1, expectedFeesToken1, "feesToken1 should be correctly updated");
+    assert.deepEqual(updatedPoolHourlyData.feesUSD, expectedFeesUsd, "feesUSD should be correctly updated");
+  });
+
+  it(`When calling set hourly data, with the amount0 positive and amount1 negative,
+    multiple times, in less than 1 hour, it should update the same pool hourly data,
+    just suming up the swap fee`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+    let v4PoolData = new V4PoolDataMock(pool.id);
+
+    token0 = {
+      ...token0,
+      usdPrice: BigDecimal("0.022"),
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: BigDecimal("1.21"),
+    };
+
+    let amount0 = BigInt(189269) * BigInt(10) ** BigInt(token0.decimals);
+    let amount1 = BigInt(198621) * BigInt(10) ** BigInt(token1.decimals) * -1n;
+    let poolHourlyData = new PoolHourlyDataMock();
+    let currentFeesToken0 = BigDecimal("21023896.3");
+    let currentFeesToken1 = BigDecimal("32987.3");
+    let currentUSDFees = currentFeesToken0.times(token0.usdPrice).plus(currentFeesToken1.times(token1.usdPrice));
+    let currentHourlyId = getPoolHourlyDataId(eventTimestamp, pool);
+    let callTimes = 4;
+    let swapFee = 500;
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    poolHourlyData = {
+      ...poolHourlyData,
+      id: currentHourlyId,
+      feesToken0: currentFeesToken0,
+      feesToken1: currentFeesToken1,
+      feesUSD: currentUSDFees,
+    };
+
+    let token0ExpectedSwapFee = formatFromTokenAmount((amount0 * BigInt(pool.currentFeeTier)) / 1000000n, token0);
+
+    context.Pool.set(pool);
+    context.PoolHourlyData.set(poolHourlyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V4PoolData.set(v4PoolData);
+
+    for (let i = 0; i < callTimes; i++) {
+      await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    }
+
+    const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(currentHourlyId);
+    const expectedFeesToken0 = currentFeesToken0.plus(
+      formatFromTokenAmount((amount0 * BigInt(pool.currentFeeTier)) / BigInt(1000000), token0).times(
+        BigDecimal(callTimes)
+      )
+    );
+    const expectedFeesUsd = currentFeesToken1
+      .times(token1.usdPrice)
+      .plus(currentFeesToken0.plus(token0ExpectedSwapFee.times(BigDecimal(callTimes))).times(token0.usdPrice));
+
+    assert.deepEqual(updatedPoolHourlyData.feesToken0, expectedFeesToken0, "feesToken0 should be correctly updated");
+    assert.deepEqual(updatedPoolHourlyData.feesUSD, expectedFeesUsd, "feesUSD should be correctly updated");
+  });
+
+  it(`When calling set hourly data with the amount0 positive and amount1 negative
+    multiple times, with more than 1 hour from each other,it should update differents
+    pool hourly data entities(as it is a new hour, it should create a new entity for each
+    hour and update it)`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+
+    token0 = {
+      ...token0,
+      usdPrice: BigDecimal("0.022"),
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: BigDecimal("1.21"),
+    };
+
+    let amount0 = BigInt(1765) * BigInt(10) ** BigInt(token0.decimals);
+    let amount1 = BigInt(12) * BigInt(10) ** BigInt(token1.decimals) * -1n;
+
+    let hourIds: string[] = [];
+    let callTimes = 5;
+    let swapFee = 500;
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    for (let i = 0; i < callTimes; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS);
+      let currentHourlyId = getPoolHourlyDataId(eventTimestamp, pool);
+
+      assert(!hourIds.includes(currentHourlyId), "Hour Id should be different for every hour");
+
+      hourIds.push(currentHourlyId);
+
+      await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+      const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(currentHourlyId);
+
+      assert.deepEqual(
+        updatedPoolHourlyData.feesToken0,
+        formatFromTokenAmount((amount0 * BigInt(pool.currentFeeTier)) / 1000000n, token0)
+      );
+    }
+  });
+
+  it(`When calling set hourly data with the amount0 negative and amount1 positive
+    multiple times, with more than 1 hour from each other,it should update differents
+    pool hourly data entities(as it is a new hour, it should create a new entity for each
+    hour and update it)`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+
+    token0 = {
+      ...token0,
+      usdPrice: BigDecimal("0.022"),
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: BigDecimal("1.21"),
+    };
+
+    let amount0 = BigInt(1765) * BigInt(10) ** BigInt(token0.decimals) * -1n;
+    let amount1 = BigInt(12) * BigInt(10) ** BigInt(token1.decimals);
+
+    let hourIds: string[] = [];
+    let callTimes = 5;
+    let swapFee = 500;
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    for (let i = 0; i < callTimes; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS);
+      let currentHourlyId = getPoolHourlyDataId(eventTimestamp, pool);
+
+      assert(!hourIds.includes(currentHourlyId), "Hour Id should be different for every hour");
+
+      hourIds.push(currentHourlyId);
+
+      await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+      const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(currentHourlyId);
+
+      assert.deepEqual(
+        updatedPoolHourlyData.feesToken1,
+        formatFromTokenAmount((amount1 * BigInt(pool.currentFeeTier)) / 1000000n, token1)
+      );
+    }
+  });
+
+  it(`should set the pool daily data TVL when calling set daily data`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+    let amount0 = BigInt(200);
+    let amount1 = BigInt(100);
+    let currentTotalValueLockedToken0 = BigDecimal("21092789");
+    let currentTotalValueLockedToken1 = BigDecimal("91787289798271");
+    let currentTotalValueLockedUSD = BigDecimal("917872826258287289798271.7635267");
+
+    pool = {
+      ...pool,
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken0: currentTotalValueLockedToken0,
+      totalValueLockedToken1: currentTotalValueLockedToken1,
+      totalValueLockedUSD: currentTotalValueLockedUSD,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const poolDailyDataUpdated = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+
+    assert.deepEqual(poolDailyDataUpdated.totalValueLockedToken0, pool.totalValueLockedToken0);
+    assert.deepEqual(poolDailyDataUpdated.totalValueLockedToken1, pool.totalValueLockedToken1);
+    assert.deepEqual(poolDailyDataUpdated.totalValueLockedUSD, pool.totalValueLockedUSD);
+  });
+
+  it(`When calling set daily data with the amount0 positive and amount1 negative,
+    multiple times, with less than 1 day from each other,
+    it should correctly update the fees for the same pool daily data entity`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+
+    token0 = {
+      ...token0,
+      usdPrice: BigDecimal("0.022"),
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: BigDecimal("1.21"),
+    };
+
+    let amount0 = BigInt(1765) * BigInt(10) ** BigInt(token0.decimals);
+    let amount1 = BigInt(12) * BigInt(10) ** BigInt(token1.decimals) * -1n;
+
+    let poolDailyData = new PoolDailyDataMock();
+    let currentFeesToken0 = BigDecimal("1898.3");
+    let currentFeesToken1 = BigDecimal("1.3");
+    let currentUSDFees = currentFeesToken0.times(token0.usdPrice).plus(currentFeesToken1.times(token1.usdPrice));
+    let currentDailyId = getPoolDailyDataId(eventTimestamp, pool);
+    let callTimes = 8;
+    let swapFee = 500;
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    poolDailyData = {
+      ...poolDailyData,
+      id: currentDailyId,
+      feesToken0: currentFeesToken0,
+      feesToken1: currentFeesToken1,
+      feesUSD: currentUSDFees,
+    };
+
+    let token0ExpectedSwapFee = formatFromTokenAmount(
+      (amount0 * BigInt(pool.currentFeeTier)) / BigInt(1000000),
+      token0
+    );
+
+    context.Pool.set(pool);
+    context.PoolDailyData.set(poolDailyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    for (let i = 0; i < callTimes; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS);
+
+      await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    }
+
+    const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(currentDailyId);
+    const expectedToken0Fees = currentFeesToken0.plus(
+      formatFromTokenAmount((amount0 * BigInt(pool.currentFeeTier)) / BigInt(1000000), token0).times(
+        BigDecimal(callTimes.toString())
+      )
+    );
+    const expectedTokenFeesUSD = currentFeesToken1
+      .times(token1.usdPrice)
+      .plus(
+        currentFeesToken0.plus(token0ExpectedSwapFee.times(BigDecimal(callTimes.toString()))).times(token0.usdPrice)
+      );
+
+    assert.deepEqual(updatedPoolDailyData.feesToken0, expectedToken0Fees, "feesToken0 should be correctly updated");
+    assert.deepEqual(updatedPoolDailyData.feesUSD, expectedTokenFeesUSD, "feesUSD should be correctly updated");
+  });
+
+  it(`When calling set daily data with the amount0 negative and amount1 positive,
+    multiple times, with less than 1 day from each other,
+    it should correctly update fees for the same pool daily data entity`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+
+    token0 = {
+      ...token0,
+      usdPrice: BigDecimal("0.022"),
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: BigDecimal("1.21"),
+    };
+
+    let amount0 = BigInt(1765) * BigInt(10) ** BigInt(token0.decimals) * -1n;
+    let amount1 = BigInt(12) * BigInt(10) ** BigInt(token1.decimals);
+
+    let poolDailyData = new PoolDailyDataMock();
+    let currentFeesToken0 = BigDecimal("1898.3");
+    let currentFeesToken1 = BigDecimal("1.3");
+    let currentUSDFees = currentFeesToken0.times(token0.usdPrice).plus(currentFeesToken1.times(token1.usdPrice));
+    let currentDailyId = getPoolDailyDataId(eventTimestamp, pool);
+    let callTimes = 8;
+    let swapFee = 500;
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+      createdAtTimestamp: eventTimestamp,
+    };
+
+    poolDailyData = {
+      ...poolDailyData,
+      id: currentDailyId,
+      feesToken0: currentFeesToken0,
+      feesToken1: currentFeesToken1,
+      feesUSD: currentUSDFees,
+    };
+
+    let token1ExpectedSwapFee = formatFromTokenAmount(
+      (amount1 * BigInt(pool.currentFeeTier)) / BigInt(1000000),
+      token1
+    );
+
+    context.Pool.set(pool);
+    context.PoolDailyData.set(poolDailyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    for (let i = 0; i < callTimes; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS * 2);
+
+      await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    }
+
+    const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(currentDailyId);
+    const expectedToken1Fees = currentFeesToken1.plus(
+      formatFromTokenAmount((amount1 * BigInt(pool.currentFeeTier)) / BigInt(1000000), token1).times(
+        BigDecimal(callTimes.toString())
+      )
+    );
+    const expectedTokenFeesUSD = currentFeesToken0
+      .times(token0.usdPrice)
+      .plus(
+        currentFeesToken1.plus(token1ExpectedSwapFee.times(BigDecimal(callTimes.toString()))).times(token1.usdPrice)
+      );
+
+    assert.deepEqual(updatedPoolDailyData.feesToken1, expectedToken1Fees, "feesToken1 should be correctly updated");
+    assert.deepEqual(updatedPoolDailyData.feesUSD, expectedTokenFeesUSD, "feesUSD should be correctly updated");
+  });
+
+  it(`Whe calling set daily data with the amount0 positive and amount1 negative,
+    multiple times, with more than 1 day from each other,
+    it should correctly update fees for multiple pool daily data entity, one for
+    each new day`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+
+    token0 = {
+      ...token0,
+      usdPrice: BigDecimal("0.022"),
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: BigDecimal("1.21"),
+    };
+
+    let amount0 = BigInt(1765) * BigInt(10) ** BigInt(token0.decimals);
+    let amount1 = BigInt(12) * BigInt(10) ** BigInt(token1.decimals) * -1n;
+
+    let dayIds: string[] = [];
+    let callTimes = 5;
+
+    let swapFee = 500;
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    for (let i = 0; i < callTimes; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS * 24);
+      let currentDayId = getPoolDailyDataId(eventTimestamp, pool);
+
+      assert(!dayIds.includes(currentDayId), "Day Id should be different for every hour");
+
+      dayIds.push(currentDayId);
+
+      await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+      const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(currentDayId);
+      const expectedToken0Fees = formatFromTokenAmount(
+        (amount0 * BigInt(pool.currentFeeTier)) / BigInt(1000000),
+        token0
+      );
+
+      assert.deepEqual(updatedPoolDailyData.feesToken0, expectedToken0Fees, "feesToken0 should be correctly updated");
+      assert.deepEqual(
+        updatedPoolDailyData.feesUSD,
+        expectedToken0Fees.times(token0.usdPrice),
+        "feesUSD should be correctly updated"
+      );
+    }
+  });
+
+  it(`Whe calling set daily data with the amount0 negative and amount1 positive,
+    multiple times, with more than 1 day from each other,
+    it should correctly update fees for multiple pool daily data entity, one for
+    each new day`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+
+    token0 = {
+      ...token0,
+      usdPrice: BigDecimal("0.022"),
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: BigDecimal("1.21"),
+    };
+
+    let amount0 = BigInt(1765) * BigInt(10) ** BigInt(token0.decimals) * -1n;
+    let amount1 = BigInt(12) * BigInt(10) ** BigInt(token1.decimals);
+
+    let dayIds: string[] = [];
+    let callTimes = 5;
+
+    let swapFee = 500;
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    for (let i = 0; i < callTimes; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS * 24);
+      let currentDayId = getPoolDailyDataId(eventTimestamp, pool);
+
+      assert(!dayIds.includes(currentDayId), "Day Id should be different for every hour");
+
+      dayIds.push(currentDayId);
+
+      await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+      const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(currentDayId);
+      const expectedToken1Fees = formatFromTokenAmount(
+        (amount1 * BigInt(pool.currentFeeTier)) / BigInt(1000000),
+        token1
+      );
+
+      assert.deepEqual(updatedPoolDailyData.feesToken1, expectedToken1Fees, "feesToken1 should be correctly updated");
+      assert.deepEqual(
+        updatedPoolDailyData.feesUSD,
+        expectedToken1Fees.times(token1.usdPrice),
+        "feesUSD should be correctly updated"
+      );
+    }
+  });
+
+  it(`When calling to set hourly data, with the amount0 positive and amount1 negative,
+    and the pool has a different swap fee than the pool fee tier,
+    the feesToken0 field in the pool hourly data should be updated,
+    suming up the swap fee (got from the event)`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+    let amount0 = BigInt(32) * BigInt(10) ** BigInt(token0.decimals);
+    let amount1 = BigInt(199) * BigInt(10) ** BigInt(token1.decimals) * -1n;
+    let poolHourlyData = new PoolHourlyDataMock();
+    let currentFees = BigDecimal("12.3");
+    let swapFee = 500;
+    let poolFeeTier = 198;
+
+    pool = {
+      ...pool,
+      currentFeeTier: poolFeeTier,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    poolHourlyData = {
+      ...poolHourlyData,
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      feesToken0: currentFees,
+    };
+
+    context.Pool.set(pool);
+    context.PoolHourlyData.set(poolHourlyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    const exepectedFeesToken0 = currentFees.plus(
+      formatFromTokenAmount((amount0 * BigInt(swapFee)) / BigInt(1000000n), token0)
+    );
+
+    assert.deepEqual(updatedPoolHourlyData.feesToken0, exepectedFeesToken0);
+  });
+
+  it(`When calling to set hourly data, with the amount0 negative and amount1 positive,
+    and the pool has a different swap fee than the pool fee tier,
+    the feesToken0 field in the pool hourly data should be updated,
+    suming up the swap fee (got from the event)`, async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+    let amount0 = BigInt(32) * BigInt(10) ** BigInt(token0.decimals) * -1n;
+    let amount1 = BigInt(199) * BigInt(10) ** BigInt(token1.decimals);
+    let poolHourlyData = new PoolHourlyDataMock();
+    let currentFees = BigDecimal("12.3");
+    let swapFee = 500;
+    let poolFeeTier = 1000;
+
+    pool = {
+      ...pool,
+      currentFeeTier: poolFeeTier,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    poolHourlyData = {
+      ...poolHourlyData,
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      feesToken1: currentFees,
+    };
+
+    context.Pool.set(pool);
+    context.PoolHourlyData.set(poolHourlyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    const expectedToken1Fees = currentFees.plus(
+      formatFromTokenAmount((amount1 * BigInt(swapFee)) / BigInt(1000000n), token1)
+    );
+
+    assert.deepEqual(updatedPoolHourlyData.feesToken1, expectedToken1Fees);
+  });
+
+  it(`When calling to set daily data, with the amount0 negative and amount1 positive,
+    and the pool has a different swap fee than the pool fee tier,
+    the feesToken0 field in the pool daily data should be updated,
+    suming up the swap fee (got from the event)`, async () => {
+    eventTimestamp = BigInt(1);
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000012");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000002");
+    let amount0 = BigInt(32) * BigInt(10) ** BigInt(token0.decimals) * -1n;
+    let amount1 = BigInt(199) * BigInt(10) ** BigInt(token1.decimals);
+    let poolDailyData = new PoolDailyDataMock();
+    let currentFees = BigDecimal("12.3");
+    let swapFee = 500;
+    let poolFeeTier = 1000;
+
+    pool = {
+      ...pool,
+      currentFeeTier: poolFeeTier,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    poolDailyData = {
+      ...poolDailyData,
+      id: getPoolDailyDataId(eventTimestamp, pool),
+      feesToken1: currentFees,
+    };
+
+    context.Pool.set(pool);
+    context.PoolDailyData.set(poolDailyData);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
+    const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+    const expectedToken1Fees = currentFees.plus(
+      formatFromTokenAmount((amount1 * BigInt(swapFee)) / BigInt(1000000n), token1)
+    );
+
+    assert.deepEqual(updatedPoolDailyData.feesToken1, expectedToken1Fees);
   });
 });

@@ -315,227 +315,319 @@ describe("V4PoolModifyLiquidity", () => {
     assert.equal(poolAfter.totalValueLockedUSD.toString(), usdAmountbefore.plus(usdAmountRemoved).toString()); // using plus because the value is negative
   });
 
-  // it("When adding liquidity, it should correctly modify the tokens total amount pooled", () => {
-  //   let token0Id = "0x0000000000000000000000000000000000000001";
-  //   let token1Id = "0x0000000000000000000000000000000000000002";
-  //   let pool = new PoolMock();
-  //   let token0 = new TokenMock(Address.fromString(token0Id));
-  //   let token1 = new TokenMock(Address.fromString(token1Id));
-  //   let totalAmountPooledToken0Before = BigDecimal.fromString("20.387520919667882736");
-  //   let totalAmountPooledToken1Before = BigDecimal.fromString("52639.292441");
-  //   let v4Pool = new V4PoolMock();
+  it("When adding liquidity, it should correctly modify the tokens total amount pooled", async () => {
+    let token0Id = "0x0000000000000000000000000000000000000001";
+    let token1Id = "0x0000000000000000000000000000000000000002";
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let totalAmountPooledToken0Before = BigDecimal("20.387520919667882736");
+    let totalAmountPooledToken1Before = BigDecimal("52639.292441");
+    let v4PoolData = new V4PoolDataMock();
 
-  //   token0.decimals = 18;
-  //   token1.decimals = 6;
-  //   token0.totalTokenPooledAmount = totalAmountPooledToken0Before;
-  //   token1.totalTokenPooledAmount = totalAmountPooledToken1Before;
+    token0 = {
+      ...token0,
+      id: token0Id,
+      decimals: 18,
+      totalTokenPooledAmount: totalAmountPooledToken0Before,
+    };
 
-  //   v4Pool.tick = BigInt.fromString("-197765");
-  //   v4Pool.sqrtPriceX96 = BigInt.fromString("4024415889252221097743020");
+    token1 = {
+      ...token1,
+      id: token1Id,
+      decimals: 6,
+      totalTokenPooledAmount: totalAmountPooledToken1Before,
+    };
 
-  //   token0.save();
-  //   token1.save();
-  //   pool.save();
-  //   v4Pool.save();
+    v4PoolData = {
+      ...v4PoolData,
+      id: pool.id,
+      tick: BigInt("-197765"),
+      sqrtPriceX96: BigInt("4024415889252221097743020"),
+    };
 
-  //   let liquidityDelta = BigInt.fromString("1169660501840625341");
-  //   let tickLower = -197770 as i32;
-  //   let tickUpper = -197760 as i32;
-  //   let token0totalAmountAdded = formatFromTokenAmount(
-  //     getAmount0(tickLower, tickUpper, v4Pool.tick.toI32(), liquidityDelta, v4Pool.sqrtPriceX96),
-  //     token0,
-  //   );
-  //   let token1totalAmountAdded = formatFromTokenAmount(
-  //     getAmount1(tickLower, tickUpper, v4Pool.tick.toI32(), liquidityDelta, v4Pool.sqrtPriceX96),
-  //     token1,
-  //   );
+    context.Pool.set(pool);
+    context.V4PoolData.set(v4PoolData);
+    context.Token.set(token0);
+    context.Token.set(token1);
 
-  //   handleV4PoolModifyLiquidity(pool, token0, token1, liquidityDelta, tickLower, tickUpper);
+    let liquidityDelta = BigInt("1169660501840625341");
+    let tickLower = -197770;
+    let tickUpper = -197760;
+    let token0totalAmountAdded = formatFromTokenAmount(
+      getAmount0(tickLower, tickUpper, v4PoolData.tick, liquidityDelta, v4PoolData.sqrtPriceX96),
+      token0
+    );
 
-  //   assert.fieldEquals(
-  //     "Token",
-  //     token0.id.toHexString(),
-  //     "totalTokenPooledAmount",
-  //     totalAmountPooledToken0Before.plus(token0totalAmountAdded).toString(),
-  //   );
-  //   assert.fieldEquals(
-  //     "Token",
-  //     token1.id.toHexString(),
-  //     "totalTokenPooledAmount",
-  //     totalAmountPooledToken1Before.plus(token1totalAmountAdded).toString(),
-  //   );
-  // });
+    let token1totalAmountAdded = formatFromTokenAmount(
+      getAmount1(tickLower, tickUpper, v4PoolData.tick, liquidityDelta, v4PoolData.sqrtPriceX96),
+      token1
+    );
 
-  // it("When removing liquidity, it should correctly modify the tokens total amount pooled", () => {
-  //   let token0Id = "0x0000000000000000000000000000000000000001";
-  //   let token1Id = "0x0000000000000000000000000000000000000002";
-  //   let pool = new PoolMock();
-  //   let token0 = new TokenMock(Address.fromString(token0Id));
-  //   let token1 = new TokenMock(Address.fromString(token1Id));
-  //   let totalAmountPooledToken0Before = BigDecimal.fromString("20.387520919667882736");
-  //   let totalAmountPooledToken1Before = BigDecimal.fromString("52639.292441");
-  //   let v4Pool = new V4PoolMock();
+    await handleV4PoolModifyLiquidity(
+      context,
+      pool,
+      token0,
+      token1,
+      liquidityDelta,
+      tickLower,
+      tickUpper,
+      eventTimestamp,
+      new PoolSetters(context, network)
+    );
 
-  //   token0.decimals = 18;
-  //   token1.decimals = 6;
-  //   token0.totalTokenPooledAmount = totalAmountPooledToken0Before;
-  //   token1.totalTokenPooledAmount = totalAmountPooledToken1Before;
+    const toke0After = await context.Token.getOrThrow(token0.id);
+    const token1After = await context.Token.getOrThrow(token1.id);
 
-  //   v4Pool.tick = BigInt.fromString("-197765");
-  //   v4Pool.sqrtPriceX96 = BigInt.fromString("4024415889252221097743020");
+    assert.equal(
+      toke0After.totalTokenPooledAmount.toString(),
+      totalAmountPooledToken0Before.plus(token0totalAmountAdded).toString()
+    );
 
-  //   token0.save();
-  //   token1.save();
-  //   pool.save();
-  //   v4Pool.save();
+    assert.equal(
+      token1After.totalTokenPooledAmount.toString(),
+      totalAmountPooledToken1Before.plus(token1totalAmountAdded).toString()
+    );
+  });
 
-  //   let tickLower = -197920 as i32;
-  //   let tickUpper = -197910 as i32;
-  //   let liquidityDelta = BigInt.fromString("-2739387638594388447");
+  it("When removing liquidity, it should correctly modify the tokens total amount pooled", async () => {
+    let token0Id = "0x0000000000000000000000000000000000000001";
+    let token1Id = "0x0000000000000000000000000000000000000002";
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let totalAmountPooledToken0Before = BigDecimal("20.387520919667882736");
+    let totalAmountPooledToken1Before = BigDecimal("52639.292441");
+    let v4Pool = new V4PoolDataMock();
 
-  //   let token0totalAmountRemoved = formatFromTokenAmount(
-  //     getAmount0(tickLower, tickUpper, v4Pool.tick.toI32(), liquidityDelta, v4Pool.sqrtPriceX96),
-  //     token0,
-  //   );
-  //   let token1totalAmountRemoved = formatFromTokenAmount(
-  //     getAmount1(tickLower, tickUpper, v4Pool.tick.toI32(), liquidityDelta, v4Pool.sqrtPriceX96),
-  //     token1,
-  //   );
+    token0 = {
+      ...token0,
+      id: token0Id,
+      decimals: 18,
+      totalTokenPooledAmount: totalAmountPooledToken0Before,
+    };
 
-  //   handleV4PoolModifyLiquidity(pool, token0, token1, liquidityDelta, tickLower, tickUpper);
+    token1 = {
+      ...token1,
+      id: token1Id,
+      decimals: 6,
+      totalTokenPooledAmount: totalAmountPooledToken1Before,
+    };
 
-  //   assert.fieldEquals(
-  //     "Token",
-  //     token0.id.toHexString(),
-  //     "totalTokenPooledAmount",
-  //     totalAmountPooledToken0Before.plus(token0totalAmountRemoved).toString(), // using plus because the value is negative
-  //   );
-  //   assert.fieldEquals(
-  //     "Token",
-  //     token1.id.toHexString(),
-  //     "totalTokenPooledAmount",
-  //     totalAmountPooledToken1Before.plus(token1totalAmountRemoved).toString(), // using plus because the value is negative
-  //   );
-  // });
+    v4Pool = {
+      ...v4Pool,
+      id: pool.id,
+      tick: BigInt("-197765"),
+      sqrtPriceX96: BigInt("4024415889252221097743020"),
+    };
 
-  // it("When removing liquidity, it should correctly modify the tokens total amount pooled in usd", () => {
-  //   let token0Id = "0x0000000000000000000000000000000000000001";
-  //   let token1Id = "0x0000000000000000000000000000000000000002";
-  //   let token0UsdPrice = BigDecimal.fromString("1200.72");
-  //   let token1UsdPrice = BigDecimal.fromString("1.0001");
+    context.Pool.set(pool);
+    context.V4PoolData.set(v4Pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
 
-  //   let pool = new PoolMock();
-  //   let token0 = new TokenMock(Address.fromString(token0Id));
-  //   let token1 = new TokenMock(Address.fromString(token1Id));
-  //   let totalAmountPooledToken0Before = BigDecimal.fromString("20.387520919667882736");
-  //   let totalAmountPooledToken1Before = BigDecimal.fromString("52639.292441");
-  //   let totalUSDPooledToken0Before = totalAmountPooledToken0Before.times(token0UsdPrice);
-  //   let totalUSDPooledToken1Before = totalAmountPooledToken1Before.times(token1UsdPrice);
-  //   let v4Pool = new V4PoolMock();
+    let tickLower = -197920;
+    let tickUpper = -197910;
+    let liquidityDelta = BigInt("-2739387638594388447");
 
-  //   token0.decimals = 18;
-  //   token1.decimals = 6;
-  //   token0.usdPrice = token0UsdPrice;
-  //   token1.usdPrice = token1UsdPrice;
-  //   token0.totalTokenPooledAmount = totalAmountPooledToken0Before;
-  //   token1.totalTokenPooledAmount = totalAmountPooledToken1Before;
-  //   token0.totalValuePooledUsd = totalUSDPooledToken0Before;
-  //   token1.totalValuePooledUsd = totalUSDPooledToken1Before;
+    let token0totalAmountRemoved = formatFromTokenAmount(
+      getAmount0(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96),
+      token0
+    );
+    let token1totalAmountRemoved = formatFromTokenAmount(
+      getAmount1(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96),
+      token1
+    );
 
-  //   v4Pool.tick = BigInt.fromString("-197765");
-  //   v4Pool.sqrtPriceX96 = BigInt.fromString("4024415889252221097743020");
+    await handleV4PoolModifyLiquidity(
+      context,
+      pool,
+      token0,
+      token1,
+      liquidityDelta,
+      tickLower,
+      tickUpper,
+      eventTimestamp,
+      new PoolSetters(context, network)
+    );
 
-  //   v4Pool.save();
-  //   token0.save();
-  //   token1.save();
-  //   pool.save();
+    const newToken0 = await context.Token.getOrThrow(token0.id);
+    const newToken1 = await context.Token.getOrThrow(token1.id);
 
-  //   let tickLower = -197920 as i32;
-  //   let tickUpper = -197910 as i32;
-  //   let liquidityDelta = BigInt.fromString("-2739387638594388447");
+    assert.equal(
+      newToken0.totalTokenPooledAmount.toString(),
+      totalAmountPooledToken0Before.plus(token0totalAmountRemoved).toString()
+    ); // using plus because the value is negative
 
-  //   let token0totalAmountRemoved = formatFromTokenAmount(
-  //     getAmount0(tickLower, tickUpper, v4Pool.tick.toI32(), liquidityDelta, v4Pool.sqrtPriceX96),
-  //     token0,
-  //   );
-  //   let token1totalAmountRemoved = formatFromTokenAmount(
-  //     getAmount1(tickLower, tickUpper, v4Pool.tick.toI32(), liquidityDelta, v4Pool.sqrtPriceX96),
-  //     token1,
-  //   );
+    assert.equal(
+      newToken1.totalTokenPooledAmount.toString(),
+      totalAmountPooledToken1Before.plus(token1totalAmountRemoved).toString()
+    ); // using plus because the value is negative
+  });
 
-  //   handleV4PoolModifyLiquidity(pool, token0, token1, liquidityDelta, tickLower, tickUpper);
+  it("When removing liquidity, it should correctly modify the tokens total amount pooled in usd", async () => {
+    let token0Id = "0x0000000000000000000000000000000000000001";
+    let token1Id = "0x0000000000000000000000000000000000000002";
+    let token0UsdPrice = BigDecimal("1200.72");
+    let token1UsdPrice = BigDecimal("1.0001");
 
-  //   assert.fieldEquals(
-  //     "Token",
-  //     token0.id.toHexString(),
-  //     "totalValuePooledUsd",
-  //     totalUSDPooledToken0Before.plus(token0UsdPrice.times(token0totalAmountRemoved)).toString(), // using plus because the value is negative
-  //   );
-  //   assert.fieldEquals(
-  //     "Token",
-  //     token1.id.toHexString(),
-  //     "totalValuePooledUsd",
-  //     totalUSDPooledToken1Before.plus(token1UsdPrice.times(token1totalAmountRemoved)).toString(), // using plus because the value is negative
-  //   );
-  // });
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let totalAmountPooledToken0Before = BigDecimal("20.387520919667882736");
+    let totalAmountPooledToken1Before = BigDecimal("52639.292441");
+    let totalUSDPooledToken0Before = totalAmountPooledToken0Before.times(token0UsdPrice);
+    let totalUSDPooledToken1Before = totalAmountPooledToken1Before.times(token1UsdPrice);
+    let v4Pool = new V4PoolDataMock();
 
-  // it("When adding liquidity, it should correctly modify the tokens total amount pooled in usd", () => {
-  //   let token0Id = "0x0000000000000000000000000000000000000001";
-  //   let token1Id = "0x0000000000000000000000000000000000000002";
-  //   let token0UsdPrice = BigDecimal.fromString("1200.72");
-  //   let token1UsdPrice = BigDecimal.fromString("1.0001");
-  //   let v4Pool = new V4PoolMock();
-  //   let pool = new PoolMock();
-  //   let token0 = new TokenMock(Address.fromString(token0Id));
-  //   let token1 = new TokenMock(Address.fromString(token1Id));
-  //   let totalAmountPooledToken0Before = BigDecimal.fromString("20.387520919667882736");
-  //   let totalAmountPooledToken1Before = BigDecimal.fromString("52639.292441");
-  //   let totalUSDPooledToken0Before = totalAmountPooledToken0Before.times(token0UsdPrice);
-  //   let totalUSDPooledToken1Before = totalAmountPooledToken1Before.times(token1UsdPrice);
+    token0 = {
+      ...token0,
+      id: token0Id,
+      decimals: 18,
+      totalTokenPooledAmount: totalAmountPooledToken0Before,
+      totalValuePooledUsd: totalUSDPooledToken0Before,
+      usdPrice: token0UsdPrice,
+    };
 
-  //   token0.decimals = 18;
-  //   token1.decimals = 6;
-  //   token0.usdPrice = token0UsdPrice;
-  //   token1.usdPrice = token1UsdPrice;
-  //   token0.totalTokenPooledAmount = totalAmountPooledToken0Before;
-  //   token1.totalTokenPooledAmount = totalAmountPooledToken1Before;
-  //   token0.totalValuePooledUsd = totalUSDPooledToken0Before;
-  //   token1.totalValuePooledUsd = totalUSDPooledToken1Before;
+    token1 = {
+      ...token1,
+      id: token1Id,
+      decimals: 6,
+      totalTokenPooledAmount: totalAmountPooledToken1Before,
+      totalValuePooledUsd: totalUSDPooledToken1Before,
+      usdPrice: token1UsdPrice,
+    };
 
-  //   v4Pool.tick = BigInt.fromString("-197765");
-  //   v4Pool.sqrtPriceX96 = BigInt.fromString("4024415889252221097743020");
+    v4Pool = {
+      ...v4Pool,
+      id: pool.id,
+      tick: BigInt("-197765"),
+      sqrtPriceX96: BigInt("4024415889252221097743020"),
+    };
 
-  //   token0.save();
-  //   token1.save();
-  //   pool.save();
-  //   v4Pool.save();
+    context.Pool.set(pool);
+    context.V4PoolData.set(v4Pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
 
-  //   let liquidityDelta = BigInt.fromString("1169660501840625341");
-  //   let tickLower = -197770 as i32;
-  //   let tickUpper = -197760 as i32;
+    let tickLower = -197920;
+    let tickUpper = -197910;
+    let liquidityDelta = BigInt("-2739387638594388447");
 
-  //   let token0totalAmountAdded = formatFromTokenAmount(
-  //     getAmount0(tickLower, tickUpper, v4Pool.tick.toI32(), liquidityDelta, v4Pool.sqrtPriceX96),
-  //     token0,
-  //   );
-  //   let token1totalAmountAdded = formatFromTokenAmount(
-  //     getAmount1(tickLower, tickUpper, v4Pool.tick.toI32(), liquidityDelta, v4Pool.sqrtPriceX96),
-  //     token1,
-  //   );
+    let token0totalAmountRemoved = formatFromTokenAmount(
+      getAmount0(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96),
+      token0
+    );
+    let token1totalAmountRemoved = formatFromTokenAmount(
+      getAmount1(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96),
+      token1
+    );
 
-  //   handleV4PoolModifyLiquidity(pool, token0, token1, liquidityDelta, tickLower, tickUpper);
+    await handleV4PoolModifyLiquidity(
+      context,
+      pool,
+      token0,
+      token1,
+      liquidityDelta,
+      tickLower,
+      tickUpper,
+      eventTimestamp,
+      new PoolSetters(context, network)
+    );
 
-  //   assert.fieldEquals(
-  //     "Token",
-  //     token0.id.toHexString(),
-  //     "totalValuePooledUsd",
-  //     totalUSDPooledToken0Before.plus(token0UsdPrice.times(token0totalAmountAdded)).toString(),
-  //   );
-  //   assert.fieldEquals(
-  //     "Token",
-  //     token1.id.toHexString(),
-  //     "totalValuePooledUsd",
-  //     totalUSDPooledToken1Before.plus(token1UsdPrice.times(token1totalAmountAdded)).toString(),
-  //   );
-  // });
+    const token0After = await context.Token.getOrThrow(token0.id);
+    const token1After = await context.Token.getOrThrow(token1.id);
+
+    assert.equal(
+      token0After.totalValuePooledUsd.toString(),
+      totalUSDPooledToken0Before.plus(token0UsdPrice.times(token0totalAmountRemoved)).toString()
+    ); // using plus because the value is negative
+
+    assert.equal(
+      token1After.totalValuePooledUsd.toString(),
+      totalUSDPooledToken1Before.plus(token1UsdPrice.times(token1totalAmountRemoved)).toString()
+    ); // using plus because the value is negative
+  });
+
+  it("When adding liquidity, it should correctly modify the tokens total amount pooled in usd", async () => {
+    let token0Id = "0x0000000000000000000000000000000000000001";
+    let token1Id = "0x0000000000000000000000000000000000000002";
+    let token0UsdPrice = BigDecimal("1200.72");
+    let token1UsdPrice = BigDecimal("1.0001");
+    let v4Pool = new V4PoolDataMock();
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let totalAmountPooledToken0Before = BigDecimal("20.387520919667882736");
+    let totalAmountPooledToken1Before = BigDecimal("52639.292441");
+    let totalUSDPooledToken0Before = totalAmountPooledToken0Before.times(token0UsdPrice);
+    let totalUSDPooledToken1Before = totalAmountPooledToken1Before.times(token1UsdPrice);
+
+    token0 = {
+      ...token0,
+      id: token0Id,
+      totalTokenPooledAmount: totalAmountPooledToken0Before,
+      totalValuePooledUsd: totalUSDPooledToken0Before,
+      usdPrice: token0UsdPrice,
+      decimals: 18,
+    };
+
+    token1 = {
+      ...token1,
+      id: token1Id,
+      decimals: 6,
+      usdPrice: token1UsdPrice,
+      totalTokenPooledAmount: totalAmountPooledToken1Before,
+      totalValuePooledUsd: totalUSDPooledToken1Before,
+    };
+
+    v4Pool = {
+      ...v4Pool,
+      id: pool.id,
+      tick: BigInt("-197765"),
+      sqrtPriceX96: BigInt("4024415889252221097743020"),
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V4PoolData.set(v4Pool);
+
+    let liquidityDelta = BigInt("1169660501840625341");
+    let tickLower = -197770;
+    let tickUpper = -197760;
+
+    let token0totalAmountAdded = formatFromTokenAmount(
+      getAmount0(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96),
+      token0
+    );
+    let token1totalAmountAdded = formatFromTokenAmount(
+      getAmount1(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96),
+      token1
+    );
+
+    await handleV4PoolModifyLiquidity(
+      context,
+      pool,
+      token0,
+      token1,
+      liquidityDelta,
+      tickLower,
+      tickUpper,
+      eventTimestamp,
+      new PoolSetters(context, network)
+    );
+
+    const token0After = await context.Token.getOrThrow(token0.id);
+    const token1After = await context.Token.getOrThrow(token1.id);
+
+    assert.equal(
+      token0After.totalValuePooledUsd.toString(),
+      totalUSDPooledToken0Before.plus(token0UsdPrice.times(token0totalAmountAdded)).toString()
+    );
+    assert.equal(
+      token1After.totalValuePooledUsd.toString(),
+      totalUSDPooledToken1Before.plus(token1UsdPrice.times(token1totalAmountAdded)).toString()
+    );
+  });
 });

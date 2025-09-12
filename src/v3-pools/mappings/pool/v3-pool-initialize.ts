@@ -1,6 +1,6 @@
 import { HandlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { sqrtPriceX96toPrice } from "../../../common/cl-pool-converters";
 import { PoolSetters } from "../../../common/pool-setters";
-import { sqrtPriceX96toPrice } from "../../common/v3-v4-pool-converters";
 
 export async function handleV3PoolInitialize(
   context: HandlerContext,

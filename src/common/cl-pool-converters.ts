@@ -1,7 +1,7 @@
 import { BigDecimal, Token } from "generated";
-import { safeDiv } from "../../common/math";
-import { tokenBaseAmount } from "../../common/token-commons";
-import { PoolPrices } from "../../common/types";
+import { safeDiv } from "./math";
+import { tokenBaseAmount } from "./token-commons";
+import { PoolPrices } from "./types";
 
 export function sqrtPriceX96toPrice(sqrtPriceX96: bigint, poolToken0: Token, poolToken1: Token): PoolPrices {
   const Q192 = BigInt(2) ** BigInt(192);

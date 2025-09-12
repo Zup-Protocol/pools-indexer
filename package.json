@@ -9,7 +9,8 @@
     "codegen": "envio codegen",
     "dev": "envio dev",
     "start": "envio start",
-    "test": "pnpm mocha"
+    "test": "pnpm mocha",
+    "test:coverage": "nyc --reporter=text --n 'src/' pnpm mocha"
   },
   "devDependencies": {
     "@types/chai": "^4.3.11",
@@ -18,6 +19,7 @@
     "@types/sinon": "^17.0.4",
     "chai": "4.3.10",
     "mocha": "10.2.0",
+    "nyc": "^17.1.0",
     "sinon": "^21.0.0",
     "ts-mocha": "^10.0.0",
     "typescript": "5.2.2"

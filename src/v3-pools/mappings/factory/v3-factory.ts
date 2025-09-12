@@ -16,7 +16,7 @@ export async function handleV3PoolCreated(
   protocol: SupportedProtocol,
   tokenService: TokenService,
   algebraPoolData?: AlgebraPoolData
-): Promise<PoolEntity> {
+): Promise<void> {
   const token0Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token0Address);
   const token1Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token1Address);
   const poolId = IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress);
@@ -61,6 +61,4 @@ export async function handleV3PoolCreated(
     logo: SupportedProtocol.getLogoUrl(protocol),
     url: SupportedProtocol.getUrl(protocol),
   });
-
-  return poolEntity;
 }
