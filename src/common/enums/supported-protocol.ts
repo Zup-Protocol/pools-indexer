@@ -19,10 +19,11 @@ export enum SupportedProtocol {
   ZEBRA_V3 = "zebra-v3",
   PANCAKESWAP_INFINITY_CL = "pancakeswap-infinity-cl",
   UNISWAP_V4 = "uniswap-v4",
-  GLIQUID_V3 = "gliquid-v3",
+  GLIQUID_ALGEBRA = "gliquid-v3",
   HYPER_SWAP_V3 = "hyperswap-v3",
   PROJECT_X_V3 = "projectx-v3",
   HYBRA_V3 = "hybra-v3",
+  KITTENSWAP_ALGEBRA = "kittenswap-v3",
 }
 
 export namespace SupportedProtocol {
@@ -54,14 +55,16 @@ export namespace SupportedProtocol {
         return "PancakeSwap Infinity CL";
       case SupportedProtocol.UNISWAP_V4:
         return "Uniswap V4";
-      case SupportedProtocol.GLIQUID_V3:
-        return "Gliquid V3";
+      case SupportedProtocol.GLIQUID_ALGEBRA:
+        return "Gliquid Algebra";
       case SupportedProtocol.HYPER_SWAP_V3:
         return "HyperSwap V3";
       case SupportedProtocol.PROJECT_X_V3:
         return "Project X V3";
       case SupportedProtocol.HYBRA_V3:
         return "Hybra V3";
+      case SupportedProtocol.KITTENSWAP_ALGEBRA:
+        return "Kittenswap Algebra";
     }
   }
 
@@ -93,7 +96,7 @@ export namespace SupportedProtocol {
         return "https://pancakeswap.finance/";
       case SupportedProtocol.UNISWAP_V4:
         return "https://uniswap.org/";
-      case SupportedProtocol.GLIQUID_V3:
+      case SupportedProtocol.GLIQUID_ALGEBRA:
         return "https://gliquid.xyz/";
       case SupportedProtocol.HYPER_SWAP_V3:
         return "https://hyperswap.exchange/";
@@ -101,6 +104,8 @@ export namespace SupportedProtocol {
         return "https://prjx.com/";
       case SupportedProtocol.HYBRA_V3:
         return "https://hybra.finance/";
+      case SupportedProtocol.KITTENSWAP_ALGEBRA:
+        return "https://kittenswap.finance/";
     }
   }
 
@@ -132,7 +137,7 @@ export namespace SupportedProtocol {
         return "https://assets-cdn.trustwallet.com/dapps/pancakeswap.finance.png";
       case SupportedProtocol.UNISWAP_V4:
         return "https://assets-cdn.trustwallet.com/dapps/app.uniswap.org.png";
-      case SupportedProtocol.GLIQUID_V3:
+      case SupportedProtocol.GLIQUID_ALGEBRA:
         return "https://icons.llamao.fi/icons/protocols/gliquid";
       case SupportedProtocol.HYPER_SWAP_V3:
         return "https://icons.llamao.fi/icons/protocols/hyperswap";
@@ -140,6 +145,8 @@ export namespace SupportedProtocol {
         return "https://icons.llamao.fi/icons/protocols/project-x";
       case SupportedProtocol.HYBRA_V3:
         return "https://icons.llamao.fi/icons/protocols/hybra";
+      case SupportedProtocol.KITTENSWAP_ALGEBRA:
+        return "https://icons.llamao.fi/icons/protocols/kittenswap-algebra";
     }
   }
 
@@ -171,7 +178,7 @@ export namespace SupportedProtocol {
         return Permit2Address.pancakeSwap(network);
       case SupportedProtocol.UNISWAP_V4:
         return Permit2Address.uniswap(network);
-      case SupportedProtocol.GLIQUID_V3:
+      case SupportedProtocol.GLIQUID_ALGEBRA:
         throw Error(`Permit2 is not available for Gliquid V3`);
       case SupportedProtocol.HYPER_SWAP_V3:
         throw Error(`Permit2 is not available for HyperSwap`);
@@ -179,6 +186,8 @@ export namespace SupportedProtocol {
         throw Error(`Permit2 is not available for ProjectX V3`);
       case SupportedProtocol.HYBRA_V3:
         throw Error(`Permit2 is not available for Hybra V3`);
+      case SupportedProtocol.KITTENSWAP_ALGEBRA:
+        throw Error(`Permit2 is not available for KittenSwap V3`);
     }
   }
 
@@ -210,7 +219,7 @@ export namespace SupportedProtocol {
         return V4PositionManagerAddress.pancakeSwap(network);
       case SupportedProtocol.UNISWAP_V4:
         return V4PositionManagerAddress.uniswap(network);
-      case SupportedProtocol.GLIQUID_V3:
+      case SupportedProtocol.GLIQUID_ALGEBRA:
         throw Error(`V4 position manager is not available for Gliquid V3`);
       case SupportedProtocol.HYPER_SWAP_V3:
         throw Error(`V4 position manager is not available for HyperSwap`);
@@ -218,6 +227,8 @@ export namespace SupportedProtocol {
         throw Error(`V4 position manager is not available for ProjectX V3`);
       case SupportedProtocol.HYBRA_V3:
         throw Error(`V4 position manager is not available for Hybra V3`);
+      case SupportedProtocol.KITTENSWAP_ALGEBRA:
+        throw Error(`V4 position manager is not available for KittenSwap V3`);
     }
   }
 
@@ -249,7 +260,7 @@ export namespace SupportedProtocol {
         return undefined; // A State view is expected for uniswap v4, but pancakeswap v4 has a different implementation without it
       case SupportedProtocol.UNISWAP_V4:
         return V4StateViewAddress.uniswap(network);
-      case SupportedProtocol.GLIQUID_V3:
+      case SupportedProtocol.GLIQUID_ALGEBRA:
         throw Error(`V4 state view is not available for Gliquid V3`);
       case SupportedProtocol.HYPER_SWAP_V3:
         throw Error(`V4 state view is not available for HyperSwap`);
@@ -257,6 +268,8 @@ export namespace SupportedProtocol {
         throw Error(`V4 state view is not available for ProjectX V3`);
       case SupportedProtocol.HYBRA_V3:
         throw Error(`V4 state view is not available for Hybra V3`);
+      case SupportedProtocol.KITTENSWAP_ALGEBRA:
+        throw Error(`V4 state view is not available for KittenSwap V3`);
     }
   }
 
@@ -288,7 +301,7 @@ export namespace SupportedProtocol {
         throw Error(`V3 position manager is not available for PancakeSwap Infinity CL`);
       case SupportedProtocol.UNISWAP_V4:
         throw Error(`V3 position manager is not available for Uniswap V4`);
-      case SupportedProtocol.GLIQUID_V3:
+      case SupportedProtocol.GLIQUID_ALGEBRA:
         return V3PositionManagerAddress.gliquid(network);
       case SupportedProtocol.HYPER_SWAP_V3:
         return V3PositionManagerAddress.hyperSwap(network);
@@ -296,6 +309,8 @@ export namespace SupportedProtocol {
         return V3PositionManagerAddress.projectX(network);
       case SupportedProtocol.HYBRA_V3:
         return V3PositionManagerAddress.hybra(network);
+      case SupportedProtocol.KITTENSWAP_ALGEBRA:
+        return V3PositionManagerAddress.kittenSwap(network);
     }
   }
 
@@ -327,7 +342,7 @@ export namespace SupportedProtocol {
         throw Error(`V2 position manager is not available for PancakeSwap Infinity CL`);
       case SupportedProtocol.UNISWAP_V4:
         throw Error(`V2 position manager is not available for Uniswap V4`);
-      case SupportedProtocol.GLIQUID_V3:
+      case SupportedProtocol.GLIQUID_ALGEBRA:
         throw Error(`V2 position manager is not available for Gliquid V3`);
       case SupportedProtocol.HYPER_SWAP_V3:
         throw Error(`V2 position manager is not available for HyperSwap`);
@@ -335,6 +350,8 @@ export namespace SupportedProtocol {
         throw Error(`V2 position manager is not available for ProjectX V3`);
       case SupportedProtocol.HYBRA_V3:
         throw Error(`V2 position manager is not available for Hybra V3`);
+      case SupportedProtocol.KITTENSWAP_ALGEBRA:
+        throw Error(`V2 position manager is not available for KittenSwap V3`);
     }
   }
 }

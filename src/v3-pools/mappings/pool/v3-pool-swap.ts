@@ -8,8 +8,8 @@ export async function handleV3PoolSwap(params: {
   poolEntity: PoolEntity;
   token0Entity: TokenEntity;
   token1Entity: TokenEntity;
-  amount0: bigint;
-  amount1: bigint;
+  swapAmount0: bigint;
+  swapAmount1: bigint;
   sqrtPriceX96: bigint;
   tick: bigint;
   eventTimestamp: bigint;
@@ -17,8 +17,9 @@ export async function handleV3PoolSwap(params: {
   newFeeTier?: number;
   overrideSingleSwapFee?: number;
 }): Promise<void> {
-  const tokenAmount0Formatted = formatFromTokenAmount(params.amount0, params.token0Entity);
-  const tokenAmount1Formatted = formatFromTokenAmount(params.amount1, params.token1Entity);
+  const tokenAmount0Formatted = formatFromTokenAmount(params.swapAmount0, params.token0Entity);
+  const tokenAmount1Formatted = formatFromTokenAmount(params.swapAmount1, params.token1Entity);
+
   let v3PoolEntity = (await params.context.V3PoolData.get(params.poolEntity.id))!;
 
   const newPrices = params.v3PoolSetters.getPricesForPoolWhitelistedTokens(
@@ -29,16 +30,15 @@ export async function handleV3PoolSwap(params: {
 
   const poolTotalValueLockedToken0 = params.poolEntity.totalValueLockedToken0.plus(tokenAmount0Formatted);
   const poolTotalValueLockedToken1 = params.poolEntity.totalValueLockedToken1.plus(tokenAmount1Formatted);
-
-  const poolTotalValueLockedUSD = params.poolEntity.totalValueLockedToken0
+  const poolTotalValueLockedUSD = poolTotalValueLockedToken0
     .times(newPrices.token0UpdatedPrice)
-    .plus(params.poolEntity.totalValueLockedToken1.times(newPrices.token1UpdatedPrice));
+    .plus(poolTotalValueLockedToken1.times(newPrices.token1UpdatedPrice));
 
   const token0TotalTokenPooledAmount = params.token0Entity.totalTokenPooledAmount.plus(tokenAmount0Formatted);
   const token1TotalTokenPooledAmount = params.token1Entity.totalTokenPooledAmount.plus(tokenAmount1Formatted);
 
-  const token0TotalValuePooledUsd = params.token0Entity.totalTokenPooledAmount.times(newPrices.token0UpdatedPrice);
-  const token1TotalValuePooledUsd = params.token1Entity.totalTokenPooledAmount.times(newPrices.token1UpdatedPrice);
+  const token0TotalValuePooledUsd = token0TotalTokenPooledAmount.times(newPrices.token0UpdatedPrice);
+  const token1TotalValuePooledUsd = token1TotalTokenPooledAmount.times(newPrices.token1UpdatedPrice);
 
   v3PoolEntity = {
     ...v3PoolEntity,
@@ -74,8 +74,8 @@ export async function handleV3PoolSwap(params: {
     params.token0Entity,
     params.token1Entity,
     params.poolEntity,
-    params.amount0,
-    params.amount1,
+    params.swapAmount0,
+    params.swapAmount1,
     params.overrideSingleSwapFee
   );
 
@@ -85,8 +85,8 @@ export async function handleV3PoolSwap(params: {
     params.poolEntity,
     params.token0Entity,
     params.token1Entity,
-    params.amount0,
-    params.amount1,
+    params.swapAmount0,
+    params.swapAmount1,
     params.overrideSingleSwapFee
   );
 

@@ -1,19 +1,19 @@
-import { GLiquidAlgebraFactory } from "generated";
+import { KittenSwapAlgebraFactory } from "generated";
 import { ZERO_ADDRESS } from "../../../../common/constants";
 import { IndexerNetwork } from "../../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
 import { TokenService } from "../../../../common/services/token-service";
 import { handleV3PoolCreated } from "../v3-factory";
 
-GLiquidAlgebraFactory.Pool.contractRegister(({ event, context }) => {
-  context.addAlgebraPool_1_2_1(event.params.pool);
+KittenSwapAlgebraFactory.Pool.contractRegister(({ event, context }) => {
+  context.addAlgebraPool_1_2_2(event.params.pool);
 });
 
-GLiquidAlgebraFactory.CustomPool.contractRegister(({ event, context }) => {
-  context.addAlgebraPool_1_2_1(event.params.pool);
+KittenSwapAlgebraFactory.CustomPool.contractRegister(({ event, context }) => {
+  context.addAlgebraPool_1_2_2(event.params.pool);
 });
 
-GLiquidAlgebraFactory.Pool.handler(async ({ event, context }) => {
+KittenSwapAlgebraFactory.Pool.handler(async ({ event, context }) => {
   const algebraPoolData = await context.AlgebraPoolData.getOrCreate({
     id: IndexerNetwork.getEntityIdFromAddress(event.chainId, event.params.pool),
     deployer: ZERO_ADDRESS,
@@ -29,13 +29,13 @@ GLiquidAlgebraFactory.Pool.handler(async ({ event, context }) => {
     0,
     BigInt(event.block.timestamp),
     event.chainId,
-    SupportedProtocol.GLIQUID_ALGEBRA,
+    SupportedProtocol.KITTENSWAP_ALGEBRA,
     TokenService.shared,
     algebraPoolData
   );
 });
 
-GLiquidAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
+KittenSwapAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
   const algebraPoolData = await context.AlgebraPoolData.getOrCreate({
     id: IndexerNetwork.getEntityIdFromAddress(event.chainId, event.params.pool),
     deployer: event.params.deployer.toLowerCase(),
@@ -51,7 +51,7 @@ GLiquidAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
     0,
     BigInt(event.block.timestamp),
     event.chainId,
-    SupportedProtocol.GLIQUID_ALGEBRA,
+    SupportedProtocol.KITTENSWAP_ALGEBRA,
     TokenService.shared,
     algebraPoolData
   );

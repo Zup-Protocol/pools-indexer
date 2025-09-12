@@ -30,22 +30,37 @@ describe("ViemService", () => {
   });
 
   it(`should create a new instance of viem for the passed network if there is no cached one,
-    the instance should use the correct rpc url for the passed network and batch the calls`, () => {
+    the instance should use the fallback and pass the free + paid rpc urls, with the correect
+    config`, () => {
     const fakeClient: viem.PublicClient = {
       key: "test",
     } as viem.PublicClient;
-    let receivedUrl: string;
-    let receivedBatch: boolean;
+    let receivedUrls: string[] = [];
+    let receivedOptions: viem.FallbackTransportConfig = {};
+    let receivedBatch: boolean[] = [];
+    let expectedOptions: viem.FallbackTransportConfig = {
+      rank: false,
+      retryCount: 5,
+      retryDelay: 10000,
+    };
 
     const fakeViem = {
       createPublicClient: sinon.fake.returns(fakeClient),
       http: (url: string, { batch }: { batch: boolean }) => {
-        receivedUrl = url;
-        receivedBatch = batch;
+        receivedUrls.push(url);
+        receivedBatch.push(batch);
 
         return {
           batch: batch,
           url: url,
+        };
+      },
+      fallback: (urls: viem.Transport[], options: viem.FallbackTransportConfig) => {
+        receivedOptions = options;
+
+        return {
+          urls,
+          options,
         };
       },
     };
@@ -56,8 +71,14 @@ describe("ViemService", () => {
     console.log(createdClient);
 
     assert(createdClient === fakeClient, "client was not created");
-    assert(receivedBatch!, "client was not batched");
-    assert.equal(receivedUrl!, IndexerNetwork.getFreeRPCUrl(IndexerNetwork.HYPER_EVM), "url was not correct");
+    assert.deepEqual(receivedBatch, [true, true], "clients were not batched");
+    assert.deepEqual(
+      receivedUrls,
+      [IndexerNetwork.getFreeRPCUrl(IndexerNetwork.HYPER_EVM), IndexerNetwork.getPaidRPCUrl(IndexerNetwork.HYPER_EVM)],
+      "url was not correct"
+    );
+
+    assert.deepEqual(receivedOptions, expectedOptions, "options are not correct");
   });
 
   it(`should cache a new created instance, and return in new calls to getClient`, () => {

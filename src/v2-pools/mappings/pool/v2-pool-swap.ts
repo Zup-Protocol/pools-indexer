@@ -40,15 +40,15 @@ export async function handleV2PoolSwap(
   const poolTotalValueLockedToken0 = newPoolReserve0Formatted;
   const poolTotalValueLockedToken1 = newPoolReserve1Formatted;
 
-  const poolTotalValueLockedUSD = poolEntity.totalValueLockedToken0
+  const poolTotalValueLockedUSD = poolTotalValueLockedToken0
     .times(newPrices.token0UpdatedPrice)
-    .plus(poolEntity.totalValueLockedToken1.times(newPrices.token1UpdatedPrice));
+    .plus(poolTotalValueLockedToken1.times(newPrices.token1UpdatedPrice));
 
   const token0TotalTokenPooledAmount = token0Entity.totalTokenPooledAmount.plus(amount0Formatted);
   const token1TotalTokenPooledAmount = token1Entity.totalTokenPooledAmount.plus(amount1Formatted);
 
-  const token0TotalValuePooledUsd = token0Entity.totalTokenPooledAmount.times(newPrices.token0UpdatedPrice);
-  const token1TotalValuePooledUsd = token1Entity.totalTokenPooledAmount.times(newPrices.token1UpdatedPrice);
+  const token0TotalValuePooledUsd = token0TotalTokenPooledAmount.times(newPrices.token0UpdatedPrice);
+  const token1TotalValuePooledUsd = token1TotalTokenPooledAmount.times(newPrices.token1UpdatedPrice);
 
   poolEntity = {
     ...poolEntity,

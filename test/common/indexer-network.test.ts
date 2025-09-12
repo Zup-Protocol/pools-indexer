@@ -29,39 +29,70 @@ describe("IndexerNetworkTests", () => {
     assert.equal(IndexerNetwork.SEPOLIA, 11155111);
   });
 
-  it("should return the correct rpc url for ethereum", () => {
+  it("should return the correct rpc url for ethereum when using paid RPC url", () => {
     assert.equal(
-      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.ETHEREUM),
+      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.ETHEREUM),
       `https://eth-mainnet.g.alchemy.com/v2/${envioRpcKey}`
     );
   });
 
-  it("should return the correct rpc url for base", () => {
+  it("should return the correct rpc url for base when using paid RPC url", () => {
     assert.equal(
-      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.BASE),
+      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.BASE),
       `https://base-mainnet.g.alchemy.com/v2/${envioRpcKey}`
     );
   });
 
-  it("should return the correct rpc url for scroll", () => {
+  it("should return the correct rpc url for scroll when using paid RPC url", () => {
     assert.equal(
-      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.SCROLL),
+      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.SCROLL),
       `https://scroll-mainnet.g.alchemy.com/v2/${envioRpcKey}`
     );
   });
 
-  it("should return the correct rpc url for unichain", () => {
+  it("should return the correct rpc url for unichain when using paid RPC url", () => {
     assert.equal(
-      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.UNICHAIN),
+      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.UNICHAIN),
       `https://unichain-mainnet.g.alchemy.com/v2/${envioRpcKey}`
     );
   });
 
-  it("should return the correct rpc url for sepolia", () => {
+  it("should return the correct rpc url for sepolia when using paid RPC url", () => {
     assert.equal(
-      IndexerNetwork.getFreeRPCUrl(IndexerNetwork.SEPOLIA),
+      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.SEPOLIA),
       `https://eth-sepolia.g.alchemy.com/v2/${envioRpcKey}`
     );
+  });
+
+  it("should return the correct rpc url for hyperEVM when using paid RPC url", () => {
+    assert.equal(
+      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.HYPER_EVM),
+      `https://hyperliquid-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`
+    );
+  });
+
+  it("should return the correct rpc url for ethereum when using free RPC url", () => {
+    assert.equal(IndexerNetwork.getFreeRPCUrl(IndexerNetwork.ETHEREUM), `https://mainnet.gateway.tenderly.co`);
+  });
+
+  it("should return the correct rpc url for base when using free RPC url", () => {
+    assert.equal(IndexerNetwork.getFreeRPCUrl(IndexerNetwork.BASE), `https://mainnet.base.org`);
+  });
+
+  it("should return the correct rpc url for scroll when using free RPC url", () => {
+    assert.equal(IndexerNetwork.getFreeRPCUrl(IndexerNetwork.SCROLL), `https://rpc.scroll.io`);
+  });
+
+  it("should return the correct rpc url for unichain when using free RPC url", () => {
+    assert.equal(IndexerNetwork.getFreeRPCUrl(IndexerNetwork.UNICHAIN), `https://mainnet.unichain.org`);
+  });
+
+  it("should return the correct rpc url for sepolia when using free RPC url", () => {
+    assert.equal(IndexerNetwork.getFreeRPCUrl(IndexerNetwork.SEPOLIA), `https://sepolia.gateway.tenderly.co`);
+  });
+
+  it("should return the correct rpc url for hyperEVM when using free RPC url", () => {
+    assert.equal(IndexerNetwork.getFreeRPCUrl(IndexerNetwork.HYPER_EVM), `https://hyperliquid.drpc.org`);
   });
 
   it(`should return the right entity id for the given address,

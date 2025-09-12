@@ -21,12 +21,12 @@ export async function handleV3PoolMint(
   const token0TotalTokenPooledAmount = token0Entity.totalTokenPooledAmount.plus(token0FormattedAmount);
   const token1TotalTokenPooledAmount = token1Entity.totalTokenPooledAmount.plus(token1FormattedAmount);
 
-  const token0TotalValuePooledUsd = token0Entity.totalTokenPooledAmount.times(token0Entity.usdPrice);
-  const token1TotalValuePooledUsd = token1Entity.totalTokenPooledAmount.times(token1Entity.usdPrice);
+  const token0TotalValuePooledUsd = token0TotalTokenPooledAmount.times(token0Entity.usdPrice);
+  const token1TotalValuePooledUsd = token1TotalTokenPooledAmount.times(token1Entity.usdPrice);
 
-  const poolTotalValueLockedUSD = poolEntity.totalValueLockedToken0
+  const poolTotalValueLockedUSD = pooTotalValueLockedToken0
     .times(token0Entity.usdPrice)
-    .plus(poolEntity.totalValueLockedToken1.times(token1Entity.usdPrice));
+    .plus(pooTotalValueLockedToken1.times(token1Entity.usdPrice));
 
   poolEntity = {
     ...poolEntity,

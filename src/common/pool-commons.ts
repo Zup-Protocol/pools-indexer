@@ -4,6 +4,10 @@ import "../../src/common/string.extension";
 import { ONE_HOUR_IN_SECONDS, ZERO_ADDRESS } from "./constants";
 import { IndexerNetwork } from "./enums/indexer-network";
 
+export function getRawFeeFromTokenAmount(rawTokenAmount: bigint, rawFee: number): bigint {
+  return (rawTokenAmount * BigInt(rawFee)) / BigInt(1000000);
+}
+
 export function isVariableWithStablePool(token0: TokenEntity, token1: TokenEntity, network: IndexerNetwork): boolean {
   const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses(network).map<string>((address) =>
     address.toLowerCase()

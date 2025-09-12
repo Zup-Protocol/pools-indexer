@@ -4,11 +4,15 @@ This is the primary indexer used by the Zup Protocol to calculate yields. It agg
 
 ### Table of Contents
 
-1. [Dependencies](#dependencies)
-2. [Installation](#installation)
-3. [Running tests](#running-tests)
-4. [Adding a new network](#adding-a-new-network)
-5. [Adding a new DEX](#adding-a-new-dex)
+- [Dependencies](#dependencies)
+- [Installation](#installation)
+- [Running tests](#running-tests)
+- [Running the indexer locally](#running-the-indexer-locally)
+- [Adding a new network](#adding-a-new-network)
+- [Adding new DEXs](#adding-new-dexs)
+  - [Adding a new V2 DEX](#adding-a-new-v2-dex)
+  - [Adding a new V3 DEX](#adding-a-new-v3-dex)
+  - [Adding a new V4 DEX](#adding-a-new-v4-dex)
 
 ## Dependencies
 
@@ -17,7 +21,7 @@ This is the primary indexer used by the Zup Protocol to calculate yields. It agg
   - To know if Node.js is installed, run `node --version` you should see a response like `vX.X.X`.
   - If Node.js is not installed, head over to [How to install Node.js](https://nodejs.org/en/learn/getting-started/how-to-install-nodejs)
 
-- **Docker (optional)**
+- **Docker (required only if you want to run the indexer locally)**
 
   - To know if Docker is installed, run `docker --version` you should see a response like `Docker version X.X.X`.
   - If Docker is not installed, head over to [How to install Docker](https://docs.docker.com/get-docker/)
@@ -30,6 +34,7 @@ This is the primary indexer used by the Zup Protocol to calculate yields. It agg
 
 1. Clone the repository
 2. run `pnpm install`
+3. if you are using alchemy RPCs, set the env file with your alchemy api key (example at [.env_example](./.env_example)). If you are not using alchemy, you can change the paid rpc url used by the indexer at [indexer-network.ts](./src/common/enums/indexer-network.ts) in the function `getPaidRPCUrl`.
 
 ## Running tests
 
@@ -39,17 +44,27 @@ To run all the tests, just open your terminal and type:
 pnpm test
 ```
 
+## Running the indexer locally
+
+To run the indexer locally, ensure you have Docker running and run:
+
+```bash
+pnpm dev
+```
+
+Envio will immediately start syncing the indexer locally and will print the logs in the terminal.
+
 ## Adding a new network
 
 To add a new network to the indexer, you need to do a few things:
 
-1. Head over to the end of the [config.yaml](./config.yaml) file, at the `networks` section, and add a new entry for the new network, specifing the `id`, `start_block`, `confirmed_block_threshold`, and the contracts that you want to index in this new network.
+1. Head over to the end of the [config.yaml](./config.yaml) file, at the `networks` section, and add a new entry for the new network, specifying the `id`, `start_block`, `confirmed_block_threshold`, and the contracts that you want to index in this new network.
    - The `id` field should be exactly the same as the chain id for the network. _Don't know the chain id? head over to [Chainlist](https://chainlist.org/) and look for the chain id._
    - The `start_block` should be the block number where the oldest contract was deployed.
    - The `confirmed_block_threshold` is the number of blocks that you want to consider as confirmed, usually 3 minutes (Block number may vary for different networks).
 2. Add a new entry in the `IndexerNetwork` enum at [indexer-network.ts](./src/common/enums/indexer-network.ts) for the new network. The enum value should be the exact one defined in the `id` field in the [config.yaml](./config.yaml). Which should be the chain id of the network
 3. Add a new entry for every function in `IndexerNetwork` namespace, that needs to be configured per network, at [indexer-network.ts](./src/common/enums/indexer-network.ts). Things such RPC urls, stablecoins addresses, wrapped native addresses, etc.
-4. Modify all the files that are using the `IndexerNetwok` networks to specify addresses or params per network, and if applicable add a new entry specifing the address for the new network, in case it's not applicable, should throw an error.
+4. Modify all the files that are using the `IndexerNetwork` networks to specify addresses or params per network, and if applicable add a new entry specifying the address for the new network, in case it's not applicable, should throw an error.
 
    - [V2 Position Manager Address](./src/v2-pools/common/v2-position-manager-address.ts)
    - [V3 Position Manager Address](./src/v3-pools/common/v3-position-manager-address.ts)
@@ -57,59 +72,72 @@ To add a new network to the indexer, you need to do a few things:
    - [Permit2 Address](./src/common/permit2-address.ts)
    - [V4 State View Address](./src/v4-pools/common/v4-state-view-address.ts)
 
-<!-- CONTINUE HERE -->
-<!-- ## Adding a new V2 DEX  -->
-<!--
-1. Modify the manifest of the networks that should support the new V2 DEX in [subgraph-manifests](./subgraph-manifests):
+## Adding new DEXs
 
-- The Factory contract of the DEX must be included in the manifest, at the `dataSources` section, following the same pattern as the other DEXs.
-- In case that the new DEX events or code is a little different from the UniswapV2 original one, some additional things are required:
-  - You should add its ABI in the [abis](./abis/) folder. For the Pair and the Factory.
-  - A new template for this DEX must be added in the subgraph manifest, with the correct events and handlers.
-  - You should create personalized handlers for this new DEX, to handle events emitted by this personalized template, following the pattern of the other ones at [v2-pools/mappings/factory/dexs](./src/v2-pools/mappings/pool/dexs/) (WARNING:
-    DON'T FORGET TO IMPORT THE EVENT FROM THE SAME DEX AS THE HANDLER, IMPORTING OTHER DEX EVENT CAN CAUSE BUGS).
+### Adding a new V2 DEX
 
-2. Create a factory handler specific for the new DEX in [v2-pools/mappings/factory/dexs](./src/v2-pools/mappings/factory/dexs), following the pattern of the other ones (WARNING: Be sure to import the correct event from the same DEX, importing other DEX event can cause bugs)
+1. Modify the config file for the indexer [config.yaml](./config.yaml) to include the new DEX:
 
-3. Create a new function in [v2-position-manager-address.ts](./src/v2-pools/utils/v2-position-manager-address.ts) to return the address of the position
-   manager for this new DEX for each network and attach it to its handler
+   - You should add the factory contract of the DEX in the `contracts` section, following the same pattern as the other DEXs.
+   - In case that this new DEX pool events are different from the original UniswapV2, some additional things are required:
+     - You should add its ABI in the [abis](./abis/) folder. For the Pair and the Factory.
+     - A new contract for this DEX pool must be added in the config file, with the correct events and handlers.
+     - You should create personalized handlers for this new DEXs, to handle events emitted by this personalized template, following the pattern of the other ones at [v2-pools/mappings/pool/dexs](./src/v2-pools/mappings/pool/dexs/)
 
-4. Modify the root subgraph manifest [subgraph.yaml](./subgraph.yaml) to include the new DEX in the subgraph, so tests can be ran without any compilation error, this is simply copying and pasting the newly added config from the others manifests, but changing the network to `mainnet`
-   and changing the path of the handlers and files
+2. Create a factory handler specific for the new DEX in [v2-pools/mappings/factory/dexs](./src/v2-pools/mappings/factory/dexs), following the pattern of the other ones.
 
-5. Code tests for this nex DEX handlers if possible :)
+   - You should not forget to register the pool dynamic contract in this file, for example:
 
-## Adding a new V3 DEX
+   ```ts
+   UniswapV2Factory.PairCreated.contractRegister(({ event, context }) => {
+     context.addUniswapV2Pool(event.params.pair);
+   });
+   ```
 
-1. Modify the manifest of the networks that should support the new V3 DEX in [subgraph-manifests](./subgraph-manifests):
+   In case that the new DEX events are not compatible with the UniswapV2 events, you should then instead of registering an UniswapV2Pool, register the new DEX pool contract created, at the previous step. if the new DEX events are compatible with the UniswapV2 events, you can just copy and paste the one above.
 
-- The Factory contract of the DEX must be included in the manifest, at the `dataSources` section, following the same pattern as the other DEXs.
-- In case that the new DEX events or code is a little different from the UniswapV3 original one, some additional things are required:
-  - You should add its ABI in the [abis](./abis/) folder. For the Pool and the Factory.
-  - A new template for this DEX must be added in the subgraph manifest, with the correct events and handlers.
-  - You should create personalized handlers for this new DEX, to handle events emitted by this personalized template, following the pattern of the other ones at [v3-pools/mappings/factory/dexs](./src/v3-pools/mappings/pool/dexs/) (WARNING:
-    DON'T FORGET TO IMPORT THE EVENT FROM THE SAME DEX AS THE HANDLER, IMPORTING OTHER DEX EVENT CAN CAUSE BUGS).
+3. Create a new function in [v2-position-manager-address.ts](./src/v2-pools/common/v2-position-manager-address.ts) to return the address of the position
+   manager for this new DEX for each network.
 
-2. Create a factory handler specific for the new DEX in [v3-pools/mappings/factory/dexs](./src/v3-pools/mappings/factory/dexs), following the pattern of the other ones (WARNING: Be sure to import the correct event from the same DEX, importing other DEX event can cause bugs)
+4. Create a new entry in the `SupportedProtocol` enum at [supported-protocol.ts](./src/common/enums/supported-protocol.ts) for the new DEX, and add all needed returns (e.g., logo url, name, etc...) for the new DEX in the enum namespace at the same file, below the enum itself.
 
-3. Create a new function in [v3-position-manager-address.ts](./src/v3-pools/utils/v3-position-manager-address.ts) to return the address of the position
-   manager for this new DEX for each network and attach it to its handler
+### Adding a new V3 DEX
 
-4. Modify the root subgraph manifest [subgraph.yaml](./subgraph.yaml) to include the new DEX in the subgraph, so tests can be ran without any compilation error, this is simply copying and pasting the newly added config from the others manifests, but changing the network to `mainnet`
-   and changing the path of the handlers and files
+1. Modify the config file for the indexer [config.yaml](./config.yaml) to include the new DEX:
 
-5. Code tests for this nex DEX handlers if possible :)
+   - You should add the factory contract of the DEX in the `contracts` section, following the same pattern as the other DEXs.
+   - In case that this new DEX pool events are different from the original UniswapV3, some additional things are required:
+     - You should add its ABI in the [abis](./abis/) folder. For the Pair and the Factory.
+     - A new contract for this DEX pool must be added in the config file, with the correct events and handlers.
+     - You should create peronsalized handlers for this new DEXs, to handle events emitted by this personalized template, following the pattern of the other ones at [v3-pools/mappings/factory/dexs](./src/v3-pools/mappings/pool/dexs/)
 
-## Adding a new V4 DEX
+2. Create a factory handler specific for the new DEX in [v3-pools/mappings/factory/dexs](./src/v3-pools/mappings/factory/dexs), following the pattern of the other ones.
 
-1. Modify the manifest of the networks that should support the new V4 DEX in [subgraph-manifests](./subgraph-manifests)
+   - You should not forget to register the pool dynamic contract in this file, for example:
 
-2. Create a pool manager initialize handler specific for the new DEX in [v4-pools/mappings/pool-manager/dexs](./src/v4-pools/mappings/pool-manager/dexs), following the pattern of the other ones
+   ```ts
+   UniswapV3Factory.PoolCreated.contractRegister(({ event, context }) => {
+     context.addUniswapV3Pool(event.params.pool);
+   });
+   ```
 
-3. Create a new function in [common/position-manager-address.ts](./src/common/position-manager-address.ts) to return the address of the position manager address in the `V4PositionManagerAddress` object for each network that the new DEX is supported
+   In case that the new DEX events are not compatible with the UniswapV3 events, you should then instead of registering an UniswapV3Pool, register the new DEX pool contract created, at the previous step. if the new DEX events are compatible with the UniswapV3 events, you can just copy and paste the one above.
 
-4. Add the V4 State view address for the new V4 DEX if applicable in [utils/v4-state-view-address.ts](./src/v4-pools/utils/v4-state-view-address.ts). If not applicable, just pass `null` to the handler
+3. Create a new function in [v3-position-manager-address.ts](./src/v3-pools/common/v3-position-manager-address.ts) to return the address of the position
+   manager for this new DEX.
 
-5. Add the permit2 address for the new V4 DEX in [common/permit2-address.ts](./src/common/permit2-address.ts).
+4. Create a new entry in the `SupportedProtocol` enum at [supported-protocol.ts](./src/common/enums/supported-protocol.ts) for the new DEX, and add all needed returns (e.g logo url, name, etc...) for the new DEX in the enum namespace at the same file, below the enum itself.
 
-6. Code tests for this nex DEX handlers if possible :D -->
+### Adding a new V4 DEX
+
+1. Add the DEX V4 Pool manager and its handlers in the `contracts` section in the [config.yaml](./config.yaml) for the new DEX
+
+2. Create handlers for this new DEX in [v4-pools/mappings/pool-manager/dexs](./src/v4-pools/mappings/pool-manager/dexs), following the pattern of the other ones
+
+3. Create a new function in [v4-position-manager-address.ts](./src/v4-pools/common/v4-position-manager-address.ts) to return the address of the position manager for this new DEX.
+
+4. Create a new function in [v4-state-view-address.ts](./src/v4-pools/common/v4-state-view-address.ts) to return the address of the V4 State view for this new DEX, if applicable for this new DEX.
+
+5. Add the permit2 address for the new DEX in [permit2-address.ts](./src/common/permit2-address.ts)
+
+6. Create a new entry in the `SupportedProtocol` enum at [supported-protocol.ts](./src/common/enums/supported-protocol.ts) for the new DEX, and add all needed returns (e.g logo url, name, etc...) for the new DEX in the enum namespace at the same file, below the enum itself.

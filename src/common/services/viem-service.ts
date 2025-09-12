@@ -17,7 +17,6 @@ export class ViemService {
 
   getClient(forNetwork: IndexerNetwork): viem.Client {
     let client = this.clients[forNetwork];
-
     if (client) return client;
 
     client = this.viemModule.createPublicClient({
@@ -26,8 +25,8 @@ export class ViemService {
       },
       transport: this.viemModule.fallback(
         [
-          viem.http(IndexerNetwork.getFreeRPCUrl(forNetwork), { batch: true }),
-          viem.http(IndexerNetwork.getPaidRPCUrl(forNetwork), { batch: true }),
+          this.viemModule.http(IndexerNetwork.getFreeRPCUrl(forNetwork), { batch: true }),
+          this.viemModule.http(IndexerNetwork.getPaidRPCUrl(forNetwork), { batch: true }),
         ],
         {
           rank: false,

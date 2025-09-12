@@ -22,15 +22,15 @@ export async function handleV2PoolSync(
   const poolTotalValueLockedToken0 = reserve0Formatted;
   const poolTotalValueLockedToken1 = reserve1Formatted;
 
-  const poolTotalValueLockedUSD = poolEntity.totalValueLockedToken0
+  const poolTotalValueLockedUSD = poolTotalValueLockedToken0
     .times(token0Entity.usdPrice)
-    .plus(poolEntity.totalValueLockedToken1.times(token1Entity.usdPrice));
+    .plus(poolTotalValueLockedToken1.times(token1Entity.usdPrice));
 
   const token0TotalTokenPooledAmount = token0Entity.totalTokenPooledAmount.plus(reserve0Difference);
   const token1TotalTokenPooledAmount = token1Entity.totalTokenPooledAmount.plus(reserve1Difference);
 
-  const token0TotalValuePooledUsd = token0Entity.totalTokenPooledAmount.times(token0Entity.usdPrice);
-  const token1TotalValuePooledUsd = token1Entity.totalTokenPooledAmount.times(token1Entity.usdPrice);
+  const token0TotalValuePooledUsd = token0TotalTokenPooledAmount.times(token0Entity.usdPrice);
+  const token1TotalValuePooledUsd = token1TotalTokenPooledAmount.times(token1Entity.usdPrice);
 
   poolEntity = {
     ...poolEntity,

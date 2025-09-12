@@ -7,6 +7,7 @@ import {
   findWrappedNative,
   getPoolDailyDataId,
   getPoolHourlyDataId,
+  getRawFeeFromTokenAmount,
   isNativePool,
   isStablePool,
   isVariableWithStablePool,
@@ -151,7 +152,7 @@ export class PoolSetters {
     const userInputToken = this._findUserInputToken(amount0, token0, token1);
 
     if (userInputToken.id == pool.token0_id) {
-      const feeAmountToken0 = this._getSwapFee(
+      const feeAmountToken0 = getRawFeeFromTokenAmount(
         amount0,
         customFee == pool.currentFeeTier ? pool.currentFeeTier : customFee
       );
@@ -163,7 +164,7 @@ export class PoolSetters {
         feesToken0: feesToken0,
       };
     } else {
-      const feeAmountToken1 = this._getSwapFee(
+      const feeAmountToken1 = getRawFeeFromTokenAmount(
         amount1,
         customFee == pool.currentFeeTier ? pool.currentFeeTier : customFee
       );
@@ -210,7 +211,7 @@ export class PoolSetters {
     }))!;
 
     if (userInputToken.id == pool.token0_id) {
-      let feeAmountToken0 = this._getSwapFee(
+      let feeAmountToken0 = getRawFeeFromTokenAmount(
         amount0,
         customFee != pool.currentFeeTier ? customFee : pool.currentFeeTier
       );
@@ -222,7 +223,7 @@ export class PoolSetters {
         feesToken0: feesToken0,
       };
     } else {
-      let feeAmountToken1 = this._getSwapFee(
+      let feeAmountToken1 = getRawFeeFromTokenAmount(
         amount1,
         customFee != pool.currentFeeTier ? customFee : pool.currentFeeTier
       );
@@ -245,10 +246,6 @@ export class PoolSetters {
     };
 
     context.PoolHourlyData.set(poolHourlyDataEntity);
-  }
-
-  private _getSwapFee(tokenAmount: bigint, poolFeeTier: number): bigint {
-    return (tokenAmount * BigInt(poolFeeTier)) / BigInt(1000000);
   }
 
   private _findUserInputToken(amount0: bigint, token0: TokenEntity, token1: TokenEntity): TokenEntity {

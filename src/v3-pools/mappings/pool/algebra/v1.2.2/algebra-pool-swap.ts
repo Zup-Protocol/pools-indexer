@@ -1,19 +1,25 @@
-import { AlgebraPool_1_2_1 } from "generated";
+import { AlgebraPool_1_2_2 } from "generated";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV3PoolSwap } from "../../v3-pool-swap";
 import { getPoolDeductingAlgebraNonLPFees } from "../common/algebra-pool-common";
 
-AlgebraPool_1_2_1.Swap.handler(async ({ event, context }) => {
+let overrideSwapFee: number | undefined = undefined;
+let pluginFee: number = 0;
+
+AlgebraPool_1_2_2.SwapFee.handler(async ({ event }) => {
+  overrideSwapFee = event.params.overrideFee != 0n ? Number.parseInt(event.params.overrideFee.toString()) : undefined;
+  pluginFee = Number.parseInt(event.params.pluginFee.toString());
+});
+
+AlgebraPool_1_2_2.Swap.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
   let poolEntity = await context.Pool.getOrThrow(poolId);
 
+  const swapFee = overrideSwapFee ?? poolEntity.currentFeeTier;
   const algebraPoolData = await context.AlgebraPoolData.getOrThrow(poolId);
   const token0Entity = await context.Token.getOrThrow(poolEntity.token0_id);
   const token1Entity = await context.Token.getOrThrow(poolEntity.token1_id);
-  const overrideSwapFee =
-    event.params.overrideFee != 0n ? Number.parseInt(event.params.overrideFee.toString()) : undefined;
-  const pluginFee = Number.parseInt(event.params.pluginFee.toString());
 
   poolEntity = getPoolDeductingAlgebraNonLPFees({
     amount0SwapAmount: event.params.amount0,

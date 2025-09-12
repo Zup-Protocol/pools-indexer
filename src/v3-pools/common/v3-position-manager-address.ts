@@ -148,4 +148,13 @@ export class V3PositionManagerAddress {
         throw Error(`Hybra is not supported on ${network}`);
     }
   }
+
+  static kittenSwap(network: IndexerNetwork): string {
+    switch (network) {
+      case IndexerNetwork.HYPER_EVM:
+        return "0x9ea4459c8DefBF561495d95414b9CF1E2242a3E2";
+      default:
+        throw Error(`KittenSwap is not supported on ${network}`);
+    }
+  }
 }

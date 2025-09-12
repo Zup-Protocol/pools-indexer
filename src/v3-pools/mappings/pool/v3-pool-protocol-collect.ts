@@ -22,12 +22,12 @@ export async function handleV3PoolProtocolCollect(
   const token0TotalTokenPooledAmount = token0Entity.totalTokenPooledAmount.minus(token0AmountFormatted);
   const token1TotalTokenPooledAmount = token1Entity.totalTokenPooledAmount.minus(token1AmountFormatted);
 
-  const token0TotalValuePooledUsd = token0Entity.totalTokenPooledAmount.times(token0Entity.usdPrice);
-  const token1TotalValuePooledUsd = token1Entity.totalTokenPooledAmount.times(token1Entity.usdPrice);
+  const token0TotalValuePooledUsd = token0TotalTokenPooledAmount.times(token0Entity.usdPrice);
+  const token1TotalValuePooledUsd = token1TotalTokenPooledAmount.times(token1Entity.usdPrice);
 
-  const poolTotalValueLockedUSD = poolEntity.totalValueLockedToken0
+  const poolTotalValueLockedUSD = poolTotalValueLockedToken0
     .times(token0Entity.usdPrice)
-    .plus(poolEntity.totalValueLockedToken1.times(token1Entity.usdPrice));
+    .plus(poolTotalValueLockedToken1.times(token1Entity.usdPrice));
 
   poolEntity = {
     ...poolEntity,
