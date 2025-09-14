@@ -44,7 +44,7 @@ const swapFeeEffect = experimental_createEffect(
     name: "aerodrome-v3-pool-swap-fee",
     input: SwapFeeSchemaInput,
     output: SwapFeeSchemaOutput,
-    cache: true,
+    cache: false, // We shouldn’t cache it since the fee can change, and it’s too complex and error-prone to calculate every time, so we don’t
   },
   async ({ input }) => {
     return await _getPoolSwapFee(input.chainId, input.poolAddress);

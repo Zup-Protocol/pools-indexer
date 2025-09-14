@@ -5,20 +5,28 @@ import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { TokenService } from "../../../common/services/token-service";
 
-export async function handleV2PoolCreated(
-  context: HandlerContext,
-  chainId: number,
-  eventTimestamp: bigint,
-  token0Address: string,
-  token1Address: string,
-  poolAddress: string,
-  feeTier: number,
-  protocol: SupportedProtocol,
-  tokenService: TokenService
-): Promise<PoolEntity> {
-  const token0Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token0Address);
-  const token1Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token1Address);
-  const poolId = IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress);
+export async function handleV2PoolCreated(params: {
+  context: HandlerContext;
+  chainId: number;
+  eventTimestamp: bigint;
+  token0Address: string;
+  token1Address: string;
+  poolAddress: string;
+  feeTier: number;
+  protocol: SupportedProtocol;
+  tokenService: TokenService;
+}): Promise<void> {
+  const token0Entity = await params.tokenService.getOrCreateTokenEntity(
+    params.context,
+    params.chainId,
+    params.token0Address
+  );
+  const token1Entity = await params.tokenService.getOrCreateTokenEntity(
+    params.context,
+    params.chainId,
+    params.token1Address
+  );
+  const poolId = IndexerNetwork.getEntityIdFromAddress(params.chainId, params.poolAddress);
 
   const v2PoolEntity: V2PoolDataEntity = {
     id: poolId,
@@ -26,13 +34,13 @@ export async function handleV2PoolCreated(
 
   const poolEntity: PoolEntity = {
     id: poolId,
-    positionManager: SupportedProtocol.getV2PositionManager(protocol, chainId),
-    createdAtTimestamp: eventTimestamp,
-    currentFeeTier: feeTier,
-    initialFeeTier: feeTier,
+    positionManager: SupportedProtocol.getV2PositionManager(params.protocol, params.chainId),
+    createdAtTimestamp: params.eventTimestamp,
+    currentFeeTier: params.feeTier,
+    initialFeeTier: params.feeTier,
     totalValueLockedToken0: ZERO_BIG_DECIMAL,
     poolType: "V2",
-    protocol_id: protocol,
+    protocol_id: params.protocol,
     token0_id: token0Entity.id,
     token1_id: token1Entity.id,
     totalValueLockedToken1: ZERO_BIG_DECIMAL,
@@ -42,20 +50,19 @@ export async function handleV2PoolCreated(
     v3PoolData_id: undefined,
     v4PoolData_id: undefined,
     algebraPoolData_id: undefined,
-    chainId: chainId,
-    poolAddress: poolAddress.toLowerCase(),
+    chainId: params.chainId,
+    poolAddress: params.poolAddress.toLowerCase(),
   };
 
-  context.Token.set(token0Entity);
-  context.Token.set(token1Entity);
-  context.Pool.set(poolEntity);
+  params.context.Token.set(token0Entity);
+  params.context.Token.set(token1Entity);
+  params.context.Pool.set(poolEntity);
+  params.context.V2PoolData.set(v2PoolEntity);
 
-  await context.Protocol.getOrCreate({
-    id: protocol,
-    name: SupportedProtocol.getName(protocol),
-    logo: SupportedProtocol.getLogoUrl(protocol),
-    url: SupportedProtocol.getUrl(protocol),
+  await params.context.Protocol.getOrCreate({
+    id: params.protocol,
+    name: SupportedProtocol.getName(params.protocol),
+    logo: SupportedProtocol.getLogoUrl(params.protocol),
+    url: SupportedProtocol.getUrl(params.protocol),
   });
-
-  return poolEntity;
 }

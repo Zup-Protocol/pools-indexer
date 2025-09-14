@@ -2,11 +2,18 @@ import assert from "assert";
 import { BigDecimal, HandlerContext } from "generated";
 import sinon from "sinon";
 import { sqrtPriceX96toPrice } from "../../../../src/common/cl-pool-converters";
-import { getPoolHourlyDataId } from "../../../../src/common/pool-commons";
+import { getPoolDailyDataId, getPoolHourlyDataId } from "../../../../src/common/pool-commons";
 import { PoolSetters } from "../../../../src/common/pool-setters";
 import { formatFromTokenAmount } from "../../../../src/common/token-commons";
 import { handleV3PoolSwap } from "../../../../src/v3-pools/mappings/pool/v3-pool-swap";
-import { HandlerContextCustomMock, PoolHourlyDataMock, PoolMock, TokenMock, V3PoolDataMock } from "../../../mocks";
+import {
+  HandlerContextCustomMock,
+  PoolDailyDataMock,
+  PoolHourlyDataMock,
+  PoolMock,
+  TokenMock,
+  V3PoolDataMock,
+} from "../../../mocks";
 
 describe("V3PoolSwapHandler", () => {
   let context: HandlerContext;
@@ -536,6 +543,78 @@ describe("V3PoolSwapHandler", () => {
 
     assert(
       poolSetters.setHourlyData.calledWithMatch(
+        eventTimestamp,
+        sinon.match.any,
+        sinon.match.any,
+        sinon.match.any,
+        sinon.match.any,
+        amount0,
+        amount1
+      )
+    );
+  });
+
+  it(`When the handler is called, it should correctly call the
+      pool setters to update the pool daily data`, async () => {
+    let token0Id = "0x0000000000000000000000000000000000000012";
+    let token1Id = "0x0000000000000000000000000000000000000002";
+    let pool = new PoolMock();
+    let poolDailyDataId = getPoolDailyDataId(eventTimestamp, pool);
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let sqrtPriceX96 = BigInt(3432);
+    let amount0 = 32n * 10n ** BigInt(token0.decimals);
+    let amount1 = 199n * 10n ** BigInt(token1.decimals) * -1n; // by making this negative, we can simulate a swap of token0 by token1, as token1 have benn removed from the pool
+    let poolDailyData = new PoolDailyDataMock();
+    let currentFees = BigDecimal("12.3");
+    let swapFee = 500;
+    let tick = BigInt(989756545);
+
+    pool = {
+      ...pool,
+      currentFeeTier: swapFee,
+      token0_id: token0Id,
+      token1_id: token1Id,
+    };
+
+    poolDailyData = {
+      ...poolDailyData,
+      id: poolDailyDataId,
+      feesToken0: currentFees,
+      pool_id: pool.id,
+      dayStartTimestamp: eventTimestamp,
+    };
+
+    token0 = {
+      ...token0,
+      id: token0Id,
+    };
+
+    token1 = {
+      ...token1,
+      id: token1Id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.PoolDailyData.set(poolDailyData);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    assert(
+      poolSetters.setDailyData.calledWithMatch(
         eventTimestamp,
         sinon.match.any,
         sinon.match.any,

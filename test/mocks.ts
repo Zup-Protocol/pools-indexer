@@ -185,12 +185,14 @@ export class V4PoolDataMock implements V4PoolData {
 }
 
 export class PoolMock implements Pool {
+  constructor(readonly customId: string = "mock-pool-id") {}
+
   algebraPoolData_id: string | undefined = new AlgebraPoolDataMock().id;
   chainId: number = 1;
   createdAtTimestamp: bigint = BigInt((Date.now() / 1000).toFixed(0));
   currentFeeTier: number = 500;
   initialFeeTier: number = 500;
-  id: string = "mock-pool-id";
+  id: string = this.customId;
   isStablePool: boolean = false;
   poolAddress: string = "0x0000000000000000000000000000000000000001";
   poolType: PoolType_t = "V3";

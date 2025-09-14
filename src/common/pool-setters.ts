@@ -102,8 +102,8 @@ export class PoolSetters {
       const newToken0Price = poolPrices.token1PerToken0.times(poolToken1Entity.usdPrice);
 
       return {
-        token0UpdatedPrice: poolToken0Entity.usdPrice,
-        token1UpdatedPrice: newToken0Price.decimalPlaces(poolToken1Entity.decimals),
+        token0UpdatedPrice: newToken0Price.decimalPlaces(poolToken0Entity.decimals),
+        token1UpdatedPrice: poolToken1Entity.usdPrice,
       };
     }
 

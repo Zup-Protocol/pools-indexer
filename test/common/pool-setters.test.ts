@@ -1,7 +1,7 @@
 import assert from "assert";
 import { BigDecimal, HandlerContext, Pool, PoolDailyData, Token } from "generated";
 import { sqrtPriceX96toPrice } from "../../src/common/cl-pool-converters";
-import { ONE_HOUR_IN_SECONDS, ZERO_BIG_DECIMAL } from "../../src/common/constants";
+import { ONE_HOUR_IN_SECONDS, ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "../../src/common/constants";
 import { IndexerNetwork } from "../../src/common/enums/indexer-network";
 import { getPoolDailyDataId, getPoolHourlyDataId } from "../../src/common/pool-commons";
 import { PoolSetters } from "../../src/common/pool-setters";
@@ -219,6 +219,66 @@ describe("PoolSetters", () => {
 
     assert.equal(tokenPrices.token1UpdatedPrice.toString(), "3.4969124908482705");
     assert.equal(tokenPrices.token0UpdatedPrice.toString(), token0Price.toString());
+  });
+
+  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
+      token0 native and token1 non-native it should correctly 
+      return the token1 price based on the native price.
+      The native token should remain unchanged`, () => {
+    let sqrtPriceX96 = BigInt("2448752485024712708594653706276");
+    let token0Price = BigDecimal("3340.53");
+
+    const token0: Token = {
+      id: "toko-0",
+      tokenAddress: ZERO_ADDRESS,
+      decimals: 18,
+      usdPrice: token0Price,
+    } as Token;
+
+    const token1: Token = {
+      id: "toko-1",
+      tokenAddress: "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83",
+      decimals: 18,
+    } as Token;
+
+    let tokenPrices = sut.getPricesForPoolWhitelistedTokens(
+      token0,
+      token1,
+      sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
+    );
+
+    assert.equal(tokenPrices.token1UpdatedPrice.toString(), "3.4969124908482705");
+    assert.equal(tokenPrices.token0UpdatedPrice.toString(), token0Price.toString());
+  });
+
+  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
+      token1 native and token0 non-native it should correctly 
+      return the token0 price based on the native price.
+      The native token should remain unchanged`, () => {
+    let sqrtPriceX96 = BigInt("2448752485024712708594653706276");
+    let token1Price = BigDecimal("3340.53");
+
+    const token1: Token = {
+      id: "toko-1",
+      tokenAddress: ZERO_ADDRESS,
+      decimals: 18,
+      usdPrice: token1Price,
+    } as Token;
+
+    const token0: Token = {
+      id: "toko-0",
+      tokenAddress: "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83",
+      decimals: 18,
+    } as Token;
+
+    let tokenPrices = sut.getPricesForPoolWhitelistedTokens(
+      token0,
+      token1,
+      sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
+    );
+
+    assert.equal(tokenPrices.token1UpdatedPrice.toString(), token1Price.toString());
+    assert.equal(tokenPrices.token0UpdatedPrice.toString(), "3191140.95937615219643823");
   });
 
   it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
