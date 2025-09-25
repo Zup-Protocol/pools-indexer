@@ -19,3 +19,22 @@ export function mulDivRoundingUp(a: bigint, b: bigint, denominator: bigint): big
   if (!(product % denominator == BigInt(0))) result = result + ONE_BIG_INT;
   return result;
 }
+
+export function percentageDifference(baseNumber: BigDecimal, comparisonNumber: BigDecimal): BigDecimal {
+  const diff = comparisonNumber.lt(baseNumber)
+    ? baseNumber.minus(comparisonNumber)
+    : comparisonNumber.minus(baseNumber);
+
+  return safeDiv(diff, comparisonNumber.lt(baseNumber) ? comparisonNumber : baseNumber).times(BigDecimal(100));
+}
+
+export function isPercentageDifferenceWithinThreshold(
+  baseNumber: BigDecimal,
+  comparisonNumber: BigDecimal,
+  maxPercentThreshold: number
+): boolean {
+  if (comparisonNumber.eq(ZERO_BIG_DECIMAL) && baseNumber.eq(ZERO_BIG_DECIMAL)) return true;
+  if (comparisonNumber.eq(ZERO_BIG_DECIMAL) || baseNumber.eq(ZERO_BIG_DECIMAL)) return false;
+
+  return percentageDifference(baseNumber, comparisonNumber).lte(BigDecimal(maxPercentThreshold));
+}

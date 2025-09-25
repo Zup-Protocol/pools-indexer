@@ -9,16 +9,16 @@ UniswapV2Pool.Swap.handler(async ({ event, context }) => {
   const token0 = (await context.Token.get(pool.token0_id))!;
   const token1 = (await context.Token.get(pool.token1_id))!;
 
-  await handleV2PoolSwap(
+  await handleV2PoolSwap({
+    amount0In: event.params.amount0In,
+    amount0Out: event.params.amount0Out,
+    amount1In: event.params.amount1In,
+    amount1Out: event.params.amount1Out,
     context,
-    pool,
-    token0,
-    token1,
-    event.params.amount0In,
-    event.params.amount1In,
-    event.params.amount0Out,
-    event.params.amount1Out,
-    BigInt(event.block.timestamp),
-    new PoolSetters(context, event.chainId)
-  );
+    eventTimestamp: BigInt(event.block.timestamp),
+    poolEntity: pool,
+    token0Entity: token0,
+    token1Entity: token1,
+    v2PoolSetters: new PoolSetters(context, event.chainId),
+  });
 });

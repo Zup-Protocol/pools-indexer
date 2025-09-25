@@ -1,9 +1,9 @@
-import { HandlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
 import { PoolSetters } from "../../../common/pool-setters";
-import { formatFromTokenAmount } from "../../../common/token-commons";
+import { formatFromTokenAmount, pickMostLiquidPoolForToken } from "../../../common/token-commons";
 
 export async function handleV2PoolClaimFees(
-  context: HandlerContext,
+  context: handlerContext,
   poolEntity: PoolEntity,
   token0Entity: TokenEntity,
   token1Entity: TokenEntity,
@@ -12,42 +12,47 @@ export async function handleV2PoolClaimFees(
   eventTimestamp: bigint,
   v2PoolSetters: PoolSetters
 ): Promise<void> {
-  let amount0Formatted = formatFromTokenAmount(amount0, token0Entity);
-  let amount1Formatted = formatFromTokenAmount(amount1, token1Entity);
+  const token0SourcePricePoolEntity = await context.Pool.get(token0Entity.mostLiquidPool_id);
+  const token1SourcePricePoolEntity = await context.Pool.get(token1Entity.mostLiquidPool_id);
+  const amount0Formatted = formatFromTokenAmount(amount0, token0Entity);
+  const amount1Formatted = formatFromTokenAmount(amount1, token1Entity);
 
-  const poolTotalValueLockedToken0 = poolEntity.totalValueLockedToken0.minus(amount0Formatted);
-  const poolTotalValueLockedToken1 = poolEntity.totalValueLockedToken1.minus(amount1Formatted);
+  const updatedPoolTotalValueLockedToken0 = poolEntity.totalValueLockedToken0.minus(amount0Formatted);
+  const updatedPoolTotalValueLockedToken1 = poolEntity.totalValueLockedToken1.minus(amount1Formatted);
 
-  const poolTotalValueLockedUSD = poolTotalValueLockedToken0
+  const updatedPoolTotalValueLockedUSD = updatedPoolTotalValueLockedToken0
     .times(token0Entity.usdPrice)
-    .plus(poolTotalValueLockedToken1.times(token1Entity.usdPrice));
+    .plus(updatedPoolTotalValueLockedToken1.times(token1Entity.usdPrice));
 
-  const token0TotalTokenPooledAmount = token0Entity.totalTokenPooledAmount.minus(amount0Formatted);
-  const token1TotalTokenPooledAmount = token1Entity.totalTokenPooledAmount.minus(amount1Formatted);
+  const updatedToken0TotalTokenPooledAmount = token0Entity.totalTokenPooledAmount.minus(amount0Formatted);
+  const updatedToken1TotalTokenPooledAmount = token1Entity.totalTokenPooledAmount.minus(amount1Formatted);
 
-  const token0TotalValuePooledUsd = token0TotalTokenPooledAmount.times(token0Entity.usdPrice);
-  const token1TotalValuePooledUsd = token1TotalTokenPooledAmount.times(token1Entity.usdPrice);
+  const updatedToken0TotalValuePooledUsd = updatedToken0TotalTokenPooledAmount.times(token0Entity.usdPrice);
+  const updatedToken1TotalValuePooledUsd = updatedToken1TotalTokenPooledAmount.times(token1Entity.usdPrice);
 
   poolEntity = {
     ...poolEntity,
-    totalValueLockedToken0: poolTotalValueLockedToken0,
-    totalValueLockedToken1: poolTotalValueLockedToken1,
-    totalValueLockedUSD: poolTotalValueLockedUSD,
+    totalValueLockedToken0: updatedPoolTotalValueLockedToken0,
+    totalValueLockedToken1: updatedPoolTotalValueLockedToken1,
+    totalValueLockedUSD: updatedPoolTotalValueLockedUSD,
   };
 
   token0Entity = {
     ...token0Entity,
-    totalTokenPooledAmount: token0TotalTokenPooledAmount,
-    totalValuePooledUsd: token0TotalValuePooledUsd,
+    totalTokenPooledAmount: updatedToken0TotalTokenPooledAmount,
+    totalValuePooledUsd: updatedToken0TotalValuePooledUsd,
+    mostLiquidPool_id: pickMostLiquidPoolForToken(token0Entity, poolEntity, token0SourcePricePoolEntity).id,
   };
 
   token1Entity = {
     ...token1Entity,
-    totalTokenPooledAmount: token1TotalTokenPooledAmount,
-    totalValuePooledUsd: token1TotalValuePooledUsd,
+    totalTokenPooledAmount: updatedToken1TotalTokenPooledAmount,
+    totalValuePooledUsd: updatedToken1TotalValuePooledUsd,
+    mostLiquidPool_id: pickMostLiquidPoolForToken(token1Entity, poolEntity, token1SourcePricePoolEntity).id,
   };
 
-  await v2PoolSetters.setPoolDailyDataTVL(eventTimestamp, poolEntity);
+  await v2PoolSetters.setIntervalDataTVL(eventTimestamp, poolEntity);
+
   context.Pool.set(poolEntity);
   context.Token.set(token0Entity);
   context.Token.set(token1Entity);

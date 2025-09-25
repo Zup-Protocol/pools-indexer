@@ -1,8 +1,114 @@
 import { createHash } from "crypto";
-import { Pool as PoolEntity, Token, Token as TokenEntity } from "generated";
+import { BigDecimal, Pool as PoolEntity, Token, Token as TokenEntity } from "generated";
 import "../../src/common/string.extension";
-import { ONE_HOUR_IN_SECONDS, ZERO_ADDRESS } from "./constants";
+import { ONE_HOUR_IN_SECONDS, ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "./constants";
 import { IndexerNetwork } from "./enums/indexer-network";
+import { formatFromTokenAmount } from "./token-commons";
+
+export function isPoolSwapVolumeValid(pool: PoolEntity) {
+  return pool.swapVolumeUSD.gt(ZERO_BIG_DECIMAL);
+}
+
+export function getLiquidityInflowAndOutflowFromRawAmounts(
+  amount0: bigint,
+  amount1: bigint,
+  token0: TokenEntity,
+  token1: TokenEntity
+): {
+  inflowToken0: BigDecimal;
+  inflowToken1: BigDecimal;
+  outflowToken0: BigDecimal;
+  outflowToken1: BigDecimal;
+  inflowUSD: BigDecimal;
+  outflowUSD: BigDecimal;
+  netInflowToken0: BigDecimal;
+  netInflowToken1: BigDecimal;
+  netInflowUSD: BigDecimal;
+} {
+  const amount0Formatted = formatFromTokenAmount(amount0, token0);
+  const amount1Formatted = formatFromTokenAmount(amount1, token1);
+  const isAmount0Positive = amount0 > 0;
+  const isAmount1Positive = amount1 > 0;
+
+  const inflowToken0 = isAmount0Positive ? amount0Formatted : ZERO_BIG_DECIMAL;
+  const inflowToken1 = isAmount1Positive ? amount1Formatted : ZERO_BIG_DECIMAL;
+  const outflowToken0 = isAmount0Positive ? ZERO_BIG_DECIMAL : amount0Formatted.abs();
+  const outflowToken1 = isAmount1Positive ? ZERO_BIG_DECIMAL : amount1Formatted.abs();
+  const inflowUSD = inflowToken0.times(token0.usdPrice).plus(inflowToken1.times(token1.usdPrice));
+  const outflowUSD = outflowToken0.times(token0.usdPrice).plus(outflowToken1.times(token1.usdPrice));
+  const netInflowToken0 = amount0Formatted;
+  const netInflowToken1 = amount1Formatted;
+  const netInflowUSD = inflowUSD.minus(outflowUSD);
+
+  return {
+    inflowToken0: inflowToken0,
+    inflowToken1: inflowToken1,
+    outflowToken0: outflowToken0,
+    outflowToken1: outflowToken1,
+    inflowUSD: inflowUSD,
+    outflowUSD: outflowUSD,
+    netInflowToken0: netInflowToken0,
+    netInflowToken1: netInflowToken1,
+    netInflowUSD: netInflowUSD,
+  };
+}
+
+export function getSwapVolumeFromAmounts(
+  amount0: BigDecimal,
+  amount1: BigDecimal,
+  token0: TokenEntity,
+  token1: TokenEntity
+): {
+  volumeToken0: BigDecimal;
+  volumeToken1: BigDecimal;
+  volumeUSD: BigDecimal;
+  volumeToken0USD: BigDecimal;
+  volumeToken1USD: BigDecimal;
+} {
+  if (amount0.lt(ZERO_BIG_DECIMAL)) {
+    return {
+      volumeUSD: amount1.times(token1.usdPrice),
+      volumeToken1USD: amount1.times(token1.usdPrice),
+      volumeToken1: amount1,
+      volumeToken0: ZERO_BIG_DECIMAL,
+      volumeToken0USD: ZERO_BIG_DECIMAL,
+    };
+  }
+
+  return {
+    volumeUSD: amount0.times(token0.usdPrice),
+    volumeToken0USD: amount0.times(token0.usdPrice),
+    volumeToken0: amount0,
+    volumeToken1: ZERO_BIG_DECIMAL,
+    volumeToken1USD: ZERO_BIG_DECIMAL,
+  };
+}
+
+export function getSwapFeesFromRawAmounts(
+  rawAmount0: bigint,
+  rawAmount1: bigint,
+  rawSwapFee: number,
+  token0: TokenEntity,
+  token1: TokenEntity
+): { feeToken0: BigDecimal; feeToken1: BigDecimal; feesUSD: BigDecimal } {
+  if (rawAmount0 < 0) {
+    const tokenFees = formatFromTokenAmount(getRawFeeFromTokenAmount(rawAmount1, rawSwapFee), token1);
+
+    return {
+      feesUSD: tokenFees.times(token1.usdPrice),
+      feeToken1: tokenFees,
+      feeToken0: ZERO_BIG_DECIMAL,
+    };
+  }
+
+  const tokenFees = formatFromTokenAmount(getRawFeeFromTokenAmount(rawAmount0, rawSwapFee), token0);
+
+  return {
+    feesUSD: tokenFees.times(token0.usdPrice),
+    feeToken0: tokenFees,
+    feeToken1: ZERO_BIG_DECIMAL,
+  };
+}
 
 export function getRawFeeFromTokenAmount(rawTokenAmount: bigint, rawFee: number): bigint {
   return (rawTokenAmount * BigInt(rawFee)) / BigInt(1000000);
@@ -97,11 +203,18 @@ export function getPoolHourlyDataId(blockTimestampInSeconds: bigint, pool: PoolE
 }
 
 export function getPoolDailyDataId(blockTimestamp: bigint, pool: PoolEntity): string {
-  let secondsPerDay = 86_400;
-  let dayId = (blockTimestamp - pool.createdAtTimestamp) / BigInt(secondsPerDay);
+  const secondsPerDay = 86_400;
+  const dayId = (blockTimestamp - pool.createdAtTimestamp) / BigInt(secondsPerDay);
 
-  let dayIdAddress = createHash("sha256").update(dayId.toString()).digest("hex");
-  let id = pool.poolAddress + dayIdAddress;
+  const dayIdAddress = createHash("sha256").update(dayId.toString()).digest("hex");
+  const id = pool.poolAddress + dayIdAddress;
 
   return IndexerNetwork.getEntityIdFromAddress(pool.chainId, id);
+}
+
+export function getTokenAmountInPool(pool: PoolEntity, token: TokenEntity): BigDecimal {
+  if (pool.token0_id.lowercasedEquals(token.id)) return pool.totalValueLockedToken0;
+  if (pool.token1_id.lowercasedEquals(token.id)) return pool.totalValueLockedToken1;
+
+  throw new Error("The passed token doesn't match any token in the passed pool");
 }

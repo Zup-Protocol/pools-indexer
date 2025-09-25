@@ -1,18 +1,26 @@
 import assert from "assert";
-import { Pool, Token } from "generated";
-import { ZERO_ADDRESS } from "../../src/common/constants";
+import { BigDecimal, Pool, Token } from "generated";
+import { ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "../../src/common/constants";
 import { IndexerNetwork } from "../../src/common/enums/indexer-network";
 import {
   findNativeToken,
   findStableToken,
   findWrappedNative,
+  getLiquidityInflowAndOutflowFromRawAmounts,
   getPoolDailyDataId,
   getPoolHourlyDataId,
+  getRawFeeFromTokenAmount,
+  getSwapFeesFromRawAmounts,
+  getSwapVolumeFromAmounts,
+  getTokenAmountInPool,
   isNativePool,
+  isPoolSwapVolumeValid,
   isStablePool,
   isVariableWithStablePool,
   isWrappedNativePool,
 } from "../../src/common/pool-commons";
+import { formatFromTokenAmount } from "../../src/common/token-commons";
+import { PoolMock, TokenMock } from "../mocks";
 
 describe("PoolCommons", () => {
   it(`When a pool has the token 0 as stablecoin,
@@ -472,6 +480,927 @@ describe("PoolCommons", () => {
     assert.throws(
       () => findNativeToken(token0, token1),
       Error("Pool does not have a native asset, no native token can be found")
+    );
+  });
+
+  it("when the pool swap volume is zero, it should return false for `isPoolSwapVolumeValid`", () => {
+    let pool = new PoolMock();
+
+    pool = {
+      ...pool,
+      swapVolumeUSD: ZERO_BIG_DECIMAL,
+    };
+
+    assert.equal(isPoolSwapVolumeValid(pool), false);
+  });
+
+  it("when the pool swap volume is not zero, it should return true for `isPoolSwapVolumeValid`", () => {
+    let pool = new PoolMock();
+
+    pool = {
+      ...pool,
+      swapVolumeUSD: BigDecimal("21"),
+    };
+
+    assert.equal(isPoolSwapVolumeValid(pool), true);
+  });
+
+  it(`should return the amount0 inflow when passing a positive amount`, () => {
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 2121n;
+    const amount1 = 97219182n;
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.inflowToken0, formatFromTokenAmount(amount0, token0));
+  });
+
+  it(`should return zero as inflow for token 0 when passing a negative amount`, () => {
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = -2121n;
+    const amount1 = 97219182n;
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.inflowToken0, ZERO_BIG_DECIMAL);
+  });
+
+  it(`should correctly calculate the token1 inflow when passing a positive
+    amount to 'getLiquidityInflowAndOutflowFromRawAmounts'`, () => {
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 2121n;
+    const amount1 = 97219182n;
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.inflowToken1, formatFromTokenAmount(amount1, token1));
+  });
+
+  it(`should return zero as inflow for token 1 when passing a negative amount`, () => {
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 2121n;
+    const amount1 = -97219182n;
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.inflowToken1, ZERO_BIG_DECIMAL);
+  });
+
+  it(`should sum the inflow from token0 and token1 then multiply by its prices
+   to return the total inflow USD when passing a positive amount`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = 2121n;
+    const amount1 = 97219182n;
+    const expectedInflowUSD = formatFromTokenAmount(amount0, token0)
+      .times(token0USDPrice)
+      .plus(formatFromTokenAmount(amount1, token1).times(token1USDPrice));
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.inflowUSD, expectedInflowUSD);
+  });
+
+  it(`should return zero as inflow usd when both amount0 and amount1 are negative`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = -2121n;
+    const amount1 = -97219182n;
+    const expectedInflowUSD = ZERO_BIG_DECIMAL;
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.inflowUSD, expectedInflowUSD);
+  });
+
+  it(`should return only return the inflow usd from token0 when
+    amount1 is negative but amount0 is positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = 2121n;
+    const amount1 = -97219182n;
+    const expectedInflowUSD = formatFromTokenAmount(amount0, token0).times(token0USDPrice);
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.inflowUSD, expectedInflowUSD);
+  });
+
+  it(`should return only return the inflow usd from token1 when
+    amount0 is negative but amount1 is positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = -2121n;
+    const amount1 = 97219182n;
+    const expectedInflowUSD = formatFromTokenAmount(amount1, token1).times(token1USDPrice);
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.inflowUSD, expectedInflowUSD);
+  });
+
+  it(`should return the amount zero negative for net inflow token0 if the amount0 is negative`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = -2121n;
+    const amount1 = 97219182n;
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.netInflowToken0, formatFromTokenAmount(amount0, token0));
+  });
+
+  it(`should return the amount zero positive for net inflow token0 if the amount0 is positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = 2121n;
+    const amount1 = 97219182n;
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.netInflowToken0, formatFromTokenAmount(amount0, token0));
+  });
+
+  it(`should return the amount one negative for net inflow token1 if the amount1 is negative`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = 2121n;
+    const amount1 = -97219182n;
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.netInflowToken1, formatFromTokenAmount(amount1, token1));
+  });
+
+  it(`should return the amount one positive for net inflow token1 if the amount1 is positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = 2121n;
+    const amount1 = 97219182n;
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.netInflowToken1, formatFromTokenAmount(amount1, token1));
+  });
+
+  it(`should return the amount 1 summed with amount 0 and multiplied by its prices for net inflow USD
+    if the amount0 and amount1 are positive, the result should also be positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = 2121n;
+    const amount1 = 9090n;
+    const expectedNetInflowUSD = formatFromTokenAmount(amount0, token0)
+      .times(token0USDPrice)
+      .plus(formatFromTokenAmount(amount1, token1).times(token1USDPrice));
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.netInflowUSD, expectedNetInflowUSD);
+  });
+
+  it(`should return the amount 1 summed with amount 0 and multiplied by its prices for net inflow USD
+    if the amount0 and amount1 are negative, the result should also be negative`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = -2121n;
+    const amount1 = -9090n;
+    const expectedNetInflowUSD = formatFromTokenAmount(amount0, token0)
+      .times(token0USDPrice)
+      .plus(formatFromTokenAmount(amount1, token1).times(token1USDPrice));
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.netInflowUSD, expectedNetInflowUSD);
+  });
+
+  it(`should return the amount 0 minus amount 1 and multiplied by its prices for net inflow USD
+    if the amount0 is negative and amount1 is positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = -2121n;
+    const amount1 = 9090n;
+    const expectedNetInflowUSD = formatFromTokenAmount(amount0, token0)
+      .times(token0USDPrice)
+      .plus(formatFromTokenAmount(amount1, token1).times(token1USDPrice));
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.netInflowUSD, expectedNetInflowUSD);
+  });
+
+  it(`should return the amount 1 minus amount 0 and multiplied by its prices for net inflow USD
+    if the amount1 is negative and amount0 is positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1200");
+    const token1USDPrice = BigDecimal("5");
+    const amount0 = 2121n;
+    const amount1 = -9090n;
+    const expectedNetInflowUSD = formatFromTokenAmount(amount0, token0)
+      .times(token0USDPrice)
+      .plus(formatFromTokenAmount(amount1, token1).times(token1USDPrice));
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.netInflowUSD, expectedNetInflowUSD);
+  });
+
+  it(`should return zero for token0 outflow if the amount0 is positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const amount0 = 2121n;
+    const amount1 = -9090n;
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.outflowToken0, ZERO_BIG_DECIMAL);
+  });
+
+  it(`should return the amount0 abs for token0 outflow if the amount0 is negative`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const amount0 = -2121n;
+    const amount1 = -9090n;
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.outflowToken0, formatFromTokenAmount(amount0, token0).abs());
+  });
+
+  it(`should return the amount1 abs for token1 outflow if the amount1 is negative`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const amount0 = -2121n;
+    const amount1 = -9090n;
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.outflowToken1, formatFromTokenAmount(amount1, token1).abs());
+  });
+
+  it(`should return zero for token1 outflow if the amount1 is positive`, () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const amount0 = -2121n;
+    const amount1 = 9090n;
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.outflowToken1, ZERO_BIG_DECIMAL);
+  });
+
+  it("should return the amount0 abs plus amount1 usd for outflowUSD if amount0 and amount1 are negative", () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("1111");
+    const token1USDPrice = BigDecimal("7777");
+    const amount0 = -2121n;
+    const amount1 = -9090n;
+    const expectedOutflowUSD = formatFromTokenAmount(amount0, token0)
+      .abs()
+      .times(token0USDPrice)
+      .plus(formatFromTokenAmount(amount1, token1).abs().times(token1USDPrice));
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.outflowUSD, expectedOutflowUSD);
+  });
+
+  it("should return only the amount0 usd for outflowUSD if amount1 is positive and amount0 is negative", () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const amount0 = -120917n;
+    const amount1 = 191919191n;
+    const expectedOutflowUSD = formatFromTokenAmount(amount0, token0).abs().times(token0USDPrice);
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.outflowUSD, expectedOutflowUSD);
+  });
+
+  it("should return only the amount1 usd for outflowUSD if amount1 is negative and amount0 is positive", () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const amount0 = 120917n;
+    const amount1 = -191919191n;
+    const expectedOutflowUSD = formatFromTokenAmount(amount1, token1).abs().times(token1USDPrice);
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.outflowUSD, expectedOutflowUSD);
+  });
+
+  it("should return zero for the outflow usd if both amount0 and amount1 are positive", () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const amount0 = 120917n;
+    const amount1 = 191919191n;
+
+    token0 = {
+      ...token0,
+      usdPrice: token0USDPrice,
+    };
+
+    token1 = {
+      ...token1,
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getLiquidityInflowAndOutflowFromRawAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.outflowUSD, ZERO_BIG_DECIMAL);
+  });
+
+  it("should return the amount0 as volume0 if the amount0 is positive and amount1 is negative", () => {
+    const amount0 = BigDecimal(2121);
+    const amount1 = BigDecimal(-9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    let token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    let token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeToken0, amount0);
+  });
+
+  it("should return zero as volume0 if the amount0 is negative and amount1 is positive", () => {
+    const amount0 = BigDecimal(-2121);
+    const amount1 = BigDecimal(9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeToken0, ZERO_BIG_DECIMAL);
+  });
+
+  it("should return the amount1 as volume1 if the amount1 is positive and amount0 is negative", () => {
+    const amount0 = BigDecimal(-2121);
+    const amount1 = BigDecimal(9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeToken1, amount1);
+  });
+
+  it("should return zero as volume1 if the amount1 is negative and amount0 is positive", () => {
+    const amount0 = BigDecimal(2121);
+    const amount1 = BigDecimal(-9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeToken1, ZERO_BIG_DECIMAL);
+  });
+
+  it(`should return the amount0 times token0 usd price as
+    volume0 usd if the amount0 is positive and amount1 is
+    negative`, () => {
+    const amount0 = BigDecimal(2121);
+    const amount1 = BigDecimal(-9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeToken0USD, amount0.times(token0USDPrice));
+  });
+
+  it(`should return zero as volume0 usd if the
+    amount0 is negative and amount1 is positive`, () => {
+    const amount0 = BigDecimal(-2121);
+    const amount1 = BigDecimal(9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeToken0USD, ZERO_BIG_DECIMAL);
+  });
+
+  it(`should return the amount1 times token1 usd price as
+    volume1 usd if the amount1 is positive and amount0 is
+    negative`, () => {
+    const amount0 = BigDecimal(-2121);
+    const amount1 = BigDecimal(9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeToken1USD, amount1.times(token1USDPrice));
+  });
+
+  it(`should return zero as volume1 usd if the amount1
+    is negative and amount0 is positive`, () => {
+    const amount0 = BigDecimal(2121);
+    const amount1 = BigDecimal(-9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeToken1USD, ZERO_BIG_DECIMAL);
+  });
+
+  it(`should return the amount 1 times token 1 usd price if the amount0 is
+    negative, and amount1 is positive`, () => {
+    const amount0 = BigDecimal(-2121);
+    const amount1 = BigDecimal(9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeUSD, amount1.times(token1USDPrice));
+  });
+
+  it(`should return the amount 0 times token 0 usd price if the amount1 is
+    negative, and amount0 is positive`, () => {
+    const amount0 = BigDecimal(2121);
+    const amount1 = BigDecimal(-9090);
+    const token0USDPrice = BigDecimal("192891");
+    const token1USDPrice = BigDecimal("12");
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: token0USDPrice,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1USDPrice,
+    };
+
+    const result = getSwapVolumeFromAmounts(amount0, amount1, token0, token1);
+
+    assert.deepEqual(result.volumeUSD, amount0.times(token0USDPrice));
+  });
+
+  it(`should return zero as swap fees for token0 if amount 1
+    is positive and amount 0 is negative`, () => {
+    const amount0 = -2121n;
+    const amount1 = 9090n;
+    const swapFee = 500;
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("192891"),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("12"),
+    };
+
+    const result = getSwapFeesFromRawAmounts(amount0, amount1, swapFee, token0, token1);
+
+    assert.deepEqual(result.feeToken0, ZERO_BIG_DECIMAL);
+  });
+
+  it(`should correctly calculate the swap fees for amount0
+    if amount0 is positive and amount1 is negative`, () => {
+    const amount0 = 2121n;
+    const amount1 = -9090n;
+    const swapFee = 5000;
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("192891"),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("12"),
+    };
+    const expectedToken0Fees = formatFromTokenAmount(getRawFeeFromTokenAmount(amount0, swapFee), token0);
+
+    const result = getSwapFeesFromRawAmounts(amount0, amount1, swapFee, token0, token1);
+
+    assert.deepEqual(result.feeToken0, expectedToken0Fees);
+  });
+
+  it(`should return the amount0 swap fee times token0 usd price
+    for the feesUSD if amount0 is positive and amount1 is negative`, () => {
+    const amount0 = 2121n;
+    const amount1 = -9090n;
+    const swapFee = 5000;
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("192891"),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("12"),
+    };
+    const expectedToken0Fees = formatFromTokenAmount(getRawFeeFromTokenAmount(amount0, swapFee), token0);
+
+    const result = getSwapFeesFromRawAmounts(amount0, amount1, swapFee, token0, token1);
+
+    assert.deepEqual(result.feesUSD, expectedToken0Fees.times(token0.usdPrice));
+  });
+
+  it(`should return the amount1 swap fee times token1 usd price
+    for the feesUSD if amount1 is positive and amount0 is negative`, () => {
+    const amount0 = -2121n;
+    const amount1 = 9090n;
+    const swapFee = 1000;
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("192891"),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("12"),
+    };
+    const expectedToken1Fees = formatFromTokenAmount(getRawFeeFromTokenAmount(amount1, swapFee), token1);
+
+    const result = getSwapFeesFromRawAmounts(amount0, amount1, swapFee, token0, token1);
+
+    assert.deepEqual(result.feesUSD, expectedToken1Fees.times(token1.usdPrice));
+  });
+
+  it(`should correctly calculate the swap fees for amount1
+    if amount1 is positive and amount0 is negative`, () => {
+    const amount0 = -2121n;
+    const amount1 = 9090n;
+    const swapFee = 100;
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("192891"),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("12"),
+    };
+    const expectedToken1Fees = formatFromTokenAmount(getRawFeeFromTokenAmount(amount1, swapFee), token1);
+
+    const result = getSwapFeesFromRawAmounts(amount0, amount1, swapFee, token0, token1);
+
+    assert.deepEqual(result.feeToken1, expectedToken1Fees);
+  });
+
+  it(`should return zero as swap fees for token1 if amount 0
+    is positive and amount 1 is negative`, () => {
+    const amount0 = 2121n;
+    const amount1 = -9090n;
+    const swapFee = 500;
+    const token0: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("192891"),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("12"),
+    };
+
+    const result = getSwapFeesFromRawAmounts(amount0, amount1, swapFee, token0, token1);
+
+    assert.deepEqual(result.feeToken1, ZERO_BIG_DECIMAL);
+  });
+
+  it("should return the fees in raw token amount based in the swap fee passed, and amount", () => {
+    const rawFee = 10000;
+    const rawAmount = 10000n;
+    let result = getRawFeeFromTokenAmount(rawAmount, rawFee);
+
+    assert.deepEqual(result, 100n);
+  });
+
+  it(`should return the token0 amount when calling 'getTokenAmountInPool'
+    with a pool that the token 0 is the same as the passed token`, () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000021");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000031");
+    let token0AmountPooled = BigDecimal("391862871");
+
+    pool = {
+      ...pool,
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken0: token0AmountPooled,
+    };
+
+    assert.deepEqual(getTokenAmountInPool(pool, token0), token0AmountPooled);
+  });
+
+  it(`should return the token1 amount when calling 'getTokenAmountInPool'
+    with a pool that the token 1 is the same as the passed token`, () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000021");
+    let token1 = new TokenMock("0x0000000000000000000000000000000000000031");
+    let token1AmountPooled = BigDecimal("12314523451");
+
+    pool = {
+      ...pool,
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken1: token1AmountPooled,
+    };
+
+    assert.deepEqual(getTokenAmountInPool(pool, token1), token1AmountPooled);
+  });
+
+  it(`should throw if calling 'getTokenAmountInPool' with a pool that neither token0
+    or token1 is the same as the passed token`, () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock("0x0000000000000000000000000000000000000021");
+
+    pool = {
+      ...pool,
+      token0_id: "0x0000000000000000000000000000000000000041",
+      token1_id: "0x0000000000000000000000000000000000000051",
+    };
+
+    assert.throws(
+      () => getTokenAmountInPool(pool, token0),
+      Error("The passed token doesn't match any token in the passed pool")
     );
   });
 });

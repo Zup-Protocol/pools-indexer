@@ -1,10 +1,11 @@
-import { HandlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { sqrtPriceX96toPrice } from "../../../common/cl-pool-converters";
+import { getSwapVolumeFromAmounts } from "../../../common/pool-commons";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount } from "../../../common/token-commons";
-import { sqrtPriceX96toPrice } from "../../common/v3-v4-pool-converters";
 
 export async function handleV3PoolSwap(params: {
-  context: HandlerContext;
+  context: handlerContext;
   poolEntity: PoolEntity;
   token0Entity: TokenEntity;
   token1Entity: TokenEntity;
@@ -22,23 +23,35 @@ export async function handleV3PoolSwap(params: {
 
   let v3PoolEntity = (await params.context.V3PoolData.get(params.poolEntity.id))!;
 
-  const newPrices = params.v3PoolSetters.getPricesForPoolWhitelistedTokens(
+  params.poolEntity = {
+    ...params.poolEntity,
+    totalValueLockedToken0: params.poolEntity.totalValueLockedToken0.plus(tokenAmount0Formatted),
+    totalValueLockedToken1: params.poolEntity.totalValueLockedToken1.plus(tokenAmount1Formatted),
+  };
+
+  [params.token0Entity, params.token1Entity] = await params.v3PoolSetters.updateTokenPricesFromPoolPrices(
     params.token0Entity,
     params.token1Entity,
+    params.poolEntity,
     sqrtPriceX96toPrice(params.sqrtPriceX96, params.token0Entity, params.token1Entity)
   );
 
-  const poolTotalValueLockedToken0 = params.poolEntity.totalValueLockedToken0.plus(tokenAmount0Formatted);
-  const poolTotalValueLockedToken1 = params.poolEntity.totalValueLockedToken1.plus(tokenAmount1Formatted);
-  const poolTotalValueLockedUSD = poolTotalValueLockedToken0
-    .times(newPrices.token0UpdatedPrice)
-    .plus(poolTotalValueLockedToken1.times(newPrices.token1UpdatedPrice));
+  const swapVolumeWithNewPrices = getSwapVolumeFromAmounts(
+    tokenAmount0Formatted,
+    tokenAmount1Formatted,
+    params.token0Entity,
+    params.token1Entity
+  );
 
-  const token0TotalTokenPooledAmount = params.token0Entity.totalTokenPooledAmount.plus(tokenAmount0Formatted);
-  const token1TotalTokenPooledAmount = params.token1Entity.totalTokenPooledAmount.plus(tokenAmount1Formatted);
+  const updatedPoolTotalValueLockedUSD = params.poolEntity.totalValueLockedToken0
+    .times(params.token0Entity.usdPrice)
+    .plus(params.poolEntity.totalValueLockedToken1.times(params.token1Entity.usdPrice));
 
-  const token0TotalValuePooledUsd = token0TotalTokenPooledAmount.times(newPrices.token0UpdatedPrice);
-  const token1TotalValuePooledUsd = token1TotalTokenPooledAmount.times(newPrices.token1UpdatedPrice);
+  const updatedToken0TotalTokenPooledAmount = params.token0Entity.totalTokenPooledAmount.plus(tokenAmount0Formatted);
+  const updatedToken1TotalTokenPooledAmount = params.token1Entity.totalTokenPooledAmount.plus(tokenAmount1Formatted);
+
+  const updatedToken0TotalValuePooledUsd = updatedToken0TotalTokenPooledAmount.times(params.token0Entity.usdPrice);
+  const updatedToken1TotalValuePooledUsd = updatedToken1TotalTokenPooledAmount.times(params.token1Entity.usdPrice);
 
   v3PoolEntity = {
     ...v3PoolEntity,
@@ -48,38 +61,30 @@ export async function handleV3PoolSwap(params: {
 
   params.poolEntity = {
     ...params.poolEntity,
-    totalValueLockedToken0: poolTotalValueLockedToken0,
-    totalValueLockedToken1: poolTotalValueLockedToken1,
-    totalValueLockedUSD: poolTotalValueLockedUSD,
+    totalValueLockedUSD: updatedPoolTotalValueLockedUSD,
     currentFeeTier: params.newFeeTier ?? params.poolEntity.currentFeeTier,
+    swapVolumeToken0: params.poolEntity.swapVolumeToken0.plus(swapVolumeWithNewPrices.volumeToken0),
+    swapVolumeToken1: params.poolEntity.swapVolumeToken1.plus(swapVolumeWithNewPrices.volumeToken1),
+    swapVolumeUSD: params.poolEntity.swapVolumeUSD.plus(swapVolumeWithNewPrices.volumeUSD),
   };
 
   params.token0Entity = {
     ...params.token0Entity,
-    totalTokenPooledAmount: token0TotalTokenPooledAmount,
-    totalValuePooledUsd: token0TotalValuePooledUsd,
-    usdPrice: newPrices.token0UpdatedPrice,
+    totalTokenPooledAmount: updatedToken0TotalTokenPooledAmount,
+    totalValuePooledUsd: updatedToken0TotalValuePooledUsd,
+    tokenSwapVolume: params.token0Entity.tokenSwapVolume.plus(swapVolumeWithNewPrices.volumeToken0),
+    swapVolumeUSD: params.token0Entity.swapVolumeUSD.plus(swapVolumeWithNewPrices.volumeToken0USD),
   };
 
   params.token1Entity = {
     ...params.token1Entity,
-    totalTokenPooledAmount: token1TotalTokenPooledAmount,
-    totalValuePooledUsd: token1TotalValuePooledUsd,
-    usdPrice: newPrices.token1UpdatedPrice,
+    totalTokenPooledAmount: updatedToken1TotalTokenPooledAmount,
+    totalValuePooledUsd: updatedToken1TotalValuePooledUsd,
+    tokenSwapVolume: params.token1Entity.tokenSwapVolume.plus(swapVolumeWithNewPrices.volumeToken1),
+    swapVolumeUSD: params.token1Entity.swapVolumeUSD.plus(swapVolumeWithNewPrices.volumeToken1USD),
   };
 
-  await params.v3PoolSetters.setHourlyData(
-    params.eventTimestamp,
-    params.context,
-    params.token0Entity,
-    params.token1Entity,
-    params.poolEntity,
-    params.swapAmount0,
-    params.swapAmount1,
-    params.overrideSingleSwapFee
-  );
-
-  await params.v3PoolSetters.setDailyData(
+  await params.v3PoolSetters.setIntervalSwapData(
     params.eventTimestamp,
     params.context,
     params.poolEntity,

@@ -1,18 +1,12 @@
 import { UniswapV4PoolManager } from "generated";
+import { DeFiPoolDataSetters } from "../../../../../common/defi-pool-data-setters";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV4PoolModifyLiquidity } from "../../v4-pool-modify-liquidity";
 
 UniswapV4PoolManager.ModifyLiquidity.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.params.id);
-  const poolEntity = await context.Pool.get(poolId);
-
-  if (!poolEntity) {
-    context.log.warn(`Pool ${poolId} not found, skipping event...`);
-
-    return;
-  }
-
+  const poolEntity = await context.Pool.getOrThrow(poolId);
   const token0 = await context.Token.getOrThrow(poolEntity.token0_id);
   const token1 = await context.Token.getOrThrow(poolEntity.token1_id);
 
@@ -25,6 +19,7 @@ UniswapV4PoolManager.ModifyLiquidity.handler(async ({ event, context }) => {
     Number.parseInt(event.params.tickLower.toString()),
     Number.parseInt(event.params.tickUpper.toString()),
     BigInt(event.block.timestamp),
-    new PoolSetters(context, event.chainId)
+    new PoolSetters(context, event.chainId),
+    new DeFiPoolDataSetters(context)
   );
 });

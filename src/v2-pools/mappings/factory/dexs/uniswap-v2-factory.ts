@@ -8,15 +8,15 @@ UniswapV2Factory.PairCreated.contractRegister(({ event, context }) => {
 });
 
 UniswapV2Factory.PairCreated.handler(async ({ event, context }) => {
-  await handleV2PoolCreated(
+  await handleV2PoolCreated({
     context,
-    event.chainId,
-    BigInt(event.block.timestamp),
-    event.params.token0,
-    event.params.token1,
-    event.params.pair,
-    3000,
-    SupportedProtocol.UNISWAP_V2,
-    TokenService.shared
-  );
+    chainId: event.chainId,
+    eventTimestamp: BigInt(event.block.timestamp),
+    token0Address: event.params.token0,
+    token1Address: event.params.token1,
+    poolAddress: event.params.pair,
+    feeTier: 3000, // Uniswap v2 has a constant fee of 0.3%
+    protocol: SupportedProtocol.UNISWAP_V2,
+    tokenService: TokenService.shared,
+  });
 });

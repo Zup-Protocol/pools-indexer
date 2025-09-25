@@ -23,7 +23,49 @@ describe("Permit2Address", () => {
     assert.equal(Permit2Address.uniswap(IndexerNetwork.UNICHAIN), "0x000000000022D473030F116dDEE9F6B43aC78BA3");
   });
 
-  it("pancakeSWap returns correct address for base", () => {
+  it("uniswap throws for hyperEVM", () => {
+    assert.throws(
+      () => Permit2Address.uniswap(IndexerNetwork.HYPER_EVM),
+      Error(`Uniswap is not supported on HyperEVM`)
+    );
+  });
+
+  it("pancakeSwap returns correct address for base", () => {
     assert.equal(Permit2Address.pancakeSwap(IndexerNetwork.BASE), "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768");
+  });
+
+  it("pancakeSwap throws for Ethereum", () => {
+    assert.throws(
+      () => Permit2Address.pancakeSwap(IndexerNetwork.ETHEREUM),
+      Error(`PancakeSwap is not supported on Mainnet`)
+    );
+  });
+
+  it("pancakeSwap throws for Unichain", () => {
+    assert.throws(
+      () => Permit2Address.pancakeSwap(IndexerNetwork.UNICHAIN),
+      Error(`PancakeSwap is not supported on Unichain`)
+    );
+  });
+
+  it("pancakeSwap throws for Scroll", () => {
+    assert.throws(
+      () => Permit2Address.pancakeSwap(IndexerNetwork.SCROLL),
+      Error(`PancakeSwap is not supported on Scroll`)
+    );
+  });
+
+  it("pancakeSwap throws for Sepolia", () => {
+    assert.throws(
+      () => Permit2Address.pancakeSwap(IndexerNetwork.SEPOLIA),
+      Error(`PancakeSwap is not supported on Sepolia`)
+    );
+  });
+
+  it("pancakeSwap throws for HyperEVM", () => {
+    assert.throws(
+      () => Permit2Address.pancakeSwap(IndexerNetwork.HYPER_EVM),
+      Error(`PancakeSwap is not supported on HyperEVM`)
+    );
   });
 });

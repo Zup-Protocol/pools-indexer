@@ -1,7 +1,5 @@
-import { BigDecimal, HandlerContext, Token, Token as TokenEntity } from "generated";
-import { ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "./constants";
-import { IndexerNetwork } from "./enums/indexer-network";
-import { EffectService } from "./services/effect-service";
+import { BigDecimal, Pool as PoolEntity, Token, Token as TokenEntity } from "generated";
+import { getTokenAmountInPool } from "./pool-commons";
 
 export function formatFromTokenAmount(amount: bigint, token: TokenEntity): BigDecimal {
   const tokenAmountInBigDecimal = new BigDecimal(amount.toString());
@@ -14,50 +12,19 @@ export function tokenBaseAmount(token: Token): BigInt {
   return BigInt(10) ** BigInt(token.decimals);
 }
 
-export async function getOrCreateTokenEntity(
-  context: HandlerContext,
-  network: IndexerNetwork,
-  tokenAddress: string
-): Promise<TokenEntity> {
-  const tokenId = IndexerNetwork.getEntityIdFromAddress(network, tokenAddress);
+export function pickMostLiquidPoolForToken(
+  token: TokenEntity,
+  otherPool: PoolEntity,
+  currentPool?: PoolEntity
+): PoolEntity {
+  if (!currentPool) return otherPool;
 
-  let tokenEntity = await context.Token.get(tokenId);
-  const isNativeToken: boolean = tokenAddress == ZERO_ADDRESS;
+  const tokenAmountStoredInCurrentPool = getTokenAmountInPool(currentPool, token);
+  const tokenAmountStoredInOtherPool = getTokenAmountInPool(otherPool, token);
 
-  if (!tokenEntity) {
-    if (isNativeToken) {
-      let nativeToken = IndexerNetwork.nativeToken(network);
-
-      tokenEntity = {
-        id: tokenId,
-        tokenAddress: tokenAddress.toLowerCase(),
-        decimals: nativeToken.decimals,
-        symbol: nativeToken.symbol,
-        name: nativeToken.name,
-        totalTokenPooledAmount: ZERO_BIG_DECIMAL,
-        totalValuePooledUsd: ZERO_BIG_DECIMAL,
-        usdPrice: ZERO_BIG_DECIMAL,
-      };
-
-      return tokenEntity;
-    }
-
-    let remoteTokenMetadata = await context.effect(EffectService.shared.getTokenMetadataEffect, {
-      chainId: network,
-      tokenAddress: tokenAddress,
-    });
-
-    tokenEntity = {
-      id: tokenId,
-      tokenAddress: tokenAddress.toLowerCase(),
-      decimals: remoteTokenMetadata.decimals,
-      symbol: remoteTokenMetadata.symbol,
-      name: remoteTokenMetadata.name,
-      totalTokenPooledAmount: ZERO_BIG_DECIMAL,
-      totalValuePooledUsd: ZERO_BIG_DECIMAL,
-      usdPrice: ZERO_BIG_DECIMAL,
-    };
+  if (tokenAmountStoredInOtherPool.gt(tokenAmountStoredInCurrentPool)) {
+    return otherPool;
   }
 
-  return tokenEntity!;
+  return currentPool;
 }

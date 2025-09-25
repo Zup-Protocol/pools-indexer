@@ -1,4 +1,4 @@
-import { HandlerContext, Token as TokenEntity } from "generated";
+import { handlerContext, Token as TokenEntity } from "generated";
 import { getContract } from "viem";
 import { ERC20_ABI } from "../abis";
 import { ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "../constants";
@@ -24,7 +24,7 @@ export class TokenService {
   private readonly viemService;
 
   async getOrCreateTokenEntity(
-    context: HandlerContext,
+    context: handlerContext,
     network: IndexerNetwork,
     tokenAddress: string
   ): Promise<TokenEntity> {
@@ -40,12 +40,18 @@ export class TokenService {
         tokenEntity = {
           id: tokenId,
           tokenAddress: tokenAddress.toLowerCase(),
+          mostLiquidPool_id: ZERO_ADDRESS,
           decimals: nativeToken.decimals,
           symbol: nativeToken.symbol,
           name: nativeToken.name,
           totalTokenPooledAmount: ZERO_BIG_DECIMAL,
           totalValuePooledUsd: ZERO_BIG_DECIMAL,
           usdPrice: ZERO_BIG_DECIMAL,
+          liquidityVolumeUSD: ZERO_BIG_DECIMAL,
+          swapVolumeUSD: ZERO_BIG_DECIMAL,
+          tokenLiquidityVolume: ZERO_BIG_DECIMAL,
+          tokenSwapVolume: ZERO_BIG_DECIMAL,
+          chainId: network,
         };
 
         return tokenEntity;
@@ -58,6 +64,7 @@ export class TokenService {
 
       tokenEntity = {
         id: tokenId,
+        mostLiquidPool_id: ZERO_ADDRESS,
         tokenAddress: tokenAddress.toLowerCase(),
         decimals: remoteTokenMetadata.decimals,
         symbol: remoteTokenMetadata.symbol,
@@ -65,6 +72,11 @@ export class TokenService {
         totalTokenPooledAmount: ZERO_BIG_DECIMAL,
         totalValuePooledUsd: ZERO_BIG_DECIMAL,
         usdPrice: ZERO_BIG_DECIMAL,
+        liquidityVolumeUSD: ZERO_BIG_DECIMAL,
+        swapVolumeUSD: ZERO_BIG_DECIMAL,
+        tokenLiquidityVolume: ZERO_BIG_DECIMAL,
+        tokenSwapVolume: ZERO_BIG_DECIMAL,
+        chainId: network,
       };
     }
 

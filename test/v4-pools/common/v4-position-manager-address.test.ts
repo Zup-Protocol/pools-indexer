@@ -55,6 +55,10 @@ describe("V4PositionManagerAddress", () => {
     assert.throws(() => V4PositionManagerAddress.pancakeSwap(IndexerNetwork.HYPER_EVM));
   });
 
+  it("pancakeSwap throws for Sepolia", () => {
+    assert.throws(() => V4PositionManagerAddress.pancakeSwap(IndexerNetwork.SEPOLIA));
+  });
+
   it("pancakeSwap throws for unichain", () => {
     assert.throws(() => V4PositionManagerAddress.pancakeSwap(IndexerNetwork.UNICHAIN));
   });

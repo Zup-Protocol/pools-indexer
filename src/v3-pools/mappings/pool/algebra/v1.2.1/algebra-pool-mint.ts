@@ -1,4 +1,5 @@
 import { AlgebraPool_1_2_1 } from "generated";
+import { DeFiPoolDataSetters } from "../../../../../common/defi-pool-data-setters";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV3PoolMint } from "../../v3-pool-mint";
@@ -17,6 +18,7 @@ AlgebraPool_1_2_1.Mint.handler(async ({ event, context }) => {
     event.params.amount0,
     event.params.amount1,
     BigInt(event.block.timestamp),
-    new PoolSetters(context, event.chainId)
+    new PoolSetters(context, event.chainId),
+    new DeFiPoolDataSetters(context)
   );
 });
