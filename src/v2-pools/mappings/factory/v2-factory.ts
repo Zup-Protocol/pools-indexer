@@ -1,12 +1,12 @@
-import { HandlerContext, Pool as PoolEntity, V2PoolData as V2PoolDataEntity } from "generated";
+import { handlerContext, Pool as PoolEntity, V2PoolData as V2PoolDataEntity } from "generated";
 
-import { ZERO_BIG_DECIMAL } from "../../../common/constants";
+import { defaultDeFiPoolData, ZERO_BIG_DECIMAL } from "../../../common/constants";
 import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { TokenService } from "../../../common/services/token-service";
 
 export async function handleV2PoolCreated(params: {
-  context: HandlerContext;
+  context: handlerContext;
   chainId: number;
   eventTimestamp: bigint;
   token0Address: string;
@@ -26,6 +26,9 @@ export async function handleV2PoolCreated(params: {
     params.chainId,
     params.token1Address
   );
+
+  let defiPoolData = await params.context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(params.eventTimestamp));
+
   const poolId = IndexerNetwork.getEntityIdFromAddress(params.chainId, params.poolAddress);
 
   const v2PoolEntity: V2PoolDataEntity = {
@@ -45,6 +48,12 @@ export async function handleV2PoolCreated(params: {
     token1_id: token1Entity.id,
     totalValueLockedToken1: ZERO_BIG_DECIMAL,
     totalValueLockedUSD: ZERO_BIG_DECIMAL,
+    liquidityVolumeToken0: ZERO_BIG_DECIMAL,
+    liquidityVolumeToken1: ZERO_BIG_DECIMAL,
+    liquidityVolumeUSD: ZERO_BIG_DECIMAL,
+    swapVolumeToken0: ZERO_BIG_DECIMAL,
+    swapVolumeToken1: ZERO_BIG_DECIMAL,
+    swapVolumeUSD: ZERO_BIG_DECIMAL,
     isStablePool: undefined,
     v2PoolData_id: v2PoolEntity.id,
     v3PoolData_id: undefined,
@@ -54,10 +63,16 @@ export async function handleV2PoolCreated(params: {
     poolAddress: params.poolAddress.toLowerCase(),
   };
 
+  defiPoolData = {
+    ...defiPoolData,
+    poolsCount: defiPoolData.poolsCount + 1,
+  };
+
   params.context.Token.set(token0Entity);
   params.context.Token.set(token1Entity);
   params.context.Pool.set(poolEntity);
   params.context.V2PoolData.set(v2PoolEntity);
+  params.context.DeFiPoolData.set(defiPoolData);
 
   await params.context.Protocol.getOrCreate({
     id: params.protocol,

@@ -1,10 +1,11 @@
-import { BigDecimal, HandlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { BigDecimal, handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
 import { sqrtPriceX96toPrice } from "../../../common/cl-pool-converters";
+import { getSwapVolumeFromAmounts } from "../../../common/pool-commons";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount } from "../../../common/token-commons";
 
 export async function handleV4PoolSwap(
-  context: HandlerContext,
+  context: handlerContext,
   poolEntity: PoolEntity,
   token0Entity: TokenEntity,
   token1Entity: TokenEntity,
@@ -17,29 +18,42 @@ export async function handleV4PoolSwap(
   v4PoolSetters: PoolSetters
 ): Promise<void> {
   // Unlike V3, a negative amount represents that amount is being sent to the pool and vice versa, so invert the sign
+  const amount0SignInverted = amount0 * -1n;
+  const amount1SignInverted = amount1 * -1n;
   const tokenAmount0Formatted = formatFromTokenAmount(amount0, token0Entity).times(BigDecimal("-1"));
   const tokenAmount1Formatted = formatFromTokenAmount(amount1, token1Entity).times(BigDecimal("-1"));
 
   let v4PoolEntity = await context.V4PoolData.getOrThrow(poolEntity.id);
 
-  const newPrices = v4PoolSetters.getPricesForPoolWhitelistedTokens(
+  poolEntity = {
+    ...poolEntity,
+    totalValueLockedToken0: poolEntity.totalValueLockedToken0.plus(tokenAmount0Formatted),
+    totalValueLockedToken1: poolEntity.totalValueLockedToken1.plus(tokenAmount1Formatted),
+  };
+
+  [token0Entity, token1Entity] = await v4PoolSetters.updateTokenPricesFromPoolPrices(
     token0Entity,
     token1Entity,
+    poolEntity,
     sqrtPriceX96toPrice(sqrtPriceX96, token0Entity, token1Entity)
   );
 
-  const poolTotalValueLockedToken0 = poolEntity.totalValueLockedToken0.plus(tokenAmount0Formatted);
-  const poolTotalValueLockedToken1 = poolEntity.totalValueLockedToken1.plus(tokenAmount1Formatted);
+  const swapVolumeWithNewPrices = getSwapVolumeFromAmounts(
+    tokenAmount0Formatted,
+    tokenAmount1Formatted,
+    token0Entity,
+    token1Entity
+  );
 
-  const poolTotalValueLockedUSD = poolTotalValueLockedToken0
-    .times(newPrices.token0UpdatedPrice)
-    .plus(poolTotalValueLockedToken1.times(newPrices.token1UpdatedPrice));
+  const updatedPoolTotalValueLockedUSD = poolEntity.totalValueLockedToken0
+    .times(token0Entity.usdPrice)
+    .plus(poolEntity.totalValueLockedToken1.times(token1Entity.usdPrice));
 
-  const token0TotalTokenPooledAmount = token0Entity.totalTokenPooledAmount.plus(tokenAmount0Formatted);
-  const token1TotalTokenPooledAmount = token1Entity.totalTokenPooledAmount.plus(tokenAmount1Formatted);
+  const updatedToken0TotalTokenPooledAmount = token0Entity.totalTokenPooledAmount.plus(tokenAmount0Formatted);
+  const updatedToken1TotalTokenPooledAmount = token1Entity.totalTokenPooledAmount.plus(tokenAmount1Formatted);
 
-  const token0TotalValuePooledUsd = token0TotalTokenPooledAmount.times(newPrices.token0UpdatedPrice);
-  const token1TotalValuePooledUsd = token1TotalTokenPooledAmount.times(newPrices.token1UpdatedPrice);
+  const updatedToken0TotalValuePooledUsd = updatedToken0TotalTokenPooledAmount.times(token0Entity.usdPrice);
+  const updatedToken1TotalValuePooledUsd = updatedToken1TotalTokenPooledAmount.times(token1Entity.usdPrice);
 
   v4PoolEntity = {
     ...v4PoolEntity,
@@ -49,44 +63,36 @@ export async function handleV4PoolSwap(
 
   poolEntity = {
     ...poolEntity,
-    totalValueLockedToken0: poolTotalValueLockedToken0,
-    totalValueLockedToken1: poolTotalValueLockedToken1,
-    totalValueLockedUSD: poolTotalValueLockedUSD,
+    totalValueLockedUSD: updatedPoolTotalValueLockedUSD,
+    swapVolumeToken0: poolEntity.swapVolumeToken0.plus(swapVolumeWithNewPrices.volumeToken0),
+    swapVolumeToken1: poolEntity.swapVolumeToken1.plus(swapVolumeWithNewPrices.volumeToken1),
+    swapVolumeUSD: poolEntity.swapVolumeUSD.plus(swapVolumeWithNewPrices.volumeUSD),
   };
 
   token0Entity = {
     ...token0Entity,
-    totalTokenPooledAmount: token0TotalTokenPooledAmount,
-    totalValuePooledUsd: token0TotalValuePooledUsd,
-    usdPrice: newPrices.token0UpdatedPrice,
+    totalTokenPooledAmount: updatedToken0TotalTokenPooledAmount,
+    totalValuePooledUsd: updatedToken0TotalValuePooledUsd,
+    tokenSwapVolume: token0Entity.tokenSwapVolume.plus(swapVolumeWithNewPrices.volumeToken0),
+    swapVolumeUSD: token0Entity.swapVolumeUSD.plus(swapVolumeWithNewPrices.volumeToken0USD),
   };
 
   token1Entity = {
     ...token1Entity,
-    totalTokenPooledAmount: token1TotalTokenPooledAmount,
-    totalValuePooledUsd: token1TotalValuePooledUsd,
-    usdPrice: newPrices.token1UpdatedPrice,
+    totalTokenPooledAmount: updatedToken1TotalTokenPooledAmount,
+    totalValuePooledUsd: updatedToken1TotalValuePooledUsd,
+    tokenSwapVolume: token1Entity.tokenSwapVolume.plus(swapVolumeWithNewPrices.volumeToken1),
+    swapVolumeUSD: token1Entity.swapVolumeUSD.plus(swapVolumeWithNewPrices.volumeToken1USD),
   };
 
-  await v4PoolSetters.setHourlyData(
-    eventTimestamp,
-    context,
-    token0Entity,
-    token1Entity,
-    poolEntity,
-    amount0,
-    amount1,
-    swapFee
-  );
-
-  await v4PoolSetters.setDailyData(
+  await v4PoolSetters.setIntervalSwapData(
     eventTimestamp,
     context,
     poolEntity,
     token0Entity,
     token1Entity,
-    amount0,
-    amount1,
+    amount0SignInverted,
+    amount1SignInverted,
     swapFee
   );
 

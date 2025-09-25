@@ -1,3 +1,4 @@
+export * from "./algebra-pool-burn";
 export * from "./algebra-pool-collect";
 export * from "./algebra-pool-community-fee";
 export * from "./algebra-pool-fee";

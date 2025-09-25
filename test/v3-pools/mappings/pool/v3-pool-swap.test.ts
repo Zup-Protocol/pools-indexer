@@ -1,5 +1,5 @@
 import assert from "assert";
-import { BigDecimal, HandlerContext } from "generated";
+import { BigDecimal, handlerContext } from "generated";
 import sinon from "sinon";
 import { sqrtPriceX96toPrice } from "../../../../src/common/cl-pool-converters";
 import { getPoolDailyDataId, getPoolHourlyDataId } from "../../../../src/common/pool-commons";
@@ -7,7 +7,7 @@ import { PoolSetters } from "../../../../src/common/pool-setters";
 import { formatFromTokenAmount } from "../../../../src/common/token-commons";
 import { handleV3PoolSwap } from "../../../../src/v3-pools/mappings/pool/v3-pool-swap";
 import {
-  HandlerContextCustomMock,
+  handlerContextCustomMock,
   PoolDailyDataMock,
   PoolHourlyDataMock,
   PoolMock,
@@ -16,18 +16,18 @@ import {
 } from "../../../mocks";
 
 describe("V3PoolSwapHandler", () => {
-  let context: HandlerContext;
+  let context: handlerContext;
   let eventTimestamp = BigInt(Date.now());
   let poolSetters: sinon.SinonStubbedInstance<PoolSetters>;
 
   beforeEach(() => {
-    context = HandlerContextCustomMock();
+    context = handlerContextCustomMock();
     poolSetters = sinon.createStubInstance(PoolSetters);
 
-    poolSetters.getPricesForPoolWhitelistedTokens.returns({
-      token0UpdatedPrice: BigDecimal("1200"),
-      token1UpdatedPrice: BigDecimal("1300"),
-    });
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([
+      { ...new TokenMock(), usdPrice: BigDecimal("1200") },
+      { ...new TokenMock(), usdPrice: BigDecimal("1300") },
+    ]);
   });
 
   afterEach(() => {
@@ -48,11 +48,6 @@ describe("V3PoolSwapHandler", () => {
     const amount1 = BigInt(200);
     let v3PoolData = new V3PoolDataMock();
 
-    poolSetters.getPricesForPoolWhitelistedTokens.returns({
-      token0UpdatedPrice: token0ExpectedUsdPrice,
-      token1UpdatedPrice: token1ExpectedUsdPrice,
-    });
-
     v3PoolData = {
       ...v3PoolData,
       id: pool.id,
@@ -67,6 +62,17 @@ describe("V3PoolSwapHandler", () => {
       ...token1,
       id: token1Id,
     };
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([
+      {
+        ...token0,
+        usdPrice: token0ExpectedUsdPrice,
+      },
+      {
+        ...token1,
+        usdPrice: token1ExpectedUsdPrice,
+      },
+    ]);
 
     context.Pool.set(pool);
     context.Token.set(token0);
@@ -94,24 +100,20 @@ describe("V3PoolSwapHandler", () => {
   });
 
   it(`The handler should call 'getPricesForPoolWhitelistedTokens' in the pool setters with the corrent parameters`, async () => {
-    const token0Id = "toko-cero";
-    const token1Id = "toko-uno";
     let pool = new PoolMock();
     let token0 = new TokenMock();
     let token1 = new TokenMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const token0Id = "toko-cero";
+    const token1Id = "toko-uno";
     const sqrtPriceX96 = BigInt(3432);
-    let poolPrices = sqrtPriceX96toPrice(sqrtPriceX96, token0, token1);
+    const poolPrices = sqrtPriceX96toPrice(sqrtPriceX96, token0, token1);
     const token0ExpectedUsdPrice = BigDecimal("9836276.3222");
     const token1ExpectedUsdPrice = BigDecimal("0.91728716782");
     const tick = BigInt(989756545);
     const amount0 = BigInt(100);
     const amount1 = BigInt(200);
-    let v3PoolData = new V3PoolDataMock();
-
-    poolSetters.getPricesForPoolWhitelistedTokens.returns({
-      token0UpdatedPrice: token0ExpectedUsdPrice,
-      token1UpdatedPrice: token1ExpectedUsdPrice,
-    });
 
     v3PoolData = {
       ...v3PoolData,
@@ -127,6 +129,17 @@ describe("V3PoolSwapHandler", () => {
       ...token1,
       id: token1Id,
     };
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([
+      {
+        ...token0,
+        usdPrice: token0ExpectedUsdPrice,
+      },
+      {
+        ...token1,
+        usdPrice: token1ExpectedUsdPrice,
+      },
+    ]);
 
     context.Pool.set(pool);
     context.Token.set(token0);
@@ -146,7 +159,18 @@ describe("V3PoolSwapHandler", () => {
       v3PoolSetters: poolSetters,
     });
 
-    assert(poolSetters.getPricesForPoolWhitelistedTokens.calledWith(token0, token1, poolPrices));
+    assert(
+      poolSetters.updateTokenPricesFromPoolPrices.calledWith(
+        token0,
+        token1,
+        {
+          ...pool,
+          totalValueLockedToken0: pool.totalValueLockedToken0.plus(formatFromTokenAmount(amount0, token0)),
+          totalValueLockedToken1: pool.totalValueLockedToken1.plus(formatFromTokenAmount(amount1, token1)),
+        },
+        poolPrices
+      )
+    );
   });
 
   it(`When the handler is called, and the token0 amount is a positive number,
@@ -414,11 +438,6 @@ describe("V3PoolSwapHandler", () => {
     let token0Price = BigDecimal("3278");
     let token1Price = BigDecimal("91");
 
-    poolSetters.getPricesForPoolWhitelistedTokens.returns({
-      token0UpdatedPrice: token0Price,
-      token1UpdatedPrice: token1Price,
-    });
-
     token0 = {
       ...token0,
       id: token0Id,
@@ -430,6 +449,8 @@ describe("V3PoolSwapHandler", () => {
       id: token1Id,
       usdPrice: token1Price,
     };
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
 
     pool = {
       ...pool,
@@ -542,7 +563,7 @@ describe("V3PoolSwapHandler", () => {
     });
 
     assert(
-      poolSetters.setHourlyData.calledWithMatch(
+      poolSetters.setIntervalSwapData.calledWithMatch(
         eventTimestamp,
         sinon.match.any,
         sinon.match.any,
@@ -614,7 +635,7 @@ describe("V3PoolSwapHandler", () => {
     });
 
     assert(
-      poolSetters.setDailyData.calledWithMatch(
+      poolSetters.setIntervalSwapData.calledWithMatch(
         eventTimestamp,
         sinon.match.any,
         sinon.match.any,
@@ -670,6 +691,8 @@ describe("V3PoolSwapHandler", () => {
     context.Token.set(token0);
     context.Token.set(token1);
     context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
 
     await handleV3PoolSwap({
       context,
@@ -730,6 +753,8 @@ describe("V3PoolSwapHandler", () => {
       ...token1,
       id: token1Id,
     };
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
 
     context.Pool.set(pool);
     context.Token.set(token0);
@@ -826,5 +851,378 @@ describe("V3PoolSwapHandler", () => {
 
     let updatedV3Pool = await context.V3PoolData.getOrThrow(v3Pool.id);
     assert.equal(updatedV3Pool.tick, tick);
+  });
+
+  it("should sum up the token0 swap volume in the pool if the amount0 is positive and amount1 is negative. The token1 swap volume should not change", async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const initialSwapVolumeToken0 = pool.swapVolumeToken0;
+    const initialSwapVolumeToken1 = pool.swapVolumeToken1;
+    const amount0 = BigInt(100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(-50) * 10n ** BigInt(token1.decimals);
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+
+    pool = {
+      ...pool,
+      swapVolumeToken0: initialSwapVolumeToken0,
+      swapVolumeToken1: initialSwapVolumeToken1,
+    };
+
+    v3PoolData = {
+      ...v3PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    const poolAfter = await context.Pool.getOrThrow(pool.id);
+
+    const expectedToken0Volume = initialSwapVolumeToken0.plus(formatFromTokenAmount(amount0, token0));
+    assert.equal(poolAfter.swapVolumeToken0.toString(), expectedToken0Volume.toString());
+    assert.equal(poolAfter.swapVolumeToken1.toString(), initialSwapVolumeToken1.toString());
+  });
+
+  it("should sum up the token1 swap volume in the pool if the amount1 is positive and amount0 is negative. The token0 swap volume should not change", async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const initialSwapVolumeToken0 = pool.swapVolumeToken0;
+    const initialSwapVolumeToken1 = pool.swapVolumeToken1;
+    const amount0 = BigInt(-100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(50) * 10n ** BigInt(token1.decimals);
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+
+    pool = {
+      ...pool,
+      swapVolumeToken0: initialSwapVolumeToken0,
+      swapVolumeToken1: initialSwapVolumeToken1,
+    };
+
+    v3PoolData = {
+      ...v3PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    const poolAfter = await context.Pool.getOrThrow(pool.id);
+
+    const expectedToken1Volume = initialSwapVolumeToken1.plus(formatFromTokenAmount(amount1, token1));
+    assert.equal(poolAfter.swapVolumeToken1.toString(), expectedToken1Volume.toString());
+    assert.equal(poolAfter.swapVolumeToken0.toString(), initialSwapVolumeToken0.toString());
+  });
+
+  it("should sum up the swap volume usd in the pool based on the amount1 times the token1 usd price if the amount1 is positive and amount0 is negative", async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const initialSwapVolumeUSD = pool.swapVolumeUSD;
+    const amount0 = BigInt(-100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(50) * 10n ** BigInt(token1.decimals);
+    token1.usdPrice = BigDecimal("2.5");
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+
+    v3PoolData = {
+      ...v3PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    const poolAfter = await context.Pool.getOrThrow(pool.id);
+
+    const expectedVolumeUSD = initialSwapVolumeUSD.plus(formatFromTokenAmount(amount1, token1).times(token1.usdPrice));
+    assert.equal(poolAfter.swapVolumeUSD.toString(), expectedVolumeUSD.toString());
+  });
+
+  it("should sum up the swap volume usd in the pool based on the amount0 times the token0 usd price if the amount0 is positive and amount1 is negative", async () => {
+    let pool = new PoolMock();
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const initialSwapVolumeUSD = pool.swapVolumeUSD;
+    const amount0 = BigInt(100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(-50) * 10n ** BigInt(token1.decimals);
+    token0.usdPrice = BigDecimal("3.7");
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+
+    v3PoolData = {
+      ...v3PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    const poolAfter = await context.Pool.getOrThrow(pool.id);
+
+    const expectedVolumeUSD = initialSwapVolumeUSD.plus(formatFromTokenAmount(amount0, token0).times(token0.usdPrice));
+    assert.equal(poolAfter.swapVolumeUSD.toString(), expectedVolumeUSD.toString());
+  });
+
+  it("should sum up the token 0 token swap volume by the amount 0 if the amount0 is positive and amount1 is negative", async () => {
+    let token0 = new TokenMock("0x1");
+    token0.tokenSwapVolume = BigDecimal("9271902710");
+    let token1 = new TokenMock("0x2");
+    let pool = new PoolMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const initialToken0SwapVolume = token0.tokenSwapVolume;
+    const amount0 = BigInt(100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(50) * 10n ** BigInt(token1.decimals) * -1n;
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+
+    v3PoolData = {
+      ...v3PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    const token0After = await context.Token.getOrThrow(token0.id);
+
+    const expectedToken0SwapVolume = initialToken0SwapVolume.plus(formatFromTokenAmount(amount0, token0));
+    assert.equal(token0After.tokenSwapVolume.toString(), expectedToken0SwapVolume.toString());
+  });
+
+  it("should sum up the token 1 token swap volume by the amount 1 if the amount1 is positive and amount0 is negative", async () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    token1.tokenSwapVolume = BigDecimal("11111");
+    let pool = new PoolMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const initialToken1SwapVolume = token1.tokenSwapVolume;
+    const amount0 = BigInt(-100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(50) * 10n ** BigInt(token1.decimals);
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+
+    v3PoolData = {
+      ...v3PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    const token1After = await context.Token.getOrThrow(token1.id);
+
+    const expectedToken1SwapVolume = initialToken1SwapVolume.plus(formatFromTokenAmount(amount1, token1));
+    assert.equal(token1After.tokenSwapVolume.toString(), expectedToken1SwapVolume.toString());
+  });
+
+  it("should sum up the token 0 swap volume usd by the amount 0 times the token0 usd price if the amount0 is positive and amount1 is negative", async () => {
+    let token0 = new TokenMock("0x1");
+    token0.totalTokenPooledAmount = BigDecimal("2162917092");
+
+    let token1 = new TokenMock("0x2");
+    let pool = new PoolMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const initialToken0SwapVolumeUSD = token0.swapVolumeUSD;
+    const amount0 = BigInt(100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(-50) * 10n ** BigInt(token1.decimals);
+    token0.usdPrice = BigDecimal("3.7");
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+
+    v3PoolData = {
+      ...v3PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    const token0After = await context.Token.getOrThrow(token0.id);
+
+    const expectedToken0SwapVolumeUSD = initialToken0SwapVolumeUSD.plus(
+      formatFromTokenAmount(amount0, token0).times(token0.usdPrice)
+    );
+    assert.equal(token0After.swapVolumeUSD.toString(), expectedToken0SwapVolumeUSD.toString());
+  });
+
+  it("should sum up the token 1 swap volume usd by the amount 1 times the token1 usd price if the amount1 is positive and amount0 is negative", async () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    token1.tokenSwapVolume = BigDecimal("88911");
+    let pool = new PoolMock();
+    let v3PoolData = new V3PoolDataMock();
+
+    const initialToken1SwapVolumeUSD = token1.swapVolumeUSD;
+    const amount0 = BigInt(-100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(50) * 10n ** BigInt(token1.decimals);
+    token1.usdPrice = BigDecimal("2.5");
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+
+    v3PoolData = {
+      ...v3PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V3PoolData.set(v3PoolData);
+
+    poolSetters.updateTokenPricesFromPoolPrices.resolves([token0, token1]);
+
+    await handleV3PoolSwap({
+      context,
+      poolEntity: pool,
+      token0Entity: token0,
+      token1Entity: token1,
+      swapAmount0: amount0,
+      swapAmount1: amount1,
+      sqrtPriceX96,
+      tick,
+      eventTimestamp,
+      v3PoolSetters: poolSetters,
+    });
+
+    const token1After = await context.Token.getOrThrow(token1.id);
+
+    const expectedToken1SwapVolumeUSD = initialToken1SwapVolumeUSD.plus(
+      formatFromTokenAmount(amount1, token1).times(token1.usdPrice)
+    );
+    assert.equal(token1After.swapVolumeUSD.toString(), expectedToken1SwapVolumeUSD.toString());
   });
 });

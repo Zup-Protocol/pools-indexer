@@ -1,6 +1,5 @@
 import { UniswapV4PoolManager } from "generated";
 import { SupportedProtocol } from "../../../../../common/enums/supported-protocol";
-import { PoolSetters } from "../../../../../common/pool-setters";
 import { TokenService } from "../../../../../common/services/token-service";
 import { handleV4PoolInitialize } from "../../v4-pool-initialize";
 
@@ -19,7 +18,6 @@ UniswapV4PoolManager.Initialize.handler(async ({ event, context }) => {
     BigInt(event.block.timestamp),
     event.chainId,
     event.srcAddress,
-    new PoolSetters(context, event.chainId),
     TokenService.shared
   );
 });

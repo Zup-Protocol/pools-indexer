@@ -1,16 +1,16 @@
-import { AlgebraPool_1_2_1 } from "generated";
+import { PancakeSwapV3Pool } from "generated";
 import { DeFiPoolDataSetters } from "../../../../../common/defi-pool-data-setters";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
-import { handleV3PoolMint } from "../../v3-pool-mint";
+import { handleV3PoolBurn } from "../../v3-pool-burn";
 
-AlgebraPool_1_2_1.Mint.handler(async ({ event, context }) => {
+PancakeSwapV3Pool.Burn.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
   const poolEntity = await context.Pool.getOrThrow(poolId);
   const token0Entity = await context.Token.getOrThrow(poolEntity.token0_id);
   const token1Entity = await context.Token.getOrThrow(poolEntity.token1_id);
 
-  await handleV3PoolMint(
+  await handleV3PoolBurn(
     context,
     poolEntity,
     token0Entity,

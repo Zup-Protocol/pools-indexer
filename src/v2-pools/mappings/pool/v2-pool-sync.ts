@@ -1,9 +1,9 @@
-import { HandlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
 import { PoolSetters } from "../../../common/pool-setters";
-import { formatFromTokenAmount } from "../../../common/token-commons";
+import { formatFromTokenAmount, pickMostLiquidPoolForToken } from "../../../common/token-commons";
 
 export async function handleV2PoolSync(
-  context: HandlerContext,
+  context: handlerContext,
   poolEntity: PoolEntity,
   token0Entity: TokenEntity,
   token1Entity: TokenEntity,
@@ -12,12 +12,14 @@ export async function handleV2PoolSync(
   eventTimestamp: bigint,
   v2PoolSetters: PoolSetters
 ): Promise<void> {
-  let oldToken0LockedValue = poolEntity.totalValueLockedToken0;
-  let oldToken1LockedValue = poolEntity.totalValueLockedToken1;
-  let reserve0Formatted = formatFromTokenAmount(reserve0, token0Entity);
-  let reserve1Formatted = formatFromTokenAmount(reserve1, token1Entity);
-  let reserve0Difference = reserve0Formatted.minus(oldToken0LockedValue);
-  let reserve1Difference = reserve1Formatted.minus(oldToken1LockedValue);
+  const token0SourcePricePoolEntity = await context.Pool.get(token0Entity.mostLiquidPool_id);
+  const token1SourcePricePoolEntity = await context.Pool.get(token1Entity.mostLiquidPool_id);
+  const oldToken0LockedValue = poolEntity.totalValueLockedToken0;
+  const oldToken1LockedValue = poolEntity.totalValueLockedToken1;
+  const reserve0Formatted = formatFromTokenAmount(reserve0, token0Entity);
+  const reserve1Formatted = formatFromTokenAmount(reserve1, token1Entity);
+  const reserve0Difference = reserve0Formatted.minus(oldToken0LockedValue);
+  const reserve1Difference = reserve1Formatted.minus(oldToken1LockedValue);
 
   const poolTotalValueLockedToken0 = reserve0Formatted;
   const poolTotalValueLockedToken1 = reserve1Formatted;
@@ -43,15 +45,17 @@ export async function handleV2PoolSync(
     ...token0Entity,
     totalTokenPooledAmount: token0TotalTokenPooledAmount,
     totalValuePooledUsd: token0TotalValuePooledUsd,
+    mostLiquidPool_id: pickMostLiquidPoolForToken(token0Entity, poolEntity, token0SourcePricePoolEntity).id,
   };
 
   token1Entity = {
     ...token1Entity,
     totalTokenPooledAmount: token1TotalTokenPooledAmount,
     totalValuePooledUsd: token1TotalValuePooledUsd,
+    mostLiquidPool_id: pickMostLiquidPoolForToken(token1Entity, poolEntity, token1SourcePricePoolEntity).id,
   };
 
-  await v2PoolSetters.setPoolDailyDataTVL(eventTimestamp, poolEntity);
+  await v2PoolSetters.setIntervalDataTVL(eventTimestamp, poolEntity);
 
   context.Pool.set(poolEntity);
   context.Token.set(token0Entity);

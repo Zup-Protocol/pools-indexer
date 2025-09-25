@@ -1,13 +1,23 @@
 import assert from "assert";
-import { BigDecimal, HandlerContext, Pool, PoolDailyData, Token } from "generated";
+import { BigDecimal, handlerContext, Pool, PoolDailyData, PoolHourlyData, Token } from "generated";
 import { sqrtPriceX96toPrice } from "../../src/common/cl-pool-converters";
-import { ONE_HOUR_IN_SECONDS, ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "../../src/common/constants";
+import {
+  defaultPoolDailyData,
+  defaultPoolHourlyData,
+  ONE_HOUR_IN_SECONDS,
+  ZERO_ADDRESS,
+  ZERO_BIG_DECIMAL,
+} from "../../src/common/constants";
 import { IndexerNetwork } from "../../src/common/enums/indexer-network";
-import { getPoolDailyDataId, getPoolHourlyDataId } from "../../src/common/pool-commons";
+import {
+  getLiquidityInflowAndOutflowFromRawAmounts,
+  getPoolDailyDataId,
+  getPoolHourlyDataId,
+} from "../../src/common/pool-commons";
 import { PoolSetters } from "../../src/common/pool-setters";
 import { formatFromTokenAmount } from "../../src/common/token-commons";
 import {
-  HandlerContextCustomMock,
+  handlerContextCustomMock,
   PoolDailyDataMock,
   PoolHourlyDataMock,
   PoolMock,
@@ -17,16 +27,16 @@ import {
 
 describe("PoolSetters", () => {
   let sut: PoolSetters;
-  let context: HandlerContext;
+  let context: handlerContext;
   let network = IndexerNetwork.ETHEREUM;
   let eventTimestamp = BigInt(Math.floor(Date.now() / 1000));
 
   beforeEach(() => {
-    context = HandlerContextCustomMock();
+    context = handlerContextCustomMock();
     sut = new PoolSetters(context, network);
   });
 
-  it(`When calling 'setPoolDailyDataTVL' and a PoolDailyData entity
+  it(`When calling 'setIntervalDataTVL' and a PoolDailyData entity
       has already been created in the same day, the TVL should be updated
       to the pool's current one`, async () => {
     let poolTotalValueLockedUSD = BigDecimal("100.298");
@@ -48,7 +58,7 @@ describe("PoolSetters", () => {
     } as PoolDailyData;
 
     context.PoolDailyData.set(oldPoolDailyData);
-    await sut.setPoolDailyDataTVL(BigInt(eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS * 2)), pool);
+    await sut.setIntervalDataTVL(BigInt(eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS * 2)), pool);
 
     let updatedDailyData = await context.PoolDailyData.get(oldPoolDailyData.id);
 
@@ -71,7 +81,98 @@ describe("PoolSetters", () => {
     );
   });
 
-  it(`When calling 'setPoolDailyDataTVL' and a PoolDailyData entity
+  it(`When calling 'setIntervalDataTVL' and a PoolHourlyData entity
+      has already been created in the same hour, the TVL should be updated
+      to the pool's current one`, async () => {
+    let poolTotalValueLockedUSD = BigDecimal("100.298");
+    let poolTotalValueLockedToken0 = BigDecimal("1.121");
+    let poolTotalValueLockedToken1 = BigDecimal("9872.2");
+    let eventTimestamp = BigInt(1656105600);
+    let pool: Pool = {
+      totalValueLockedUSD: poolTotalValueLockedUSD,
+      totalValueLockedToken0: poolTotalValueLockedToken0,
+      totalValueLockedToken1: poolTotalValueLockedToken1,
+      createdAtTimestamp: eventTimestamp,
+    } as Pool;
+    let oldPoolHourlyData: PoolHourlyData = {
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      totalValueLockedUSD: ZERO_BIG_DECIMAL,
+      totalValueLockedToken0: ZERO_BIG_DECIMAL,
+      totalValueLockedToken1: ZERO_BIG_DECIMAL,
+      pool_id: pool.id,
+    } as PoolHourlyData;
+
+    context.PoolHourlyData.set(oldPoolHourlyData);
+    await sut.setIntervalDataTVL(BigInt(eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS / 2)), pool);
+
+    let updatedHourlyData = await context.PoolHourlyData.get(oldPoolHourlyData.id);
+
+    assert.equal(
+      updatedHourlyData!.totalValueLockedUSD,
+      poolTotalValueLockedUSD,
+      "totalValueLockedUSD have not been updated"
+    );
+
+    assert.equal(
+      updatedHourlyData!.totalValueLockedToken0,
+      poolTotalValueLockedToken0,
+      "totalValueLockedToken0 have not been updated"
+    );
+
+    assert.equal(
+      updatedHourlyData!.totalValueLockedToken1,
+      poolTotalValueLockedToken1,
+      "totalValueLockedToken1 have not been updated"
+    );
+  });
+
+  it(`When calling 'setIntervalDataTVL' and there is not a PoolHourlyData entity
+      created in the same hour, a new one should be created and updated.`, async () => {
+    let poolTotalValueLockedUSD = BigDecimal("100.298");
+    let poolTotalValueLockedToken0 = BigDecimal("1.121");
+    let poolTotalValueLockedToken1 = BigDecimal("9872.2");
+    let oldEventTimestamp = BigInt(1656105600);
+    let newEventTimestamp = BigInt(1656105600) + BigInt(ONE_HOUR_IN_SECONDS * 2);
+    let pool: Pool = {
+      totalValueLockedUSD: poolTotalValueLockedUSD,
+      totalValueLockedToken0: poolTotalValueLockedToken0,
+      totalValueLockedToken1: poolTotalValueLockedToken1,
+      createdAtTimestamp: oldEventTimestamp,
+    } as Pool;
+    let oldPoolHourlyData: PoolHourlyData = {
+      id: getPoolHourlyDataId(oldEventTimestamp, pool),
+      totalValueLockedUSD: BigDecimal("129861892618291"),
+      totalValueLockedToken0: BigDecimal("129861892618291"),
+      totalValueLockedToken1: BigDecimal("129861892618291"),
+      pool_id: pool.id,
+    } as PoolHourlyData;
+
+    context.PoolHourlyData.set(oldPoolHourlyData);
+
+    await sut.setIntervalDataTVL(BigInt(newEventTimestamp), pool);
+
+    let updatedHourlyData = await context.PoolHourlyData.get(getPoolHourlyDataId(newEventTimestamp, pool));
+
+    assert.equal(
+      updatedHourlyData!.totalValueLockedUSD,
+      poolTotalValueLockedUSD,
+      "totalValueLockedUSD have not been updated"
+    );
+
+    assert.equal(
+      updatedHourlyData!.totalValueLockedToken0,
+      poolTotalValueLockedToken0,
+      "totalValueLockedToken0 have not been updated"
+    );
+
+    assert.equal(
+      updatedHourlyData!.totalValueLockedToken1,
+      poolTotalValueLockedToken1,
+      "totalValueLockedToken1 have not been updated"
+    );
+  });
+
+  it(`When calling 'setIntervalDataTVL' and a PoolDailyData entity
       has not been created in the same day, a new one should be created
       and the TVL should be set to the pool's current one
       `, async () => {
@@ -96,7 +197,7 @@ describe("PoolSetters", () => {
     } as PoolDailyData;
 
     context.PoolDailyData.set(oldDailyPoolDataYesterday);
-    await sut.setPoolDailyDataTVL(todayEventTimestamp, pool);
+    await sut.setIntervalDataTVL(todayEventTimestamp, pool);
 
     let updatedDailyPoolDataToday = await context.PoolDailyData.get(getPoolDailyDataId(todayEventTimestamp, pool));
     let updatedDailyPoolDataYesterday = await context.PoolDailyData.get(oldDailyPoolDataYesterday.id);
@@ -138,42 +239,63 @@ describe("PoolSetters", () => {
     );
   });
 
-  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
-      token0 stable and token1 non-stable it should return the new token1
-      and the token0 price`, async () => {
-    let sqrtPriceX96 = BigInt("132117387656662503710917528654277782");
-    let stableToken: Token = {
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of 
+    token0 stable and token1 non-stable it should return the new token1
+    and the token0 price`, async () => {
+    let pool = new PoolMock();
+
+    pool = {
+      ...pool,
+      totalValueLockedToken0: BigDecimal("1200.121"),
+      totalValueLockedToken1: BigDecimal("9872.2"),
+    };
+
+    const sqrtPriceX96 = BigInt("132117387656662503710917528654277782");
+    const stableToken: Token = {
+      ...new TokenMock(),
       id: IndexerNetwork.getEntityIdFromAddress(network, IndexerNetwork.stablecoinsAddresses(network)[0]),
       tokenAddress: IndexerNetwork.stablecoinsAddresses(network)[0],
       decimals: 6,
     } as Token;
 
-    let nonStableToken: Token = {
+    const nonStableToken: Token = {
+      ...new TokenMock(),
       id: "0xB528edBef013aff855ac3c50b381f253aF13b997",
       tokenAddress: "0xB528edBef013aff855ac3c50b381f253aF13b997",
       decimals: 18,
     } as Token;
 
-    let prices = sut.getPricesForPoolWhitelistedTokens(
+    const prices = await sut.updateTokenPricesFromPoolPrices(
       stableToken,
       nonStableToken,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, stableToken, nonStableToken)
     );
 
-    assert.equal(prices.token1UpdatedPrice.toString(), "0.359616170342539443");
-    assert.equal(prices.token0UpdatedPrice.toString(), "1");
+    assert.equal(prices[1].usdPrice.toString(), "0.359616170342539443");
+    assert.equal(prices[0].usdPrice.toString(), "1");
   });
 
-  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of
       token0 non-stable and token1 stable it should correctly return the
-      new token0 and token1 price`, () => {
+      new token0 and token1 price`, async () => {
+    let pool = new PoolMock();
+
+    pool = {
+      ...pool,
+      totalValueLockedToken0: BigDecimal("538.121"),
+      totalValueLockedToken1: BigDecimal("59000000.2"),
+    };
+
     const token0: Token = {
+      ...new TokenMock(),
       id: "toko-0",
       tokenAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
       decimals: 8,
     } as Token;
 
     const token1: Token = {
+      ...new TokenMock(),
       id: "toko-1",
       tokenAddress: IndexerNetwork.stablecoinsAddresses(network)[0],
       decimals: 6,
@@ -181,24 +303,34 @@ describe("PoolSetters", () => {
 
     const sqrtPriceX96 = BigInt("2422644741646880465971970308851");
 
-    const newPrices = sut.getPricesForPoolWhitelistedTokens(
+    const newPrices = await sut.updateTokenPricesFromPoolPrices(
       token0,
       token1,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(newPrices.token0UpdatedPrice.toString(), "93501.87063469");
-    assert.equal(newPrices.token1UpdatedPrice.toString(), "1");
+    assert.equal(newPrices[0].usdPrice.toString(), "93501.87063469");
+    assert.equal(newPrices[1].usdPrice.toString(), "1");
   });
 
-  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
-      token0 wrapped native and token1 non-wrapped native it should correctly 
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of
+      token0 wrapped native and token1 non-wrapped native it should correctly
       return the token1 price based on the wrapped native price.
-      The wrapped native token should remain unchanged`, () => {
-    let sqrtPriceX96 = BigInt("2448752485024712708594653706276");
+      The wrapped native token should remain unchanged`, async () => {
+    let pool = new PoolMock();
+
+    pool = {
+      ...pool,
+      totalValueLockedToken0: BigDecimal("932.121"),
+      totalValueLockedToken1: BigDecimal("10223.2"),
+    };
+
+    const sqrtPriceX96 = BigInt("10933698353486636695658558");
     const network = IndexerNetwork.ETHEREUM;
-    let token0Price = BigDecimal("3340.53");
+    const token0Price = BigDecimal("3340.53");
     const token0: Token = {
+      ...new TokenMock(),
       id: "toko-0",
       tokenAddress: IndexerNetwork.wrappedNativeAddress(network),
       decimals: 18,
@@ -206,29 +338,40 @@ describe("PoolSetters", () => {
     } as Token;
 
     const token1: Token = {
+      ...new TokenMock(),
       id: "toko-1",
       tokenAddress: "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83",
-      decimals: 18,
+      decimals: 9,
     } as Token;
 
-    let tokenPrices = sut.getPricesForPoolWhitelistedTokens(
+    let tokenPrices = await sut.updateTokenPricesFromPoolPrices(
       token0,
       token1,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(tokenPrices.token1UpdatedPrice.toString(), "3.4969124908482705");
-    assert.equal(tokenPrices.token0UpdatedPrice.toString(), token0Price.toString());
+    assert.equal(tokenPrices[1].usdPrice.toString(), "175.40435324");
+    assert.equal(tokenPrices[0].usdPrice.toString(), token0Price.toString());
   });
 
-  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of
       token0 native and token1 non-native it should correctly 
       return the token1 price based on the native price.
-      The native token should remain unchanged`, () => {
-    let sqrtPriceX96 = BigInt("2448752485024712708594653706276");
-    let token0Price = BigDecimal("3340.53");
+      The native token should remain unchanged`, async () => {
+    let pool = new PoolMock();
+
+    pool = {
+      ...pool,
+      totalValueLockedToken0: BigDecimal("932.121"),
+      totalValueLockedToken1: BigDecimal("102239.2"),
+    };
+
+    const sqrtPriceX96 = BigInt("2448752485024712708594653706276");
+    const token0Price = BigDecimal("3340.53");
 
     const token0: Token = {
+      ...new TokenMock(),
       id: "toko-0",
       tokenAddress: ZERO_ADDRESS,
       decimals: 18,
@@ -236,29 +379,39 @@ describe("PoolSetters", () => {
     } as Token;
 
     const token1: Token = {
+      ...new TokenMock(),
       id: "toko-1",
       tokenAddress: "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83",
       decimals: 18,
     } as Token;
 
-    let tokenPrices = sut.getPricesForPoolWhitelistedTokens(
+    const tokenPrices = await sut.updateTokenPricesFromPoolPrices(
       token0,
       token1,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(tokenPrices.token1UpdatedPrice.toString(), "3.4969124908482705");
-    assert.equal(tokenPrices.token0UpdatedPrice.toString(), token0Price.toString());
+    assert.equal(tokenPrices[1].usdPrice.toString(), "3.4969124908482705");
+    assert.equal(tokenPrices[0].usdPrice.toString(), token0Price.toString());
   });
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of
+        token1 native and token0 non-native it should correctly
+        return the token0 price based on the native price.
+        The native token should remain unchanged`, async () => {
+    let pool = new PoolMock();
 
-  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
-      token1 native and token0 non-native it should correctly 
-      return the token0 price based on the native price.
-      The native token should remain unchanged`, () => {
-    let sqrtPriceX96 = BigInt("2448752485024712708594653706276");
-    let token1Price = BigDecimal("3340.53");
+    pool = {
+      ...pool,
+      totalValueLockedToken0: BigDecimal("9678414.121"),
+      totalValueLockedToken1: BigDecimal("1784.2"),
+    };
+
+    const sqrtPriceX96 = BigInt("2707030685633932925819314982");
+    const token1Price = BigDecimal("4189.53");
 
     const token1: Token = {
+      ...new TokenMock(),
       id: "toko-1",
       tokenAddress: ZERO_ADDRESS,
       decimals: 18,
@@ -266,83 +419,102 @@ describe("PoolSetters", () => {
     } as Token;
 
     const token0: Token = {
+      ...new TokenMock(),
       id: "toko-0",
       tokenAddress: "0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83",
       decimals: 18,
     } as Token;
 
-    let tokenPrices = sut.getPricesForPoolWhitelistedTokens(
+    const tokenPrices = await sut.updateTokenPricesFromPoolPrices(
       token0,
       token1,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(tokenPrices.token1UpdatedPrice.toString(), token1Price.toString());
-    assert.equal(tokenPrices.token0UpdatedPrice.toString(), "3191140.95937615219643823");
+    assert.equal(tokenPrices[1].usdPrice.toString(), token1Price.toString());
+    assert.equal(tokenPrices[0].usdPrice.toString(), "4.890941796742165595");
   });
 
-  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of
       token1 wrapped native and token0 non-wrapped native it should correctly
       return the token0 price based on the wrapped native price.
       The token 1 price should remain unchanged`, async () => {
+    const pool = new PoolMock();
+
     const sqrtPriceX96 = BigInt("41900264649575989012484016231357126");
     const token1USDPrice = BigDecimal("3340.53");
 
     const token0: Token = {
+      ...new TokenMock(),
       id: "toko-0",
       tokenAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
       decimals: 8,
     } as Token;
 
     const token1: Token = {
+      ...new TokenMock(),
       id: "toko-1",
       tokenAddress: IndexerNetwork.wrappedNativeAddress(network),
       decimals: 18,
       usdPrice: token1USDPrice,
     } as Token;
 
-    const newPrices = sut.getPricesForPoolWhitelistedTokens(
+    const newPrices = await sut.updateTokenPricesFromPoolPrices(
       token0,
       token1,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(newPrices.token0UpdatedPrice.toString(), "93430.72975104");
-    assert.equal(newPrices.token1UpdatedPrice.toString(), token1USDPrice.toString());
+    assert.equal(newPrices[0].usdPrice.toString(), "93430.72975104");
+    assert.equal(newPrices[1].usdPrice.toString(), token1USDPrice.toString());
   });
 
-  it(`when calling 'getPricesForPoolWhitelistedTokens' with a pool of token0
+  it(`when calling 'updateTokenPricesFromPoolPrices' with a pool of token0
       stable and token1 stable it should correctly
       retutn the new token0 and token1 price`, async () => {
+    const pool = new PoolMock();
     const sqrtPriceX96 = BigInt("79308353598837787813110990092");
     const token0: Token = {
+      ...new TokenMock(),
       tokenAddress: IndexerNetwork.stablecoinsAddresses(network)[0],
       decimals: 6,
     } as Token;
 
     const token1: Token = {
+      ...new TokenMock(),
       tokenAddress: IndexerNetwork.stablecoinsAddresses(network)[1],
       decimals: 6,
     } as Token;
 
-    let newPrices = sut.getPricesForPoolWhitelistedTokens(
+    const newPrices = await sut.updateTokenPricesFromPoolPrices(
       token0,
       token1,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(newPrices.token0UpdatedPrice.toString(), "1.002025");
-    assert.equal(newPrices.token1UpdatedPrice.toString(), "0.997979");
+    assert.equal(newPrices[0].usdPrice.toString(), "1.002025");
+    assert.equal(newPrices[1].usdPrice.toString(), "0.997979");
   });
 
-  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of token0
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of token0
     that is not mapped, and a token1 that is not mapped, but the token0 has its usd
     price set by some reason, the token1 usd price should be returned based on the token0 price.
-    While the token0 usd price should remain unchanged`, () => {
+    While the token0 usd price should remain unchanged`, async () => {
+    let pool = new PoolMock();
     const token0UsdPrice = BigDecimal("113848.2042535");
-    const sqrtPriceX96 = BigInt("79489222257038229567344314831");
+    const sqrtPriceX96 = BigInt("2659594470916659425799358867195");
+
+    pool = {
+      ...pool,
+      totalValueLockedToken0: BigDecimal("1126.3223"),
+      totalValueLockedToken1: BigDecimal("11267186.3223"),
+    };
 
     const token0: Token = {
+      ...new TokenMock(),
       id: "toko-0",
       tokenAddress: "0x0000000000000000000000000000000000000001",
       decimals: 8,
@@ -350,50 +522,57 @@ describe("PoolSetters", () => {
     } as Token;
 
     const token1: Token = {
+      ...new TokenMock(),
       id: "toko-1",
       tokenAddress: "0x0000000000000000000000000000000000000002",
-      decimals: 8,
+      decimals: 6,
       usdPrice: BigDecimal(0),
     } as Token;
 
-    const newPrices = sut.getPricesForPoolWhitelistedTokens(
+    const newPrices = await sut.updateTokenPricesFromPoolPrices(
       token0,
       token1,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(newPrices.token0UpdatedPrice.toString(), token0UsdPrice.toString());
-    assert.equal(newPrices.token1UpdatedPrice.toString(), "113101.6281344");
+    assert.equal(newPrices[0].usdPrice.toString(), token0UsdPrice.toString());
+    assert.equal(newPrices[1].usdPrice.toString(), "1.01031");
   });
 
-  it(`When calling 'getPricesForPoolWhitelistedTokens' with a pool of token0
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of token0
     that is not mapped, and a token1 that is not mapped, but the token1 has its usd
     price set by some reason, the token0 usd price should be return
-    based on the token1 price. While the token1 usd price should remain unchanged`, () => {
+    based on the token1 price. While the token1 usd price should remain unchanged`, async () => {
+    const pool = new PoolMock();
+
     const token1UsdPrice = BigDecimal("1.002");
     const sqrtPriceX96 = BigInt("58252955171373273082115870408");
 
     const token0: Token = {
+      ...new TokenMock(),
       id: "toko-0",
       tokenAddress: "0x0000000000000000000000000000000000000001",
       decimals: 18,
     } as Token;
 
     const token1: Token = {
+      ...new TokenMock(),
       id: "toko-1",
       tokenAddress: "0x0000000000000000000000000000000000000002",
       decimals: 18,
       usdPrice: token1UsdPrice,
     } as Token;
 
-    const newPrices = sut.getPricesForPoolWhitelistedTokens(
+    const newPrices = await sut.updateTokenPricesFromPoolPrices(
       token0,
       token1,
+      pool,
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(newPrices.token1UpdatedPrice.toString(), token1UsdPrice.toString());
-    assert.equal(newPrices.token0UpdatedPrice.toString(), "0.541682092007859127");
+    assert.equal(newPrices[1].usdPrice.toString(), token1UsdPrice.toString());
+    assert.equal(newPrices[0].usdPrice.toString(), "0.541682092007859127");
   });
 
   it(`When calling set hourly data, with the amount0 negative
@@ -428,7 +607,7 @@ describe("PoolSetters", () => {
     context.Token.set(token0);
     context.Token.set(token1);
 
-    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
 
     const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
     const expectedNewFees = currentFees.plus(formatFromTokenAmount((amount1 * BigInt(swapFee)) / 1000000n, token1));
@@ -480,7 +659,7 @@ describe("PoolSetters", () => {
     context.Token.set(token0);
     context.Token.set(token1);
 
-    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
 
     const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
     const expectedNewFees = currentFees.plus(formatFromTokenAmount((amount0 * BigInt(swapFee)) / 1000000n, token0));
@@ -535,7 +714,7 @@ describe("PoolSetters", () => {
     context.Token.set(token0);
     context.Token.set(token1);
 
-    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
 
     const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
     const token0ExpectedSwapFee = formatFromTokenAmount((amount0 * BigInt(swapFee)) / 1000000n, token0);
@@ -594,7 +773,7 @@ describe("PoolSetters", () => {
     context.Token.set(token0);
     context.Token.set(token1);
 
-    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
 
     const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
     const token1ExpectedSwapFee = formatFromTokenAmount((amount1 * BigInt(swapFee)) / 1000000n, token1);
@@ -658,7 +837,7 @@ describe("PoolSetters", () => {
     context.V4PoolData.set(v4PoolData);
 
     for (let i = 0; i < callTimes; i++) {
-      await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+      await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
     }
 
     const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(currentHourlyId);
@@ -727,7 +906,7 @@ describe("PoolSetters", () => {
     context.V4PoolData.set(v4PoolData);
 
     for (let i = 0; i < callTimes; i++) {
-      await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+      await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
     }
 
     const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(currentHourlyId);
@@ -784,7 +963,7 @@ describe("PoolSetters", () => {
 
       hourIds.push(currentHourlyId);
 
-      await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+      await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
       const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(currentHourlyId);
 
       assert.deepEqual(
@@ -834,7 +1013,7 @@ describe("PoolSetters", () => {
 
       hourIds.push(currentHourlyId);
 
-      await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+      await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
       const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(currentHourlyId);
 
       assert.deepEqual(
@@ -867,7 +1046,7 @@ describe("PoolSetters", () => {
     context.Token.set(token0);
     context.Token.set(token1);
 
-    await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
     const poolDailyDataUpdated = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
 
     assert.deepEqual(poolDailyDataUpdated.totalValueLockedToken0, pool.totalValueLockedToken0);
@@ -931,7 +1110,7 @@ describe("PoolSetters", () => {
     for (let i = 0; i < callTimes; i++) {
       eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS);
 
-      await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+      await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
     }
 
     const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(currentDailyId);
@@ -1007,7 +1186,7 @@ describe("PoolSetters", () => {
     for (let i = 0; i < callTimes; i++) {
       eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS * 2);
 
-      await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+      await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
     }
 
     const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(currentDailyId);
@@ -1071,7 +1250,7 @@ describe("PoolSetters", () => {
 
       dayIds.push(currentDayId);
 
-      await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+      await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
       const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(currentDayId);
       const expectedToken0Fees = formatFromTokenAmount(
         (amount0 * BigInt(pool.currentFeeTier)) / BigInt(1000000),
@@ -1132,7 +1311,7 @@ describe("PoolSetters", () => {
 
       dayIds.push(currentDayId);
 
-      await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+      await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
       const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(currentDayId);
       const expectedToken1Fees = formatFromTokenAmount(
         (amount1 * BigInt(pool.currentFeeTier)) / BigInt(1000000),
@@ -1180,7 +1359,7 @@ describe("PoolSetters", () => {
     context.Token.set(token0);
     context.Token.set(token1);
 
-    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
     const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
     const exepectedFeesToken0 = currentFees.plus(
       formatFromTokenAmount((amount0 * BigInt(swapFee)) / BigInt(1000000n), token0)
@@ -1221,7 +1400,7 @@ describe("PoolSetters", () => {
     context.Token.set(token0);
     context.Token.set(token1);
 
-    await sut.setHourlyData(eventTimestamp, context, token0, token1, pool, amount0, amount1, swapFee);
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
     const updatedPoolHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
     const expectedToken1Fees = currentFees.plus(
       formatFromTokenAmount((amount1 * BigInt(swapFee)) / BigInt(1000000n), token1)
@@ -1263,12 +1442,1761 @@ describe("PoolSetters", () => {
     context.Token.set(token0);
     context.Token.set(token1);
 
-    await sut.setDailyData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1, swapFee);
     const updatedPoolDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
     const expectedToken1Fees = currentFees.plus(
       formatFromTokenAmount((amount1 * BigInt(swapFee)) / BigInt(1000000n), token1)
     );
 
     assert.deepEqual(updatedPoolDailyData.feesToken1, expectedToken1Fees);
+  });
+
+  it(`should update the token0 price, if calling 'updateTokenPricesFromPoolPrices'
+    from a pool that is not the current most liquid, but the new price, is within
+    the outlier price threshold compared to the current price. The most liquid pool
+    should remain the same`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0MostLiquidPool = new PoolMock("0xM05ST_LIQUID_POOL_ID_0");
+    const token1MostLiquidPool = new PoolMock("0xM05ST_LIQUID_POOL_ID_1");
+    const currentPool = new PoolMock("0xNOT_MOST_LIQUID_POOL_ID");
+
+    const token0: Token = {
+      ...new TokenMock("0x0000000000000000000000000000000000000012"),
+      mostLiquidPool_id: token0MostLiquidPool.id,
+      usdPrice: BigDecimal("113800"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock("0x0000000000000000000000000000000000000002"),
+      mostLiquidPool_id: token1MostLiquidPool.id,
+      usdPrice: BigDecimal("111555"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...currentPool,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].usdPrice, BigDecimal("111543.3929522"), "price is not updated correctly");
+    assert.deepEqual(result[0].mostLiquidPool_id, token0MostLiquidPool.id, "the most liquid pool should not change");
+  });
+
+  it(`should update the token1 price, if calling 'updateTokenPricesFromPoolPrices'
+    from a pool that is not the current most liquid, but the new price, is within
+    the outlier price threshold compared to the current price. 
+    The most liquid pool should remain the same`, async () => {
+    const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
+    const token0MostLiquidPool = new PoolMock("0xM05ST_LIQUID_POOL_ID_0");
+    const token1MostLiquidPool = new PoolMock("0xM05ST_LIQUID_POOL_ID_1");
+    const currentPool = new PoolMock("0xNOT_MOST_LIQUID_POOL_ID");
+    const token0Address = IndexerNetwork.wrappedNativeAddress(network);
+    const token1Address = IndexerNetwork.stablecoinsAddresses(network)[0];
+
+    const token0: Token = {
+      ...new TokenMock(token0Address),
+      tokenAddress: token0Address,
+      mostLiquidPool_id: token0MostLiquidPool.id,
+      usdPrice: BigDecimal("4300"),
+      decimals: 18,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Address),
+      tokenAddress: token1Address,
+      mostLiquidPool_id: token1MostLiquidPool.id,
+      usdPrice: BigDecimal("0.8"),
+      decimals: 6,
+    };
+
+    const pool: Pool = {
+      ...currentPool,
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].usdPrice.toString(), BigDecimal("1").toString(), "price is not updated correctly");
+    assert.deepEqual(result[1].mostLiquidPool_id, token1MostLiquidPool.id, "the most liquid pool should not change");
+  });
+
+  it(`should not update the token0 price, if calling 'updateTokenPricesFromPoolPrices'
+    from a pool that is not the current most liquid, and the new price is
+    not within the outlier price threshold compared to the current price`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0MostLiquidPool: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0"),
+      totalValueLockedToken0: BigDecimal("92168725178257164265142651452"),
+      token0_id: token0Id,
+    };
+
+    const token1MostLiquidPool: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1"),
+      totalValueLockedToken0: BigDecimal("92168725178257164265142651452"),
+      token1_id: token1Id,
+    };
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      mostLiquidPool_id: token0MostLiquidPool.id,
+      usdPrice: BigDecimal("21"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      mostLiquidPool_id: token1MostLiquidPool.id,
+      usdPrice: BigDecimal("111555"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xNOT_MOST_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("1"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(token0MostLiquidPool);
+    context.Pool.set(token1MostLiquidPool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].usdPrice, token0.usdPrice);
+  });
+
+  it(`should not update the token1 price, if calling 'updateTokenPricesFromPoolPrices'
+    from a pool that is not the current most liquid, and the new price is
+    not within the outlier price threshold compared to the current price`, async () => {
+    const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
+    const token0Address = IndexerNetwork.wrappedNativeAddress(network);
+    const token1Address = IndexerNetwork.stablecoinsAddresses(network)[0];
+
+    const token0MostLiquidPool: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0"),
+      totalValueLockedToken0: BigDecimal("92168725178257164265142651452"),
+      token0_id: token0Address,
+    };
+
+    const token1MostLiquidPool: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1"),
+      totalValueLockedToken0: BigDecimal("92168725178257164265142651452"),
+      token1_id: token1Address,
+    };
+
+    const token0: Token = {
+      ...new TokenMock(token0Address),
+      tokenAddress: token0Address,
+      mostLiquidPool_id: token0MostLiquidPool.id,
+      usdPrice: BigDecimal("4300"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Address),
+      tokenAddress: token1Address,
+      mostLiquidPool_id: token1MostLiquidPool.id,
+      usdPrice: BigDecimal("0.002"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xNOT_MOST_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("4300"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(token0MostLiquidPool);
+    context.Pool.set(token1MostLiquidPool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].usdPrice.toString(), token1.usdPrice.toString());
+  });
+
+  it(`should not update the token0 price when calling 'updateTokenPricesFromPoolPrices'
+    if the new price is outside the threshold, the pool TVL is unbalanced with the new
+    prices, and the price has broken the threshold going up`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      usdPrice: BigDecimal("1.23"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      usdPrice: BigDecimal("111555"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xNOT_MOST_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("516752167"),
+      totalValueLockedToken1: BigDecimal("1"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].usdPrice, token0.usdPrice);
+  });
+
+  it(`should not update the token1 price when calling 'updateTokenPricesFromPoolPrices'
+    if the new price is outside the threshold, the pool TVL is unbalanced with the new
+    prices, and the price has broken the threshold going up`, async () => {
+    const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
+    const token0Address = IndexerNetwork.wrappedNativeAddress(network);
+    const token1Address = IndexerNetwork.stablecoinsAddresses(network)[0];
+
+    const token0: Token = {
+      ...new TokenMock(token0Address),
+      tokenAddress: token0Address,
+      usdPrice: BigDecimal("4300"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Address),
+      tokenAddress: token1Address,
+      usdPrice: BigDecimal("0.002"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xNOT_MOST_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("2891628916281219826918"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].usdPrice.toString(), token1.usdPrice.toString());
+  });
+
+  it(`should set the token0 price if the old price is zero,
+    the most liquid pool is not set yet, and the token 1
+    and token0 tvl usd is balanced`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      usdPrice: ZERO_BIG_DECIMAL,
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      usdPrice: BigDecimal("111555"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("1"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].usdPrice.toString(), "111543.3929522");
+  });
+
+  it(`should set the token0 most liquid pool as the current
+    one if the, the most liquid pool is not set yet, and the token 1
+    and token0 tvl usd is balanced`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      usdPrice: ZERO_BIG_DECIMAL,
+      mostLiquidPool_id: ZERO_ADDRESS,
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      usdPrice: BigDecimal("111555"),
+      mostLiquidPool_id: ZERO_ADDRESS,
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("1"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].mostLiquidPool_id, pool.id);
+  });
+
+  it(`should set the token1 price if the old price is zero,
+    the most liquid pool is not set yet, and the token 1
+    and token0 tvl usd is balanced`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      usdPrice: BigDecimal("19500"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      usdPrice: ZERO_BIG_DECIMAL,
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("1"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].usdPrice.toString(), "19502.02914244");
+  });
+
+  it(`should set the token1 most liquid pool as the current,
+    if the most liquid pool is not set yet, and the token 1
+    and token0 tvl usd is balanced`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      usdPrice: BigDecimal("19500"),
+      mostLiquidPool_id: ZERO_ADDRESS,
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      usdPrice: ZERO_BIG_DECIMAL,
+      mostLiquidPool_id: ZERO_ADDRESS,
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("1"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].mostLiquidPool_id, pool.id);
+  });
+
+  it(`should not set the token1 price if the token 1
+    and token0 tvl usd with the new prices is not
+    balanced even if the old price is zero,
+    and the most liquid pool is not set yet, `, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      usdPrice: BigDecimal("19500"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      usdPrice: ZERO_BIG_DECIMAL,
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("12896178251752176"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].usdPrice.toString(), "0");
+  });
+
+  it(`should not set the token0 price if the token 1
+    and token0 tvl usd with the new prices is not
+    balanced even if the old price is zero,
+    and the most liquid pool is not set yet, `, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      usdPrice: ZERO_BIG_DECIMAL,
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      usdPrice: BigDecimal("232"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      totalValueLockedToken0: BigDecimal("86398232981"),
+      totalValueLockedToken1: BigDecimal("1"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].usdPrice.toString(), "0");
+  });
+
+  it(`should set the token0 usd price if the new price is outside
+    the threshold going down with unbalanced TVL, but the pool setting the price,
+    is the current most liquid`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const currentPool = new PoolMock("0xNOT_MOST_LIQUID_POOL_ID");
+    const token0MostLiquidPool = new PoolMock(currentPool.id);
+    const token1MostLiquidPool = new PoolMock("0xM05ST_LIQUID_POOL_ID_1");
+
+    const token0: Token = {
+      ...new TokenMock("0x0000000000000000000000000000000000000012"),
+      mostLiquidPool_id: token0MostLiquidPool.id,
+      usdPrice: BigDecimal("1289162891628916289162891"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock("0x0000000000000000000000000000000000000002"),
+      mostLiquidPool_id: token1MostLiquidPool.id,
+      usdPrice: BigDecimal("23500"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...currentPool,
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken0: BigDecimal("2961826782516725167"),
+      totalValueLockedToken1: BigDecimal("1"),
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].usdPrice.toString(), "23497.55487765");
+  });
+
+  it(`should set the token1 usd price if the new price is outside
+    the threshold going down with unbalanced TVL, but the pool
+    setting the price, is the current most liquid`, async () => {
+    const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
+    const token0Address = IndexerNetwork.wrappedNativeAddress(network);
+    const token1Address = IndexerNetwork.stablecoinsAddresses(network)[0];
+    const currentPool = new PoolMock("0xNOT_MOST_LIQUID_POOL_ID");
+    const token0MostLiquidPool = new PoolMock("0xM05ST_LIQUID_POOL_ID_0");
+    const token1MostLiquidPool = new PoolMock(currentPool.id);
+
+    const token0: Token = {
+      ...new TokenMock(token0Address),
+      tokenAddress: token0Address,
+      mostLiquidPool_id: token0MostLiquidPool.id,
+      usdPrice: BigDecimal("13.21"),
+      decimals: 18,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Address),
+      tokenAddress: token1Address,
+      mostLiquidPool_id: token1MostLiquidPool.id,
+      usdPrice: BigDecimal("1289162891628916289162891"),
+      decimals: 6,
+    };
+
+    const pool: Pool = {
+      ...currentPool,
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("2961826782516725167"),
+    };
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].usdPrice.toString(), "1");
+  });
+
+  it(`should set the token0 usd price if the pool setting the price
+    is more liquid than the saved one. Even if the price is outside
+    the threshold`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0_SAVED"),
+      totalValueLockedToken0: BigDecimal("112"),
+      token0_id: token0Id,
+    };
+
+    const token1MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1_SAVED"),
+      totalValueLockedToken0: BigDecimal("10"),
+      token1_id: token1Id,
+    };
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      mostLiquidPool_id: token0MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("21"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      mostLiquidPool_id: token1MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("111555"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xMOST_REAL_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("500"),
+      totalValueLockedToken1: BigDecimal("400"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(token0MostLiquidPoolSaved);
+    context.Pool.set(token1MostLiquidPoolSaved);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].usdPrice.toString(), "111543.3929522");
+  });
+
+  it(`should set the token0 most liquid pool as the current one if 
+    is more liquid than the saved one. Even if the price is outside
+    the threshold`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0_SAVED"),
+      totalValueLockedToken0: BigDecimal("112"),
+      token0_id: token0Id,
+    };
+
+    const token1MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1_SAVED"),
+      totalValueLockedToken0: BigDecimal("10"),
+      token1_id: token1Id,
+    };
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      mostLiquidPool_id: token0MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("21"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      mostLiquidPool_id: token1MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("111555"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xMOST_REAL_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("500"),
+      totalValueLockedToken1: BigDecimal("400"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(token0MostLiquidPoolSaved);
+    context.Pool.set(token1MostLiquidPoolSaved);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].mostLiquidPool_id, pool.id);
+  });
+
+  it(`should not set the token0 usd price if the pool setting the price
+    is more liquid than the saved one if the tvl usd with the new
+    prices are not balanced`, async () => {
+    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const token0Id = "0x0000000000000000000000000000000000000012";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const token0MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0_SAVED"),
+      totalValueLockedToken0: BigDecimal("112"),
+      token0_id: token0Id,
+    };
+
+    const token1MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1_SAVED"),
+      totalValueLockedToken0: BigDecimal("10"),
+      token1_id: token1Id,
+    };
+
+    const token0: Token = {
+      ...new TokenMock(token0Id),
+      mostLiquidPool_id: token0MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("21"),
+      decimals: 8,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Id),
+      mostLiquidPool_id: token1MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("111555"),
+      decimals: 8,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xMOST_REAL_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("912619826189251872517"),
+      totalValueLockedToken1: BigDecimal("400"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(token0MostLiquidPoolSaved);
+    context.Pool.set(token1MostLiquidPoolSaved);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[0].usdPrice.toString(), token0.usdPrice.toString());
+  });
+
+  it(`should set the token1 usd price if the pool setting the price
+    is more liquid than the saved one. Even if the price is outside
+    the threshold`, async () => {
+    const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
+    const token0Address = IndexerNetwork.wrappedNativeAddress(network);
+    const token1Address = IndexerNetwork.stablecoinsAddresses(network)[0];
+
+    const token0MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0_SAVED"),
+      totalValueLockedToken0: BigDecimal("112"),
+      token0_id: token0Address,
+    };
+
+    const token1MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1_SAVED"),
+      totalValueLockedToken1: BigDecimal("10"),
+      token1_id: token1Address,
+    };
+
+    const token0: Token = {
+      ...new TokenMock(token0Address),
+      tokenAddress: token0Address,
+      mostLiquidPool_id: token0MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("2100"),
+      decimals: 18,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Address),
+      tokenAddress: token1Address,
+      mostLiquidPool_id: token1MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("25"),
+      decimals: 6,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xMOST_REAL_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("900"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(token0MostLiquidPoolSaved);
+    context.Pool.set(token1MostLiquidPoolSaved);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].usdPrice.toString(), "1");
+  });
+
+  it(`should set the token1 most liquid pool asn the current one if
+    is more liquid than the saved one. Even if the price is outside
+    the threshold`, async () => {
+    const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
+    const token0Address = IndexerNetwork.wrappedNativeAddress(network);
+    const token1Address = IndexerNetwork.stablecoinsAddresses(network)[0];
+
+    const token0MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0_SAVED"),
+      totalValueLockedToken0: BigDecimal("112"),
+      token0_id: token0Address,
+    };
+
+    const token1MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1_SAVED"),
+      totalValueLockedToken1: BigDecimal("10"),
+      token1_id: token1Address,
+    };
+
+    const token0: Token = {
+      ...new TokenMock(token0Address),
+      tokenAddress: token0Address,
+      mostLiquidPool_id: token0MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("2100"),
+      decimals: 18,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Address),
+      tokenAddress: token1Address,
+      mostLiquidPool_id: token1MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("25"),
+      decimals: 6,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xMOST_REAL_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("900"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(token0MostLiquidPoolSaved);
+    context.Pool.set(token1MostLiquidPoolSaved);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].mostLiquidPool_id, pool.id);
+  });
+
+  it(`should not set the token1 usd price if the pool setting the price
+    is more liquid than the saved one, but the tvl usd with the new prices
+    are not balanced`, async () => {
+    const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
+    const token0Address = IndexerNetwork.wrappedNativeAddress(network);
+    const token1Address = IndexerNetwork.stablecoinsAddresses(network)[0];
+
+    const token0MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0_SAVED"),
+      totalValueLockedToken0: BigDecimal("112"),
+      token0_id: token0Address,
+    };
+
+    const token1MostLiquidPoolSaved: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1_SAVED"),
+      totalValueLockedToken1: BigDecimal("10"),
+      token1_id: token1Address,
+    };
+
+    const token0: Token = {
+      ...new TokenMock(token0Address),
+      tokenAddress: token0Address,
+      mostLiquidPool_id: token0MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("2100"),
+      decimals: 18,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(token1Address),
+      tokenAddress: token1Address,
+      mostLiquidPool_id: token1MostLiquidPoolSaved.id,
+      usdPrice: BigDecimal("25"),
+      decimals: 6,
+    };
+
+    const pool: Pool = {
+      ...new PoolMock("0xMOST_REAL_LIQUID_POOL_ID"),
+      totalValueLockedToken0: BigDecimal("500"),
+      totalValueLockedToken1: BigDecimal("900"),
+      token0_id: token0.id,
+      token1_id: token1.id,
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(token0MostLiquidPoolSaved);
+    context.Pool.set(token1MostLiquidPoolSaved);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    const poolPrices = sqrtPriceX96toPrice(currentSqrtPriceX96, token0, token1);
+
+    const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
+
+    assert.deepEqual(result[1].usdPrice.toString(), token1.usdPrice.toString());
+  });
+
+  it(`should use the current created pool daily data to
+    update the daily liquidity data, if there's already
+    one created in the same day as the event timestamp,
+    when calling 'setLiquidityIntervalData' multiple
+    times adding liquidity`, async () => {
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const pool = new PoolMock();
+    const amount0Added = 200n * 10n ** 18n;
+    const amount1Added = 100n * 10n ** 6n;
+    const amount0AddedFormatted = formatFromTokenAmount(amount0Added, token0);
+    const amount1AddedFormatted = formatFromTokenAmount(amount1Added, token1);
+    const eventTimestamp = 1640995200n;
+    const timesCalled = 6;
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, pool),
+      dayStartTimestamp: eventTimestamp,
+      liquidityInflowToken0: BigDecimal("21"),
+      liquidityInflowToken1: BigDecimal("12701"),
+      liquidityInflowUSD: BigDecimal("29179201"),
+      liquidityNetInflowToken0: BigDecimal("-1221"),
+      liquidityNetInflowToken1: BigDecimal("-9999"),
+      liquidityNetInflowUSD: BigDecimal("1271902198"),
+      liquidityOutflowToken0: BigDecimal("127819"),
+      liquidityOutflowToken1: BigDecimal("9999"),
+      liquidityOutflowUSD: BigDecimal("112213"),
+      liquidityVolumeToken0: BigDecimal("21895218921"),
+      liquidityVolumeToken1: BigDecimal("291862981"),
+      liquidityVolumeUSD: BigDecimal("281902810921"),
+    };
+
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    const liquidityInflowsAndOutflows = getLiquidityInflowAndOutflowFromRawAmounts(
+      amount0Added,
+      amount1Added,
+      token0,
+      token1
+    );
+
+    for (let i = 0; i < timesCalled; i++) {
+      await sut.setLiquidityIntervalData({
+        amount0AddedOrRemoved: amount0Added,
+        amount1AddedOrRemoved: amount1Added,
+        eventTimestamp: eventTimestamp,
+        poolEntity: pool,
+        token0: token0,
+        token1: token1,
+      });
+    }
+
+    const expectedNewPoolDailyData: PoolDailyData = {
+      ...currentPoolDailyData,
+      liquidityInflowToken0: currentPoolDailyData.liquidityInflowToken0.plus(
+        liquidityInflowsAndOutflows.inflowToken0.times(timesCalled)
+      ),
+      liquidityInflowToken1: currentPoolDailyData.liquidityInflowToken1.plus(
+        liquidityInflowsAndOutflows.inflowToken1.times(timesCalled)
+      ),
+      liquidityInflowUSD: currentPoolDailyData.liquidityInflowUSD.plus(
+        liquidityInflowsAndOutflows.inflowUSD.times(timesCalled)
+      ),
+      liquidityNetInflowToken0: currentPoolDailyData.liquidityNetInflowToken0.plus(
+        liquidityInflowsAndOutflows.netInflowToken0.times(timesCalled)
+      ),
+      liquidityNetInflowToken1: currentPoolDailyData.liquidityNetInflowToken1.plus(
+        liquidityInflowsAndOutflows.netInflowToken1.times(timesCalled)
+      ),
+      liquidityNetInflowUSD: currentPoolDailyData.liquidityNetInflowUSD.plus(
+        liquidityInflowsAndOutflows.netInflowUSD.times(timesCalled)
+      ),
+      liquidityOutflowToken0: currentPoolDailyData.liquidityOutflowToken0.plus(
+        liquidityInflowsAndOutflows.outflowToken0.times(timesCalled)
+      ),
+      liquidityOutflowToken1: currentPoolDailyData.liquidityOutflowToken1.plus(
+        liquidityInflowsAndOutflows.outflowToken1.times(timesCalled)
+      ),
+      liquidityOutflowUSD: currentPoolDailyData.liquidityOutflowUSD.plus(
+        liquidityInflowsAndOutflows.outflowUSD.times(timesCalled)
+      ),
+      liquidityVolumeToken0: currentPoolDailyData.liquidityVolumeToken0.plus(
+        amount0AddedFormatted.abs().times(timesCalled)
+      ),
+      liquidityVolumeToken1: currentPoolDailyData.liquidityVolumeToken1.plus(
+        amount1AddedFormatted.abs().times(timesCalled)
+      ),
+      liquidityVolumeUSD: currentPoolDailyData.liquidityVolumeUSD.plus(
+        amount0AddedFormatted
+          .abs()
+          .times(token0.usdPrice)
+          .plus(amount1AddedFormatted.abs().times(token1.usdPrice))
+          .times(timesCalled)
+      ),
+    };
+
+    const actualUpdatedDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+
+    assert.deepEqual(actualUpdatedDailyData, expectedNewPoolDailyData);
+  });
+
+  it(`should use the current created pool daily data to
+    update the daily liquidity data, if there's already
+    one created in the same day as the event timestamp,
+    when calling 'setLiquidityIntervalData' multiple
+    times removing liquidity`, async () => {
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const pool = new PoolMock();
+    const amount0Removed = 2719826198n * 10n ** 18n * -1n;
+    const amount1Removed = 98891211n * 10n ** 6n * -1n;
+    const amount0AddedFormatted = formatFromTokenAmount(amount0Removed, token0);
+    const amount1AddedFormatted = formatFromTokenAmount(amount1Removed, token1);
+    const eventTimestamp = 1640995200n;
+    const timesCalled = 6;
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, pool),
+      dayStartTimestamp: eventTimestamp,
+      liquidityInflowToken0: BigDecimal("0"),
+      liquidityInflowToken1: BigDecimal("12701"),
+      liquidityInflowUSD: BigDecimal("29179201"),
+      liquidityNetInflowToken0: BigDecimal("1221"),
+      liquidityNetInflowToken1: BigDecimal("9999"),
+      liquidityNetInflowUSD: BigDecimal("1271902198"),
+      liquidityOutflowToken0: BigDecimal("1"),
+      liquidityOutflowToken1: BigDecimal("9911199"),
+      liquidityOutflowUSD: BigDecimal("1826189628121"),
+      liquidityVolumeToken0: BigDecimal("21895218921"),
+      liquidityVolumeToken1: BigDecimal("291862981"),
+      liquidityVolumeUSD: BigDecimal("281902810921"),
+    };
+
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    const liquidityInflowsAndOutflows = getLiquidityInflowAndOutflowFromRawAmounts(
+      amount0Removed,
+      amount1Removed,
+      token0,
+      token1
+    );
+
+    for (let i = 0; i < timesCalled; i++) {
+      await sut.setLiquidityIntervalData({
+        amount0AddedOrRemoved: amount0Removed,
+        amount1AddedOrRemoved: amount1Removed,
+
+        eventTimestamp: eventTimestamp,
+        poolEntity: pool,
+        token0: token0,
+        token1: token1,
+      });
+    }
+
+    const expectedNewPoolDailyData: PoolDailyData = {
+      ...currentPoolDailyData,
+      liquidityInflowToken0: currentPoolDailyData.liquidityInflowToken0.plus(
+        liquidityInflowsAndOutflows.inflowToken0.times(timesCalled)
+      ),
+      liquidityInflowToken1: currentPoolDailyData.liquidityInflowToken1.plus(
+        liquidityInflowsAndOutflows.inflowToken1.times(timesCalled)
+      ),
+      liquidityInflowUSD: currentPoolDailyData.liquidityInflowUSD.plus(
+        liquidityInflowsAndOutflows.inflowUSD.times(timesCalled)
+      ),
+      liquidityNetInflowToken0: currentPoolDailyData.liquidityNetInflowToken0.plus(
+        liquidityInflowsAndOutflows.netInflowToken0.times(timesCalled)
+      ),
+      liquidityNetInflowToken1: currentPoolDailyData.liquidityNetInflowToken1.plus(
+        liquidityInflowsAndOutflows.netInflowToken1.times(timesCalled)
+      ),
+      liquidityNetInflowUSD: currentPoolDailyData.liquidityNetInflowUSD.plus(
+        liquidityInflowsAndOutflows.netInflowUSD.times(timesCalled)
+      ),
+      liquidityOutflowToken0: currentPoolDailyData.liquidityOutflowToken0.plus(
+        liquidityInflowsAndOutflows.outflowToken0.times(timesCalled)
+      ),
+      liquidityOutflowToken1: currentPoolDailyData.liquidityOutflowToken1.plus(
+        liquidityInflowsAndOutflows.outflowToken1.times(timesCalled)
+      ),
+      liquidityOutflowUSD: currentPoolDailyData.liquidityOutflowUSD.plus(
+        liquidityInflowsAndOutflows.outflowUSD.times(timesCalled)
+      ),
+      liquidityVolumeToken0: currentPoolDailyData.liquidityVolumeToken0.plus(
+        amount0AddedFormatted.abs().times(timesCalled)
+      ),
+      liquidityVolumeToken1: currentPoolDailyData.liquidityVolumeToken1.plus(
+        amount1AddedFormatted.abs().times(timesCalled)
+      ),
+      liquidityVolumeUSD: currentPoolDailyData.liquidityVolumeUSD.plus(
+        amount0AddedFormatted
+          .abs()
+          .times(token0.usdPrice)
+          .plus(amount1AddedFormatted.abs().times(token1.usdPrice))
+          .times(timesCalled)
+      ),
+    };
+
+    const actualUpdatedDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+
+    assert.deepEqual(actualUpdatedDailyData, expectedNewPoolDailyData);
+  });
+
+  it(`should create another pool daily entity data to update the
+    pool daily liquidity data if the current created pool daily data
+    is more than a day away from the event timestamp when calling
+    'setLiquidityIntervalData' multiple times removing liquidity`, async () => {
+    let eventTimestamp = 1640995200n;
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const pool = new PoolMock();
+    const amount0Removed = 331n * 10n ** 18n * -1n;
+    const amount1Removed = 12121n * 10n ** 6n * -1n;
+    const amount0AddedFormatted = formatFromTokenAmount(amount0Removed, token0);
+    const amount1AddedFormatted = formatFromTokenAmount(amount1Removed, token1);
+    const timesCalled = 6;
+    const existingPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS) * 25n, pool),
+      dayStartTimestamp: eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS) * 25n,
+      liquidityInflowToken0: BigDecimal("0"),
+      liquidityInflowToken1: BigDecimal("12701"),
+      liquidityInflowUSD: BigDecimal("29179201"),
+      liquidityNetInflowToken0: BigDecimal("1221"),
+      liquidityNetInflowToken1: BigDecimal("9999"),
+      liquidityNetInflowUSD: BigDecimal("1271902198"),
+      liquidityOutflowToken0: BigDecimal("1"),
+      liquidityOutflowToken1: BigDecimal("9911199"),
+      liquidityOutflowUSD: BigDecimal("1826189628121"),
+      liquidityVolumeToken0: BigDecimal("21895218921"),
+      liquidityVolumeToken1: BigDecimal("291862981"),
+      liquidityVolumeUSD: BigDecimal("281902810921"),
+    };
+
+    context.PoolDailyData.set(existingPoolDailyData);
+
+    const liquidityInflowsAndOutflows = getLiquidityInflowAndOutflowFromRawAmounts(
+      amount0Removed,
+      amount1Removed,
+      token0,
+      token1
+    );
+
+    for (let i = 0; i < timesCalled; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS) * 24n;
+
+      await sut.setLiquidityIntervalData({
+        amount0AddedOrRemoved: amount0Removed,
+        amount1AddedOrRemoved: amount1Removed,
+
+        eventTimestamp,
+        poolEntity: pool,
+        token0: token0,
+        token1: token1,
+      });
+
+      const expectedNewPoolDailyData: PoolDailyData = {
+        ...defaultPoolDailyData({
+          dayDataId: getPoolDailyDataId(eventTimestamp, pool),
+          dayStartTimestamp: eventTimestamp,
+          poolId: pool.id,
+        }),
+        liquidityInflowToken0: liquidityInflowsAndOutflows.inflowToken0,
+        liquidityInflowToken1: liquidityInflowsAndOutflows.inflowToken1,
+        liquidityInflowUSD: liquidityInflowsAndOutflows.inflowUSD,
+        liquidityNetInflowToken0: liquidityInflowsAndOutflows.netInflowToken0,
+        liquidityNetInflowToken1: liquidityInflowsAndOutflows.netInflowToken1,
+        liquidityNetInflowUSD: liquidityInflowsAndOutflows.netInflowUSD,
+        liquidityOutflowToken0: liquidityInflowsAndOutflows.outflowToken0,
+        liquidityOutflowToken1: liquidityInflowsAndOutflows.outflowToken1,
+        liquidityOutflowUSD: liquidityInflowsAndOutflows.outflowUSD,
+        liquidityVolumeToken0: amount0AddedFormatted.abs(),
+        liquidityVolumeToken1: amount1AddedFormatted.abs(),
+        liquidityVolumeUSD: amount0AddedFormatted
+          .abs()
+          .times(token0.usdPrice)
+          .plus(amount1AddedFormatted.abs().times(token1.usdPrice)),
+      };
+
+      const actualUpdatedDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+      assert.deepEqual(actualUpdatedDailyData, expectedNewPoolDailyData);
+    }
+  });
+
+  it(`should create another pool daily entity data to update the
+    pool daily liquidity data if the current created pool daily data
+    is more than a day away from the event timestamp when calling
+    'setLiquidityIntervalData' multiple times adding liquidity`, async () => {
+    let eventTimestamp = 1640995200n;
+
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const pool = new PoolMock();
+    const amount0Added = 309263892n * 10n ** 18n;
+    const amount1Added = 1111n * 10n ** 6n;
+    const amount0AddedFormatted = formatFromTokenAmount(amount0Added, token0);
+    const amount1AddedFormatted = formatFromTokenAmount(amount1Added, token1);
+    const timesCalled = 6;
+    const existingPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS) * 25n, pool),
+      dayStartTimestamp: eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS) * 25n,
+      liquidityInflowToken0: BigDecimal("0"),
+      liquidityInflowToken1: BigDecimal("12701"),
+      liquidityInflowUSD: BigDecimal("29179201"),
+      liquidityNetInflowToken0: BigDecimal("1221"),
+      liquidityNetInflowToken1: BigDecimal("9999"),
+      liquidityNetInflowUSD: BigDecimal("1271902198"),
+      liquidityOutflowToken0: BigDecimal("1"),
+      liquidityOutflowToken1: BigDecimal("9911199"),
+      liquidityOutflowUSD: BigDecimal("1826189628121"),
+      liquidityVolumeToken0: BigDecimal("21895218921"),
+      liquidityVolumeToken1: BigDecimal("291862981"),
+      liquidityVolumeUSD: BigDecimal("281902810921"),
+    };
+
+    context.PoolDailyData.set(existingPoolDailyData);
+
+    const liquidityInflowsAndOutflows = getLiquidityInflowAndOutflowFromRawAmounts(
+      amount0Added,
+      amount1Added,
+      token0,
+      token1
+    );
+
+    for (let i = 0; i < timesCalled; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS) * 72n;
+
+      await sut.setLiquidityIntervalData({
+        amount0AddedOrRemoved: amount0Added,
+        amount1AddedOrRemoved: amount1Added,
+
+        eventTimestamp,
+        poolEntity: pool,
+        token0: token0,
+        token1: token1,
+      });
+
+      const expectedNewPoolDailyData: PoolDailyData = {
+        ...defaultPoolDailyData({
+          dayDataId: getPoolDailyDataId(eventTimestamp, pool),
+          dayStartTimestamp: eventTimestamp,
+          poolId: pool.id,
+        }),
+        liquidityInflowToken0: liquidityInflowsAndOutflows.inflowToken0,
+        liquidityInflowToken1: liquidityInflowsAndOutflows.inflowToken1,
+        liquidityInflowUSD: liquidityInflowsAndOutflows.inflowUSD,
+        liquidityNetInflowToken0: liquidityInflowsAndOutflows.netInflowToken0,
+        liquidityNetInflowToken1: liquidityInflowsAndOutflows.netInflowToken1,
+        liquidityNetInflowUSD: liquidityInflowsAndOutflows.netInflowUSD,
+        liquidityOutflowToken0: liquidityInflowsAndOutflows.outflowToken0,
+        liquidityOutflowToken1: liquidityInflowsAndOutflows.outflowToken1,
+        liquidityOutflowUSD: liquidityInflowsAndOutflows.outflowUSD,
+        liquidityVolumeToken0: amount0AddedFormatted.abs(),
+        liquidityVolumeToken1: amount1AddedFormatted.abs(),
+        liquidityVolumeUSD: amount0AddedFormatted
+          .abs()
+          .times(token0.usdPrice)
+          .plus(amount1AddedFormatted.abs().times(token1.usdPrice)),
+      };
+
+      const actualUpdatedDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+      assert.deepEqual(actualUpdatedDailyData, expectedNewPoolDailyData);
+    }
+  });
+
+  it(`should create another pool hourly entity data to update the
+    pool hourly liquidity data if the current created pool hourly data
+    is more than a hour away from the event timestamp when calling
+    'setLiquidityIntervalData' multiple times adding liquidity`, async () => {
+    let eventTimestamp = 1640995200n;
+
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const pool = new PoolMock();
+    const amount0Added = 309262n * 10n ** 18n;
+    const amount1Added = 1111n * 10n ** 6n;
+    const amount0AddedFormatted = formatFromTokenAmount(amount0Added, token0);
+    const amount1AddedFormatted = formatFromTokenAmount(amount1Added, token1);
+    const timesCalled = 10;
+    const existingPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS) * 2n, pool),
+      hourStartTimestamp: eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS) * 2n,
+      liquidityInflowToken0: BigDecimal("0"),
+      liquidityInflowToken1: BigDecimal("12701"),
+      liquidityInflowUSD: BigDecimal("29179201"),
+      liquidityNetInflowToken0: BigDecimal("1221"),
+      liquidityNetInflowToken1: BigDecimal("9999"),
+      liquidityNetInflowUSD: BigDecimal("1271902198"),
+      liquidityOutflowToken0: BigDecimal("1"),
+      liquidityOutflowToken1: BigDecimal("9911199"),
+      liquidityOutflowUSD: BigDecimal("1826189628121"),
+      liquidityVolumeToken0: BigDecimal("21895218921"),
+      liquidityVolumeToken1: BigDecimal("291862981"),
+      liquidityVolumeUSD: BigDecimal("281902810921"),
+    };
+
+    context.PoolHourlyData.set(existingPoolHourlyData);
+
+    const liquidityInflowsAndOutflows = getLiquidityInflowAndOutflowFromRawAmounts(
+      amount0Added,
+      amount1Added,
+      token0,
+      token1
+    );
+
+    for (let i = 0; i < timesCalled; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS) * 2n;
+
+      await sut.setLiquidityIntervalData({
+        amount0AddedOrRemoved: amount0Added,
+        amount1AddedOrRemoved: amount1Added,
+
+        eventTimestamp,
+        poolEntity: pool,
+        token0: token0,
+        token1: token1,
+      });
+
+      const expectedNewPoolHourlyData: PoolHourlyData = {
+        ...defaultPoolHourlyData({
+          hourlyDataId: getPoolHourlyDataId(eventTimestamp, pool),
+          hourStartTimestamp: eventTimestamp,
+          poolId: pool.id,
+        }),
+        liquidityInflowToken0: liquidityInflowsAndOutflows.inflowToken0,
+        liquidityInflowToken1: liquidityInflowsAndOutflows.inflowToken1,
+        liquidityInflowUSD: liquidityInflowsAndOutflows.inflowUSD,
+        liquidityNetInflowToken0: liquidityInflowsAndOutflows.netInflowToken0,
+        liquidityNetInflowToken1: liquidityInflowsAndOutflows.netInflowToken1,
+        liquidityNetInflowUSD: liquidityInflowsAndOutflows.netInflowUSD,
+        liquidityOutflowToken0: liquidityInflowsAndOutflows.outflowToken0,
+        liquidityOutflowToken1: liquidityInflowsAndOutflows.outflowToken1,
+        liquidityOutflowUSD: liquidityInflowsAndOutflows.outflowUSD,
+        liquidityVolumeToken0: amount0AddedFormatted.abs(),
+        liquidityVolumeToken1: amount1AddedFormatted.abs(),
+        liquidityVolumeUSD: amount0AddedFormatted
+          .abs()
+          .times(token0.usdPrice)
+          .plus(amount1AddedFormatted.abs().times(token1.usdPrice)),
+      };
+
+      const actualUpdatedHourlyData = await context.PoolHourlyData.getOrThrow(
+        getPoolHourlyDataId(eventTimestamp, pool)
+      );
+      assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
+    }
+  });
+
+  it(`should modify the existing pool hourly entity data to update the
+    pool hourly liquidity data if the current created pool hourly data
+    is within a hout from the event timestamp when calling 'setLiquidityIntervalData'
+    multiple times adding liquidity`, async () => {
+    const token0 = new TokenMock();
+    const eventTimestamp = 1640995200n;
+    const token1 = new TokenMock();
+    const pool = new PoolMock();
+    const amount0Added = 309262n * 10n ** 18n;
+    const amount1Added = 1111n * 10n ** 6n;
+    const amount0AddedFormatted = formatFromTokenAmount(amount0Added, token0);
+    const amount1AddedFormatted = formatFromTokenAmount(amount1Added, token1);
+    const timesCalled = 10;
+    const existingPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      hourStartTimestamp: eventTimestamp,
+      liquidityInflowToken0: BigDecimal("0"),
+      liquidityInflowToken1: BigDecimal("12701"),
+      liquidityInflowUSD: BigDecimal("29179201"),
+      liquidityNetInflowToken0: BigDecimal("1221"),
+      liquidityNetInflowToken1: BigDecimal("9999"),
+      liquidityNetInflowUSD: BigDecimal("1271902198"),
+      liquidityOutflowToken0: BigDecimal("1"),
+      liquidityOutflowToken1: BigDecimal("9911199"),
+      liquidityOutflowUSD: BigDecimal("1826189628121"),
+      liquidityVolumeToken0: BigDecimal("21895218921"),
+      liquidityVolumeToken1: BigDecimal("291862981"),
+      liquidityVolumeUSD: BigDecimal("281902810921"),
+    };
+
+    context.PoolHourlyData.set(existingPoolHourlyData);
+
+    const liquidityInflowsAndOutflows = getLiquidityInflowAndOutflowFromRawAmounts(
+      amount0Added,
+      amount1Added,
+      token0,
+      token1
+    );
+
+    for (let i = 0; i < timesCalled; i++) {
+      await sut.setLiquidityIntervalData({
+        amount0AddedOrRemoved: amount0Added,
+        amount1AddedOrRemoved: amount1Added,
+
+        eventTimestamp: eventTimestamp,
+        poolEntity: pool,
+        token0: token0,
+        token1: token1,
+      });
+    }
+
+    const expectedNewPoolHourlyData: PoolHourlyData = {
+      ...existingPoolHourlyData,
+      liquidityInflowToken0: existingPoolHourlyData.liquidityInflowToken0.plus(
+        liquidityInflowsAndOutflows.inflowToken0.times(timesCalled)
+      ),
+      liquidityInflowToken1: existingPoolHourlyData.liquidityInflowToken1.plus(
+        liquidityInflowsAndOutflows.inflowToken1.times(timesCalled)
+      ),
+      liquidityInflowUSD: existingPoolHourlyData.liquidityInflowUSD.plus(
+        liquidityInflowsAndOutflows.inflowUSD.times(timesCalled)
+      ),
+      liquidityNetInflowToken0: existingPoolHourlyData.liquidityNetInflowToken0.plus(
+        liquidityInflowsAndOutflows.netInflowToken0.times(timesCalled)
+      ),
+      liquidityNetInflowToken1: existingPoolHourlyData.liquidityNetInflowToken1.plus(
+        liquidityInflowsAndOutflows.netInflowToken1.times(timesCalled)
+      ),
+      liquidityNetInflowUSD: existingPoolHourlyData.liquidityNetInflowUSD.plus(
+        liquidityInflowsAndOutflows.netInflowUSD.times(timesCalled)
+      ),
+      liquidityOutflowToken0: existingPoolHourlyData.liquidityOutflowToken0.plus(
+        liquidityInflowsAndOutflows.outflowToken0.times(timesCalled)
+      ),
+      liquidityOutflowToken1: existingPoolHourlyData.liquidityOutflowToken1.plus(
+        liquidityInflowsAndOutflows.outflowToken1.times(timesCalled)
+      ),
+      liquidityOutflowUSD: existingPoolHourlyData.liquidityOutflowUSD.plus(
+        liquidityInflowsAndOutflows.outflowUSD.times(timesCalled)
+      ),
+      liquidityVolumeToken0: existingPoolHourlyData.liquidityVolumeToken0.plus(
+        amount0AddedFormatted.abs().times(timesCalled)
+      ),
+      liquidityVolumeToken1: existingPoolHourlyData.liquidityVolumeToken1.plus(
+        amount1AddedFormatted.abs().times(timesCalled)
+      ),
+      liquidityVolumeUSD: existingPoolHourlyData.liquidityVolumeUSD.plus(
+        amount0AddedFormatted
+          .abs()
+          .times(token0.usdPrice)
+          .plus(amount1AddedFormatted.abs().times(token1.usdPrice))
+          .times(timesCalled)
+      ),
+    };
+
+    const actualUpdatedHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
+  });
+
+  it(`should modify the existing pool hourly entity data to update the
+    pool hourly liquidity data if the current created pool hourly data
+    is within a hout from the event timestamp when calling 'setLiquidityIntervalData'
+    multiple times removing liquidity`, async () => {
+    let eventTimestamp = 1640995200n;
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const pool = new PoolMock();
+    const amount0Removed = 27102710927190n * 10n ** 18n;
+    const amount1Removed = 281907219021n * 10n ** 6n;
+    const amount0RemovedFormatted = formatFromTokenAmount(amount0Removed, token0);
+    const amount1RemovedFormatted = formatFromTokenAmount(amount1Removed, token1);
+    const timesCalled = 10;
+    const existingPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      hourStartTimestamp: eventTimestamp,
+      liquidityInflowToken0: BigDecimal("0"),
+      liquidityInflowToken1: BigDecimal("12701"),
+      liquidityInflowUSD: BigDecimal("29179201"),
+      liquidityNetInflowToken0: BigDecimal("1221"),
+      liquidityNetInflowToken1: BigDecimal("9999"),
+      liquidityNetInflowUSD: BigDecimal("1271902198"),
+      liquidityOutflowToken0: BigDecimal("1"),
+      liquidityOutflowToken1: BigDecimal("9911199"),
+      liquidityOutflowUSD: BigDecimal("1826189628121"),
+      liquidityVolumeToken0: BigDecimal("21895218921"),
+      liquidityVolumeToken1: BigDecimal("291862981"),
+      liquidityVolumeUSD: BigDecimal("281902810921"),
+    };
+
+    context.PoolHourlyData.set(existingPoolHourlyData);
+
+    const liquidityInflowsAndOutflows = getLiquidityInflowAndOutflowFromRawAmounts(
+      amount0Removed,
+      amount1Removed,
+      token0,
+      token1
+    );
+
+    for (let i = 0; i < timesCalled; i++) {
+      await sut.setLiquidityIntervalData({
+        amount0AddedOrRemoved: amount0Removed,
+        amount1AddedOrRemoved: amount1Removed,
+
+        eventTimestamp: eventTimestamp,
+        poolEntity: pool,
+        token0: token0,
+        token1: token1,
+      });
+    }
+
+    const expectedNewPoolHourlyData: PoolHourlyData = {
+      ...existingPoolHourlyData,
+      liquidityInflowToken0: existingPoolHourlyData.liquidityInflowToken0.plus(
+        liquidityInflowsAndOutflows.inflowToken0.times(timesCalled)
+      ),
+      liquidityInflowToken1: existingPoolHourlyData.liquidityInflowToken1.plus(
+        liquidityInflowsAndOutflows.inflowToken1.times(timesCalled)
+      ),
+      liquidityInflowUSD: existingPoolHourlyData.liquidityInflowUSD.plus(
+        liquidityInflowsAndOutflows.inflowUSD.times(timesCalled)
+      ),
+      liquidityNetInflowToken0: existingPoolHourlyData.liquidityNetInflowToken0.plus(
+        liquidityInflowsAndOutflows.netInflowToken0.times(timesCalled)
+      ),
+      liquidityNetInflowToken1: existingPoolHourlyData.liquidityNetInflowToken1.plus(
+        liquidityInflowsAndOutflows.netInflowToken1.times(timesCalled)
+      ),
+      liquidityNetInflowUSD: existingPoolHourlyData.liquidityNetInflowUSD.plus(
+        liquidityInflowsAndOutflows.netInflowUSD.times(timesCalled)
+      ),
+      liquidityOutflowToken0: existingPoolHourlyData.liquidityOutflowToken0.plus(
+        liquidityInflowsAndOutflows.outflowToken0.times(timesCalled)
+      ),
+      liquidityOutflowToken1: existingPoolHourlyData.liquidityOutflowToken1.plus(
+        liquidityInflowsAndOutflows.outflowToken1.times(timesCalled)
+      ),
+      liquidityOutflowUSD: existingPoolHourlyData.liquidityOutflowUSD.plus(
+        liquidityInflowsAndOutflows.outflowUSD.times(timesCalled)
+      ),
+      liquidityVolumeToken0: existingPoolHourlyData.liquidityVolumeToken0.plus(
+        amount0RemovedFormatted.abs().times(timesCalled)
+      ),
+      liquidityVolumeToken1: existingPoolHourlyData.liquidityVolumeToken1.plus(
+        amount1RemovedFormatted.abs().times(timesCalled)
+      ),
+      liquidityVolumeUSD: existingPoolHourlyData.liquidityVolumeUSD.plus(
+        amount0RemovedFormatted
+          .abs()
+          .times(token0.usdPrice)
+          .plus(amount1RemovedFormatted.abs().times(token1.usdPrice))
+          .times(timesCalled)
+      ),
+    };
+
+    const actualUpdatedHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
+  });
+
+  it(`should create another pool hourly entity data to update the
+    pool hourly liquidity data if the current created pool hourly data
+    is more than a hour away from the event timestamp when calling
+    'setLiquidityIntervalData' multiple times removing liquidity`, async () => {
+    let eventTimestamp = 1640995200n;
+
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const pool = new PoolMock();
+    const amount0Removed = 309262n * 10n ** 18n * -1n;
+    const amount1Removed = 1111n * 10n ** 6n * -1n;
+    const amount0AddedFormatted = formatFromTokenAmount(amount0Removed, token0);
+    const amount1AddedFormatted = formatFromTokenAmount(amount1Removed, token1);
+    const timesCalled = 10;
+    const existingPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS) * 2n, pool),
+      hourStartTimestamp: eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS) * 2n,
+      liquidityInflowToken0: BigDecimal("0"),
+      liquidityInflowToken1: BigDecimal("12701"),
+      liquidityInflowUSD: BigDecimal("29179201"),
+      liquidityNetInflowToken0: BigDecimal("1221"),
+      liquidityNetInflowToken1: BigDecimal("9999"),
+      liquidityNetInflowUSD: BigDecimal("1271902198"),
+      liquidityOutflowToken0: BigDecimal("1"),
+      liquidityOutflowToken1: BigDecimal("9911199"),
+      liquidityOutflowUSD: BigDecimal("1826189628121"),
+      liquidityVolumeToken0: BigDecimal("21895218921"),
+      liquidityVolumeToken1: BigDecimal("291862981"),
+      liquidityVolumeUSD: BigDecimal("281902810921"),
+    };
+
+    context.PoolHourlyData.set(existingPoolHourlyData);
+
+    const liquidityInflowsAndOutflows = getLiquidityInflowAndOutflowFromRawAmounts(
+      amount0Removed,
+      amount1Removed,
+      token0,
+      token1
+    );
+
+    for (let i = 0; i < timesCalled; i++) {
+      eventTimestamp = eventTimestamp + BigInt(ONE_HOUR_IN_SECONDS) * 2n;
+
+      await sut.setLiquidityIntervalData({
+        amount0AddedOrRemoved: amount0Removed,
+        amount1AddedOrRemoved: amount1Removed,
+        eventTimestamp,
+        poolEntity: pool,
+        token0: token0,
+        token1: token1,
+      });
+
+      const expectedNewPoolHourlyData: PoolHourlyData = {
+        ...defaultPoolHourlyData({
+          hourlyDataId: getPoolHourlyDataId(eventTimestamp, pool),
+          hourStartTimestamp: eventTimestamp,
+          poolId: pool.id,
+        }),
+        liquidityInflowToken0: liquidityInflowsAndOutflows.inflowToken0,
+        liquidityInflowToken1: liquidityInflowsAndOutflows.inflowToken1,
+        liquidityInflowUSD: liquidityInflowsAndOutflows.inflowUSD,
+        liquidityNetInflowToken0: liquidityInflowsAndOutflows.netInflowToken0,
+        liquidityNetInflowToken1: liquidityInflowsAndOutflows.netInflowToken1,
+        liquidityNetInflowUSD: liquidityInflowsAndOutflows.netInflowUSD,
+        liquidityOutflowToken0: liquidityInflowsAndOutflows.outflowToken0,
+        liquidityOutflowToken1: liquidityInflowsAndOutflows.outflowToken1,
+        liquidityOutflowUSD: liquidityInflowsAndOutflows.outflowUSD,
+        liquidityVolumeToken0: amount0AddedFormatted.abs(),
+        liquidityVolumeToken1: amount1AddedFormatted.abs(),
+        liquidityVolumeUSD: amount0AddedFormatted
+          .abs()
+          .times(token0.usdPrice)
+          .plus(amount1AddedFormatted.abs().times(token1.usdPrice)),
+      };
+
+      const actualUpdatedHourlyData = await context.PoolHourlyData.getOrThrow(
+        getPoolHourlyDataId(eventTimestamp, pool)
+      );
+      assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
+    }
+  });
+
+  it(`should sum up the volume data for the hourly data
+    based on the amount 1 when calling 'setIntervalSwapData'
+    and the amount 1 is positive and amount 0 is negative`, async () => {
+    const eventTimestamp = 1640995200n;
+    const pool = new PoolMock();
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = -309262n * 10n ** 18n;
+    const amount1 = 1111n * 10n ** 6n;
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      swapVolumeToken0: BigDecimal("819628912"),
+      swapVolumeToken1: BigDecimal("121762"),
+      swapVolumeUSD: BigDecimal("12128"),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const actualUpdatedHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+
+    const expectedNewPoolHourlyData: PoolHourlyData = {
+      ...actualUpdatedHourlyData,
+      swapVolumeToken0: currentPoolHourlyData.swapVolumeToken0,
+      swapVolumeToken1: currentPoolHourlyData.swapVolumeToken1.plus(formatFromTokenAmount(amount1, token1)),
+      swapVolumeUSD: currentPoolHourlyData.swapVolumeUSD.plus(
+        formatFromTokenAmount(amount1, token0).times(token1.usdPrice)
+      ),
+    };
+
+    assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
+  });
+
+  it(`should sum up the volume data for the daily data
+    based on the amount 1 when calling 'setIntervalSwapData'
+    and the amount 1 is positive and amount 0 is negative`, async () => {
+    const eventTimestamp = 1640995200n;
+    const pool = new PoolMock();
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = -29191919222n * 10n ** 18n;
+    const amount1 = 12619821n * 10n ** 6n;
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, pool),
+      swapVolumeToken0: BigDecimal("819628912"),
+      swapVolumeToken1: BigDecimal("121762"),
+      swapVolumeUSD: BigDecimal("12128"),
+    };
+
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const actualUpdatedDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+
+    const expectedNewPoolDailyData: PoolDailyData = {
+      ...actualUpdatedDailyData,
+      swapVolumeToken0: currentPoolDailyData.swapVolumeToken0,
+      swapVolumeToken1: currentPoolDailyData.swapVolumeToken1.plus(formatFromTokenAmount(amount1, token1)),
+      swapVolumeUSD: currentPoolDailyData.swapVolumeUSD.plus(
+        formatFromTokenAmount(amount1, token0).times(token1.usdPrice)
+      ),
+    };
+
+    assert.deepEqual(actualUpdatedDailyData, expectedNewPoolDailyData);
+  });
+
+  it(`should sum up the volume data for the daily data
+    based on the amount 0 when calling 'setIntervalSwapData'
+    and the amount 0 is positive and amount 1 is negative`, async () => {
+    const eventTimestamp = 1640995200n;
+    const pool = new PoolMock();
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 1082198621n * 10n ** 6n;
+    const amount1 = -7555555n * 10n ** 18n;
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, pool),
+      swapVolumeToken0: BigDecimal("111"),
+      swapVolumeToken1: BigDecimal("91290"),
+      swapVolumeUSD: BigDecimal("2101911919"),
+    };
+
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const actualUpdatedDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+
+    const expectedNewPoolDailyData: PoolDailyData = {
+      ...actualUpdatedDailyData,
+      swapVolumeToken0: currentPoolDailyData.swapVolumeToken0.plus(formatFromTokenAmount(amount0, token0)),
+      swapVolumeToken1: currentPoolDailyData.swapVolumeToken1,
+      swapVolumeUSD: currentPoolDailyData.swapVolumeUSD.plus(
+        formatFromTokenAmount(amount0, token0).times(token0.usdPrice)
+      ),
+    };
+
+    assert.deepEqual(actualUpdatedDailyData, expectedNewPoolDailyData);
+  });
+
+  it(`should sum up the volume data for the hourly data
+    based on the amount 0 when calling 'setIntervalSwapData'
+    and the amount 0 is positive and amount 1 is negative`, async () => {
+    const eventTimestamp = 1640995200n;
+    const pool = new PoolMock();
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 309262n * 10n ** 18n;
+    const amount1 = -1111n * 10n ** 6n;
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      swapVolumeToken0: BigDecimal("819628912"),
+      swapVolumeToken1: BigDecimal("121762"),
+      swapVolumeUSD: BigDecimal("12128"),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const actualUpdatedHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+
+    const expectedNewPoolHourlyData: PoolHourlyData = {
+      ...actualUpdatedHourlyData,
+      swapVolumeToken0: currentPoolHourlyData.swapVolumeToken0.plus(formatFromTokenAmount(amount0, token0)),
+      swapVolumeToken1: currentPoolHourlyData.swapVolumeToken1,
+      swapVolumeUSD: currentPoolHourlyData.swapVolumeUSD.plus(
+        formatFromTokenAmount(amount0, token0).times(token0.usdPrice)
+      ),
+    };
+
+    assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
   });
 });

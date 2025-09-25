@@ -1,18 +1,19 @@
 import assert from "assert";
-import { BigDecimal, HandlerContext } from "generated";
+import { BigDecimal, handlerContext, Pool, Token } from "generated";
 import sinon from "sinon";
 import { PoolSetters } from "../../../../src/common/pool-setters";
 import { formatFromTokenAmount } from "../../../../src/common/token-commons";
+import { handleV2PoolClaimFees } from "../../../../src/v2-pools/mappings/pool/v2-pool-claim-fees";
 import { handleV2PoolSync } from "../../../../src/v2-pools/mappings/pool/v2-pool-sync";
-import { HandlerContextCustomMock, PoolMock, TokenMock } from "../../../mocks";
+import { handlerContextCustomMock, PoolMock, TokenMock } from "../../../mocks";
 
 describe("V2PoolSyncHandler", () => {
-  let context: HandlerContext;
+  let context: handlerContext;
   let poolSetters: sinon.SinonStubbedInstance<PoolSetters>;
   let eventTimestamp = BigInt(Math.floor(Date.now() / 1000));
 
   beforeEach(() => {
-    context = HandlerContextCustomMock();
+    context = handlerContextCustomMock();
     poolSetters = sinon.createStubInstance(PoolSetters);
   });
 
@@ -259,6 +260,230 @@ describe("V2PoolSyncHandler", () => {
     await handleV2PoolSync(context, pool, token0, token1, newReserve0, newReserve1, eventTimestamp, poolSetters);
     const updatedPool = await context.Pool.getOrThrow(pool.id)!;
 
-    assert(poolSetters.setPoolDailyDataTVL.calledWith(eventTimestamp, updatedPool));
+    assert(poolSetters.setIntervalDataTVL.calledWith(eventTimestamp, updatedPool));
+  });
+
+  it(`should select the current pool as the token0 most liquid pool if the current pool
+        has more tokens than the previous after the sync after the sync`, async () => {
+    const token0Id = "0x0000000000000000000000000000000000000001";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const previousMostLiquidPOol: Pool = {
+      ...new PoolMock(),
+      id: "XabasPeviosPool",
+      token0_id: token1Id,
+      token1_id: token0Id,
+      totalValueLockedToken1: BigDecimal("111"),
+    };
+
+    const token0: Token = {
+      ...new TokenMock(),
+      id: token0Id,
+      mostLiquidPool_id: previousMostLiquidPOol.id,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      id: token1Id,
+    };
+
+    const newReserveAmount0 = BigInt("2619261261982619821") * 10n ** BigInt(token0.decimals);
+    const newReserveAmount1 = BigInt("997092172712901") * 10n ** BigInt(token1.decimals);
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken0: BigDecimal("261986218926819"),
+      liquidityVolumeToken0: BigDecimal("398628921928961"),
+      liquidityVolumeToken1: BigDecimal("111111"),
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.Pool.set(previousMostLiquidPOol);
+
+    await handleV2PoolSync(
+      context,
+      pool,
+      token0,
+      token1,
+      newReserveAmount0,
+      newReserveAmount1,
+      eventTimestamp,
+      poolSetters
+    );
+
+    const updatedToken0 = await context.Token.getOrThrow(token0.id)!;
+
+    assert.deepEqual(updatedToken0.mostLiquidPool_id, pool.id);
+  });
+
+  it(`should not select the current pool as the token1 most liquid pool if the current pool
+        does not has more tokens than the previous`, async () => {
+    const token0Id = "0x0000000000000000000000000000000000000001";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const previousMostLiquidPOol: Pool = {
+      ...new PoolMock(),
+      id: "XabasPeviosPool",
+      token0_id: token0Id,
+      token1_id: token1Id,
+      totalValueLockedToken1: BigDecimal("111209179201092610921555"),
+    };
+
+    const token0: Token = {
+      ...new TokenMock(),
+      id: token0Id,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      id: token1Id,
+      mostLiquidPool_id: previousMostLiquidPOol.id,
+    };
+
+    const newReserveAmount0 = BigInt(123) * 10n ** BigInt(token0.decimals);
+    const newReserveAmount1 = BigInt(456) * 10n ** BigInt(token1.decimals);
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken1: BigDecimal("26198621892"),
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(previousMostLiquidPOol);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await handleV2PoolSync(
+      context,
+      pool,
+      token0,
+      token1,
+      newReserveAmount0,
+      newReserveAmount1,
+      eventTimestamp,
+      poolSetters
+    );
+
+    const updatedToken1 = await context.Token.getOrThrow(token1.id)!;
+
+    assert.deepEqual(updatedToken1.mostLiquidPool_id, previousMostLiquidPOol.id);
+  });
+
+  it(`should not select the current pool as the token0 most liquid pool if the current pool
+        does not have more tokens than the previous`, async () => {
+    const token0Id = "0x0000000000000000000000000000000000000001";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const previousMostLiquidPOol: Pool = {
+      ...new PoolMock(),
+      id: "XabasPeviosPool",
+      token0_id: token0Id,
+      token1_id: token1Id,
+      totalValueLockedToken0: BigDecimal("111209179201092610921555"),
+    };
+
+    const token0: Token = {
+      ...new TokenMock(),
+      id: token0Id,
+      mostLiquidPool_id: previousMostLiquidPOol.id,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      id: token1Id,
+    };
+
+    const newReserveAmount0 = BigInt(123) * 10n ** BigInt(token0.decimals);
+    const newReserveAmount1 = BigInt(456) * 10n ** BigInt(token1.decimals);
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken0: BigDecimal("26198621892"),
+    };
+
+    context.Pool.set(pool);
+    context.Pool.set(previousMostLiquidPOol);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    await handleV2PoolSync(
+      context,
+      pool,
+      token0,
+      token1,
+      newReserveAmount0,
+      newReserveAmount1,
+      eventTimestamp,
+      poolSetters
+    );
+
+    const updatedToken0 = await context.Token.getOrThrow(token0.id)!;
+
+    assert.deepEqual(updatedToken0.mostLiquidPool_id, previousMostLiquidPOol.id);
+  });
+
+  it(`should select the current pool as the token1 most liquid pool if the current pool
+        has more tokens than the previous after the sync`, async () => {
+    const token0Id = "0x0000000000000000000000000000000000000001";
+    const token1Id = "0x0000000000000000000000000000000000000002";
+
+    const previousMostLiquidPOol: Pool = {
+      ...new PoolMock(),
+      id: "XabasPeviosPool",
+      token0_id: token0Id,
+      token1_id: token1Id,
+      totalValueLockedToken1: BigDecimal("11555"),
+      totalValueLockedToken0: BigDecimal("11"),
+    };
+
+    const token0: Token = {
+      ...new TokenMock(),
+      id: token0Id,
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+      id: token1Id,
+      mostLiquidPool_id: previousMostLiquidPOol.id,
+    };
+
+    const newReserveAmount0 = BigInt("9206121902610") * 10n ** BigInt(token0.decimals);
+    const newReserveAmount1 = BigInt("261982618926189") * 10n ** BigInt(token1.decimals);
+
+    const pool: Pool = {
+      ...new PoolMock(),
+      token0_id: token0.id,
+      token1_id: token1.id,
+      totalValueLockedToken1: BigDecimal("261986218926819"),
+      totalValueLockedToken0: BigDecimal("9206121902610"),
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.Pool.set(previousMostLiquidPOol);
+
+    await handleV2PoolClaimFees(
+      context,
+      pool,
+      token0,
+      token1,
+      newReserveAmount0,
+      newReserveAmount1,
+      eventTimestamp,
+      poolSetters
+    );
+
+    const updatedToken1 = await context.Token.getOrThrow(token1.id)!;
+
+    assert.deepEqual(updatedToken1.mostLiquidPool_id, pool.id);
   });
 });

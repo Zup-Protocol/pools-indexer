@@ -72,6 +72,7 @@ contracts:
       - event: Fee(uint16 fee)
       - event: TickSpacing(int24 newTickSpacing)
       - event: CommunityFee(uint16 communityFeeNew)
+      - event: Burn(address indexed owner, int24 indexed bottomTick, int24 indexed topTick, uint128 liquidityAmount, uint256 amount0, uint256 amount1)
 
   - name: AlgebraPool_1_2_2
     abi_file_path: ./abis/pools/AlgebraPool_1_2_2.json
@@ -85,6 +86,7 @@ contracts:
       - event: TickSpacing(int24 newTickSpacing)
       - event: SwapFee(address indexed sender, uint24 overrideFee, uint24 pluginFee)
       - event: CommunityFee(uint16 communityFeeNew)
+      - event: Burn(address indexed owner, int24 indexed bottomTick, int24 indexed topTick, uint128 liquidityAmount, uint256 amount0, uint256 amount1)
 
   - name: UniswapV3Pool
     abi_file_path: ./abis/pools/UniswapV3Pool.json
@@ -95,6 +97,7 @@ contracts:
       - event: Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount0, uint128 amount1)
       - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)
       - event: CollectProtocol(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1)
+      - event: Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
 
   - name: AerodromeV3Factory
     abi_file_path: ./abis/factories/AerodromeV3Factory.json
@@ -116,6 +119,7 @@ contracts:
       - event: Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount0, uint128 amount1)
       - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)
       - event: CollectFees(address indexed recipient, uint128 amount0, uint128 amount1)
+      - event: Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
       # NOTE: initialize event is called before the pool is created in slipstreams,
       # causing errors (because the pool is expected to be created already).
       # As it doesn't do anything relevant now, besides setting the token prices,
@@ -155,6 +159,7 @@ contracts:
       - event: Collect(address indexed owner, address recipient, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount0, uint128 amount1)
       - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick, uint128 protocolFeesToken0, uint128 protocolFeesToken1)
       - event: CollectProtocol(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1)
+      - event: Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
 
   - name: SushiSwapV3Factory
     abi_file_path: ./abis/factories/UniswapV3Factory.json
@@ -191,12 +196,12 @@ networks:
     contracts:
       - name: UniswapV3Factory
         address: 0x0227628f3F023bb0B980b67D528571c95c6DaC1c
-      - name: UniswapV3Pool
       - name: PancakeSwapV3Factory
         address: 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865
-      - name: PancakeSwapV3Pool
       - name: UniswapV4PoolManager
         address: 0xE03A1074c86CFeDd5C142C4F04F1a1536e203543
+      - name: UniswapV3Pool
+      - name: PancakeSwapV3Pool
   - id: 1 # Ethereum Mainnet
     start_block: 12369621
     confirmed_block_threshold: 12
@@ -211,6 +216,7 @@ networks:
         address: "0x000000000004444c5dc75cB358380D2e3dE08A90"
       - name: PancakeSwapV3Pool
       - name: UniswapV3Pool
+      - name: UniswapV2Pool
   - id: 534352 # Scroll Mainnet
     start_block: 1367
     confirmed_block_threshold: 5

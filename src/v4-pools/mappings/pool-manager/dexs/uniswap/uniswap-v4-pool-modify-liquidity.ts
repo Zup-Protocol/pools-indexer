@@ -1,4 +1,5 @@
 import { UniswapV4PoolManager } from "generated";
+import { DeFiPoolDataSetters } from "../../../../../common/defi-pool-data-setters";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV4PoolModifyLiquidity } from "../../v4-pool-modify-liquidity";
@@ -18,6 +19,7 @@ UniswapV4PoolManager.ModifyLiquidity.handler(async ({ event, context }) => {
     Number.parseInt(event.params.tickLower.toString()),
     Number.parseInt(event.params.tickUpper.toString()),
     BigInt(event.block.timestamp),
-    new PoolSetters(context, event.chainId)
+    new PoolSetters(context, event.chainId),
+    new DeFiPoolDataSetters(context)
   );
 });

@@ -68,7 +68,6 @@ describe("ViemService", () => {
     sut = new ViemService(fakeViem as any);
 
     let createdClient = sut.getClient(IndexerNetwork.HYPER_EVM);
-    console.log(createdClient);
 
     assert(createdClient === fakeClient, "client was not created");
     assert.deepEqual(receivedBatch, [true, true], "clients were not batched");

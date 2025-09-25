@@ -1,15 +1,15 @@
 import assert from "assert";
-import { HandlerContext } from "generated";
+import { DeFiPoolData, handlerContext } from "generated";
 import sinon from "sinon";
-import { ZERO_BIG_DECIMAL } from "../../../../src/common/constants";
+import { defaultDeFiPoolData, DEFI_POOL_DATA_ID, ZERO_BIG_DECIMAL } from "../../../../src/common/constants";
 import { IndexerNetwork } from "../../../../src/common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../src/common/enums/supported-protocol";
 import { TokenService } from "../../../../src/common/services/token-service";
 import { handleV2PoolCreated } from "../../../../src/v2-pools/mappings/factory/v2-factory";
-import { HandlerContextCustomMock, TokenMock } from "../../../mocks";
+import { handlerContextCustomMock, TokenMock } from "../../../mocks";
 
 describe("V2FactoryHandler", () => {
-  let context: HandlerContext;
+  let context: handlerContext;
   let tokenService: sinon.SinonStubbedInstance<TokenService>;
   let poolAddress = "0xP00L4Ddr3ss";
   let token0Address = "0x0000000000000000000000000000000000000001";
@@ -21,7 +21,7 @@ describe("V2FactoryHandler", () => {
 
   beforeEach(() => {
     protocol = SupportedProtocol.UNISWAP_V2;
-    context = HandlerContextCustomMock();
+    context = handlerContextCustomMock();
     chainId = IndexerNetwork.ETHEREUM;
     tokenService = sinon.createStubInstance(TokenService);
 
@@ -392,5 +392,160 @@ describe("V2FactoryHandler", () => {
       SupportedProtocol.getLogoUrl(protocol),
       "the protocol logo url should be correct"
     );
+  });
+
+  it("should set the liquidity volume token 0 to zero", async () => {
+    await handleV2PoolCreated({
+      context,
+      chainId,
+      eventTimestamp,
+      token0Address,
+      token1Address,
+      poolAddress,
+      feeTier,
+      protocol,
+      tokenService,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+    assert.deepEqual(pool.liquidityVolumeToken0, ZERO_BIG_DECIMAL);
+  });
+
+  it("should set the liquidity volume token 1 to zero", async () => {
+    await handleV2PoolCreated({
+      context,
+      chainId,
+      eventTimestamp,
+      token0Address,
+      token1Address,
+      poolAddress,
+      feeTier,
+      protocol,
+      tokenService,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+    assert.deepEqual(pool.liquidityVolumeToken1, ZERO_BIG_DECIMAL);
+  });
+
+  it("should set the liquidity volume USD to zero", async () => {
+    await handleV2PoolCreated({
+      context,
+      chainId,
+      eventTimestamp,
+      token0Address,
+      token1Address,
+      poolAddress,
+      feeTier,
+      protocol,
+      tokenService,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+    assert.deepEqual(pool.liquidityVolumeUSD, ZERO_BIG_DECIMAL);
+  });
+
+  it("should set the swap volume USD to zero", async () => {
+    await handleV2PoolCreated({
+      context,
+      chainId,
+      eventTimestamp,
+      token0Address,
+      token1Address,
+      poolAddress,
+      feeTier,
+      protocol,
+      tokenService,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+    assert.deepEqual(pool.swapVolumeUSD, ZERO_BIG_DECIMAL);
+  });
+
+  it("should set the swap volume token 0 to zero", async () => {
+    await handleV2PoolCreated({
+      context,
+      chainId,
+      eventTimestamp,
+      token0Address,
+      token1Address,
+      poolAddress,
+      feeTier,
+      protocol,
+      tokenService,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+    assert.deepEqual(pool.swapVolumeToken0, ZERO_BIG_DECIMAL);
+  });
+
+  it("should set the swap volume token 1 to zero", async () => {
+    await handleV2PoolCreated({
+      context,
+      chainId,
+      eventTimestamp,
+      token0Address,
+      token1Address,
+      poolAddress,
+      feeTier,
+      protocol,
+      tokenService,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+    assert.deepEqual(pool.swapVolumeToken1, ZERO_BIG_DECIMAL);
+  });
+
+  it("should modify the existing defiPoolData entity to increase the poolsCount", async () => {
+    const existingDefiPoolData: DeFiPoolData = {
+      id: DEFI_POOL_DATA_ID,
+      poolsCount: 21,
+      startedAtTimestamp: 1758582407n,
+    };
+
+    context.DeFiPoolData.set(existingDefiPoolData);
+
+    await handleV2PoolCreated({
+      context,
+      chainId,
+      eventTimestamp,
+      token0Address,
+      token1Address,
+      poolAddress,
+      feeTier,
+      protocol,
+      tokenService,
+    });
+
+    const updatedDefiPoolData = await context.DeFiPoolData.getOrThrow(DEFI_POOL_DATA_ID)!;
+    const expectedNewDefiPoolData: DeFiPoolData = {
+      ...existingDefiPoolData,
+      poolsCount: existingDefiPoolData.poolsCount + 1,
+    };
+
+    assert.deepEqual(updatedDefiPoolData, expectedNewDefiPoolData);
+  });
+
+  it(`should create a new defiPoolData entity if it doesn't exist and
+    assign one as poolsCount. `, async () => {
+    await handleV2PoolCreated({
+      context,
+      chainId,
+      eventTimestamp,
+      token0Address,
+      token1Address,
+      poolAddress,
+      feeTier,
+      protocol,
+      tokenService,
+    });
+
+    const updatedDefiPoolData = await context.DeFiPoolData.getOrThrow(DEFI_POOL_DATA_ID)!;
+    const expectedNewDefiPoolData: DeFiPoolData = {
+      ...defaultDeFiPoolData(eventTimestamp),
+      poolsCount: 1,
+    };
+
+    assert.deepEqual(updatedDefiPoolData, expectedNewDefiPoolData);
   });
 });

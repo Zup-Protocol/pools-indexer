@@ -4,15 +4,45 @@ enum PoolType {
   V4
 }
 
+type DeFiPoolData {
+  id: ID!
+  poolsCount: Int!
+  startedAtTimestamp: BigInt!
+}
+
+type DeFiPoolDailyData {
+  id: ID!
+  liquidityVolumeUSD: BigDecimal!
+  liquidityNetInflowUSD: BigDecimal!
+  liquidityInflowUSD: BigDecimal!
+  liquidityOutflowUSD: BigDecimal!
+  dayStartTimestamp: BigInt! @index
+}
+
+type DeFiPoolHourlyData {
+  id: ID!
+  liquidityVolumeUSD: BigDecimal!
+  liquidityNetInflowUSD: BigDecimal!
+  liquidityInflowUSD: BigDecimal!
+  liquidityOutflowUSD: BigDecimal!
+  hourStartTimestamp: BigInt! @index
+}
+
 type Token {
   id: ID!
   tokenAddress: String! @index
   usdPrice: BigDecimal!
+  mostLiquidPool: Pool!
   decimals: Int!
-  totalValuePooledUsd: BigDecimal!
+  totalValuePooledUsd: BigDecimal! @index
   totalTokenPooledAmount: BigDecimal!
+  swapVolumeUSD: BigDecimal! @index
+  tokenSwapVolume: BigDecimal!
+  liquidityVolumeUSD: BigDecimal! @index
+  tokenLiquidityVolume: BigDecimal!
   symbol: String!
   name: String!
+  chainId: Int! @index
 }
 
 type Pool {
@@ -23,9 +53,15 @@ type Pool {
   currentFeeTier: Int!
   initialFeeTier: Int!
   positionManager: Bytes!
-  totalValueLockedUSD: BigDecimal!
+  totalValueLockedUSD: BigDecimal! @index
   totalValueLockedToken0: BigDecimal!
   totalValueLockedToken1: BigDecimal!
+  swapVolumeUSD: BigDecimal! @index
+  swapVolumeToken0: BigDecimal!
+  swapVolumeToken1: BigDecimal!
+  liquidityVolumeUSD: BigDecimal! @index
+  liquidityVolumeToken0: BigDecimal!
+  liquidityVolumeToken1: BigDecimal!
   createdAtTimestamp: BigInt!
   hourlyData: [PoolHourlyData!]! @derivedFrom(field: "pool")
   dailyData: [PoolDailyData!]! @derivedFrom(field: "pool")
@@ -74,6 +110,24 @@ type PoolHourlyData {
   feesToken0: BigDecimal!
   feesToken1: BigDecimal!
   hourStartTimestamp: BigInt! @index
+  totalValueLockedUSD: BigDecimal! @index
+  totalValueLockedToken0: BigDecimal!
+  totalValueLockedToken1: BigDecimal!
+  swapVolumeToken0: BigDecimal!
+  swapVolumeToken1: BigDecimal!
+  swapVolumeUSD: BigDecimal! @index
+  liquidityVolumeUSD: BigDecimal! @index
+  liquidityVolumeToken0: BigDecimal!
+  liquidityVolumeToken1: BigDecimal!
+  liquidityNetInflowUSD: BigDecimal! @index
+  liquidityNetInflowToken0: BigDecimal!
+  liquidityNetInflowToken1: BigDecimal!
+  liquidityInflowUSD: BigDecimal! @index
+  liquidityInflowToken0: BigDecimal!
+  liquidityInflowToken1: BigDecimal!
+  liquidityOutflowUSD: BigDecimal! @index
+  liquidityOutflowToken0: BigDecimal!
+  liquidityOutflowToken1: BigDecimal!
 }
 
 type PoolDailyData {
@@ -86,6 +140,21 @@ type PoolDailyData {
   totalValueLockedUSD: BigDecimal! @index
   totalValueLockedToken0: BigDecimal!
   totalValueLockedToken1: BigDecimal!
+  swapVolumeToken0: BigDecimal!
+  swapVolumeToken1: BigDecimal!
+  swapVolumeUSD: BigDecimal! @index
+  liquidityVolumeUSD: BigDecimal! @index
+  liquidityVolumeToken0: BigDecimal!
+  liquidityVolumeToken1: BigDecimal!
+  liquidityNetInflowUSD: BigDecimal! @index
+  liquidityNetInflowToken0: BigDecimal!
+  liquidityNetInflowToken1: BigDecimal!
+  liquidityInflowUSD: BigDecimal! @index
+  liquidityInflowToken0: BigDecimal!
+  liquidityInflowToken1: BigDecimal!
+  liquidityOutflowUSD: BigDecimal! @index
+  liquidityOutflowToken0: BigDecimal!
+  liquidityOutflowToken1: BigDecimal!
 }
 
 type Protocol {
@@ -93,4 +162,5 @@ type Protocol {
   name: String!
   logo: String!
   url: String!
+  pools: [Pool!]! @derivedFrom(field: "protocol")
 }

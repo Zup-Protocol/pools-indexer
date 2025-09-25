@@ -1,23 +1,23 @@
 import assert from "assert";
-import { BigDecimal, HandlerContext, Token } from "generated";
+import { BigDecimal, handlerContext, Token } from "generated";
 import sinon from "sinon";
 import { encodeFunctionResult } from "viem";
 import { ERC20_ABI } from "../../../src/common/abis";
-import { ZERO_BIG_DECIMAL } from "../../../src/common/constants";
+import { ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "../../../src/common/constants";
 import { IndexerNetwork } from "../../../src/common/enums/indexer-network";
 import { NetworkToken } from "../../../src/common/enums/network-token";
 import { TokenService } from "../../../src/common/services/token-service";
 import { ViemService } from "../../../src/common/services/viem-service";
-import { HandlerContextCustomMock, mockReturnEffectCall as mockNextReturnEffectCall } from "../../mocks";
+import { handlerContextCustomMock, mockReturnEffectCall as mockNextReturnEffectCall, TokenMock } from "../../mocks";
 
 describe("TokenService", () => {
   let sut: TokenService;
-  let context: HandlerContext;
+  let context: handlerContext;
   let viemService: sinon.SinonStubbedInstance<ViemService>;
   let network: IndexerNetwork;
 
   beforeEach(() => {
-    context = HandlerContextCustomMock();
+    context = handlerContextCustomMock();
     viemService = sinon.createStubInstance(ViemService);
     network = IndexerNetwork.ETHEREUM;
 
@@ -32,6 +32,7 @@ describe("TokenService", () => {
     if calling 'getOrCreateTokenEntity' with an id that already exists`, async () => {
     const tokenAddress = "0x0000000000000000000000000000000000000000";
     const tokenSetBefore: Token = {
+      ...new TokenMock(),
       id: IndexerNetwork.getEntityIdFromAddress(network, tokenAddress),
       decimals: 18,
       symbol: "ETH",
@@ -40,6 +41,7 @@ describe("TokenService", () => {
       totalTokenPooledAmount: BigDecimal("937289.0"),
       totalValuePooledUsd: BigDecimal("798765.122"),
       usdPrice: BigDecimal("121.1"),
+      chainId: network,
     };
 
     context.Token.set(tokenSetBefore);
@@ -56,11 +58,17 @@ describe("TokenService", () => {
     const tokenReturned = await sut.getOrCreateTokenEntity(context, network, tokenAddress);
     const expectedToken: Token = {
       ...NetworkToken.metadata(NetworkToken.HYPE),
+      tokenSwapVolume: ZERO_BIG_DECIMAL,
+      tokenLiquidityVolume: ZERO_BIG_DECIMAL,
+      swapVolumeUSD: ZERO_BIG_DECIMAL,
+      liquidityVolumeUSD: ZERO_BIG_DECIMAL,
+      mostLiquidPool_id: ZERO_ADDRESS,
       id: IndexerNetwork.getEntityIdFromAddress(network, tokenAddress),
       tokenAddress: tokenAddress,
       totalTokenPooledAmount: ZERO_BIG_DECIMAL,
       usdPrice: ZERO_BIG_DECIMAL,
       totalValuePooledUsd: ZERO_BIG_DECIMAL,
+      chainId: network,
     };
 
     assert.deepEqual(tokenReturned, expectedToken);
@@ -72,13 +80,20 @@ describe("TokenService", () => {
     const tokenAddress = "0x0000000000000000000000000000000000000000";
 
     const tokenReturned = await sut.getOrCreateTokenEntity(context, network, tokenAddress);
+
     const expectedToken: Token = {
       ...NetworkToken.metadata(NetworkToken.ETH),
+      tokenSwapVolume: ZERO_BIG_DECIMAL,
+      tokenLiquidityVolume: ZERO_BIG_DECIMAL,
+      swapVolumeUSD: ZERO_BIG_DECIMAL,
+      liquidityVolumeUSD: ZERO_BIG_DECIMAL,
+      mostLiquidPool_id: ZERO_ADDRESS,
       id: IndexerNetwork.getEntityIdFromAddress(network, tokenAddress),
       tokenAddress: tokenAddress,
       totalTokenPooledAmount: ZERO_BIG_DECIMAL,
       usdPrice: ZERO_BIG_DECIMAL,
       totalValuePooledUsd: ZERO_BIG_DECIMAL,
+      chainId: network,
     };
 
     assert.deepEqual(tokenReturned, expectedToken);
@@ -100,6 +115,11 @@ describe("TokenService", () => {
 
     const expectedToken: Token = {
       id: IndexerNetwork.getEntityIdFromAddress(network, tokenMetadata.tokenAddress),
+      tokenSwapVolume: ZERO_BIG_DECIMAL,
+      tokenLiquidityVolume: ZERO_BIG_DECIMAL,
+      swapVolumeUSD: ZERO_BIG_DECIMAL,
+      liquidityVolumeUSD: ZERO_BIG_DECIMAL,
+      mostLiquidPool_id: ZERO_ADDRESS,
       decimals: tokenMetadata.decimals,
       symbol: tokenMetadata.symbol,
       name: tokenMetadata.name,
@@ -107,6 +127,7 @@ describe("TokenService", () => {
       totalTokenPooledAmount: ZERO_BIG_DECIMAL,
       totalValuePooledUsd: ZERO_BIG_DECIMAL,
       usdPrice: ZERO_BIG_DECIMAL,
+      chainId: network,
     };
 
     assert.deepEqual(tokenReturned, expectedToken);
@@ -240,7 +261,6 @@ describe("TokenService", () => {
     const tokenAddress = "0x0000000000000000000000000000000000000000";
 
     const result = await sut.getRemoteTokenMetadata(tokenAddress, network);
-    console.log(result);
 
     assert.deepEqual(result, {
       decimals: 18,
