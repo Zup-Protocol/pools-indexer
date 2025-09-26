@@ -8,6 +8,7 @@ export enum IndexerNetwork {
   BASE = 8453,
   SEPOLIA = 11155111,
   HYPER_EVM = 999,
+  PLASMA = 9745,
 }
 
 export namespace IndexerNetwork {
@@ -25,6 +26,8 @@ export namespace IndexerNetwork {
         return "https://sepolia.hypersync.xyz";
       case IndexerNetwork.HYPER_EVM:
         return "https://hyperliquid.hypersync.xyz";
+      case IndexerNetwork.PLASMA:
+        return "https://rpc.plasma.to";
     }
   }
 
@@ -42,6 +45,8 @@ export namespace IndexerNetwork {
         return `https://eth-sepolia.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
       case IndexerNetwork.HYPER_EVM:
         return `https://hyperliquid-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+      case IndexerNetwork.PLASMA:
+        return `https://plasma-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
     }
   }
 
@@ -63,6 +68,8 @@ export namespace IndexerNetwork {
         return NetworkToken.metadata(NetworkToken.ETH);
       case IndexerNetwork.HYPER_EVM:
         return NetworkToken.metadata(NetworkToken.HYPE);
+      case IndexerNetwork.PLASMA:
+        return NetworkToken.metadata(NetworkToken.XPL);
     }
   }
 
@@ -106,6 +113,12 @@ export namespace IndexerNetwork {
           "0x9ab96A4668456896d45c301Bc3A15Cee76AA7B8D", // rUSDC
           "0x02c6a2fa58cc01a18b8d9e00ea48d65e4df26c70", // feUSD
         ];
+      case IndexerNetwork.PLASMA:
+        return [
+          "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb", // USDT0
+          "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", // USDe
+          "0x0a1a1a107e45b7ced86833863f482bc5f4ed82ef", // USDai
+        ];
     }
   }
 
@@ -123,6 +136,8 @@ export namespace IndexerNetwork {
         return "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14";
       case IndexerNetwork.HYPER_EVM:
         return "0x5555555555555555555555555555555555555555";
+      case IndexerNetwork.PLASMA:
+        return "0x6100e367285b01f48d07953803a2d8dca5d19873";
     }
   }
 }

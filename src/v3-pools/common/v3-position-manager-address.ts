@@ -24,6 +24,8 @@ export class V3PositionManagerAddress {
         return "0x1238536071E1c677A632429e3655c799b22cDA52";
       case IndexerNetwork.HYPER_EVM:
         throw Error(`Uniswap is not supported on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        return "0x743E03cceB4af2efA3CC76838f6E8B50B63F184c";
     }
   }
 
@@ -41,6 +43,8 @@ export class V3PositionManagerAddress {
         return "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364";
       case IndexerNetwork.HYPER_EVM:
         throw Error(`PancakeSwap is not supported on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`PancakeSwap is not supported on Plasma`);
     }
   }
 
@@ -58,6 +62,8 @@ export class V3PositionManagerAddress {
         throw Error(`SushiSwap is not supported on Sepolia`);
       case IndexerNetwork.HYPER_EVM:
         throw Error(`SushiSwap is not supported on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`SushiSwap is not supported on Plasma`);
     }
   }
 
@@ -102,6 +108,8 @@ export class V3PositionManagerAddress {
         throw Error(`Velodrome is not supported on Sepolia`);
       case IndexerNetwork.HYPER_EVM:
         throw Error(`Velodrome is not supported on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`Velodrome is not supported on Plasma`);
     }
   }
   static honeypop(network: IndexerNetwork): string {

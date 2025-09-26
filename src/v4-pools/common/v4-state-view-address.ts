@@ -15,6 +15,8 @@ export class V4StateViewAddress {
         return "0xe1dd9c3fa50edb962e442f60dfbc432e24537e4c";
       case IndexerNetwork.HYPER_EVM:
         throw Error(`Uniswap V4 state view is not implemented on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`Uniswap V4 state view is not implemented on Plasma`);
     }
   }
 }

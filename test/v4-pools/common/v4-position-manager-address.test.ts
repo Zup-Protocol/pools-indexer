@@ -62,4 +62,12 @@ describe("V4PositionManagerAddress", () => {
   it("pancakeSwap throws for unichain", () => {
     assert.throws(() => V4PositionManagerAddress.pancakeSwap(IndexerNetwork.UNICHAIN));
   });
+
+  it("pancakeSwap throws for Plasma", () => {
+    assert.throws(() => V4PositionManagerAddress.pancakeSwap(IndexerNetwork.PLASMA));
+  });
+
+  it("Uniswap throws for Plasma", () => {
+    assert.throws(() => V4PositionManagerAddress.uniswap(IndexerNetwork.PLASMA));
+  });
 });

@@ -3,6 +3,7 @@ import { NativeToken } from "../types";
 export enum NetworkToken {
   ETH,
   HYPE,
+  XPL,
 }
 
 export namespace NetworkToken {
@@ -19,6 +20,12 @@ export namespace NetworkToken {
           decimals: 18,
           name: "Hyperliquid",
           symbol: "HYPE",
+        };
+      case NetworkToken.XPL:
+        return {
+          decimals: 18,
+          name: "Plasma",
+          symbol: "XPL",
         };
     }
   }

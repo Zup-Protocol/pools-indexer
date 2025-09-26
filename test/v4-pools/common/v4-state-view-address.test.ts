@@ -26,4 +26,8 @@ describe("V4StateViewAddress", () => {
   it("uniswap throws  for hyperEVM", () => {
     assert.throws(() => V4StateViewAddress.uniswap(IndexerNetwork.HYPER_EVM));
   });
+
+  it("uniswap throws for plasma", () => {
+    assert.throws(() => V4StateViewAddress.uniswap(IndexerNetwork.PLASMA));
+  });
 });

@@ -15,6 +15,8 @@ export class V2PositionManagerAddress {
         throw Error(`Uniswap V2 position manager is not available on Scroll`);
       case IndexerNetwork.HYPER_EVM:
         throw Error(`Uniswap V2 position manager is not available on Hyper EVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`Uniswap V2 position manager is not available on Plasma`);
     }
   }
 }

@@ -15,6 +15,8 @@ export class V4PositionManagerAddress {
         return "0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4";
       case IndexerNetwork.HYPER_EVM:
         throw Error(`Uniswap V4 position manager is not implemented on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`Uniswap V4 position manager is not implemented on Plasma`);
     }
   }
 
@@ -32,6 +34,8 @@ export class V4PositionManagerAddress {
         throw Error(`PancakeSwap V4 position manager is not implemented on Sepolia`);
       case IndexerNetwork.HYPER_EVM:
         throw Error(`PancakeSwap V4 position manager is not implemented on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`PancakeSwap V4 position manager is not implemented on Plasma`);
     }
   }
 }
