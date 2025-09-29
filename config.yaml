@@ -252,25 +252,25 @@ networks:
         address: 0x04625B046C69577EfC40e6c0Bb83CDBAfab5a55F
       - name: UniswapV3Pool
       - name: AerodromeV3Pool
-  # - id: 999 # HyperEVM
-  #   start_block: 11648
-  #   confirmed_block_threshold: 6
-  #   hypersync_config:
-  #     url: https://hyperliquid.hypersync.xyz/
-  #   contracts:
-  #     - name: HyperSwapV3Factory
-  #       address: 0xB1c0fa0B789320044A6F623cFe5eBda9562602E3
-  #     - name: ProjectXV3Factory
-  #       address: 0xFf7B3e8C00e57ea31477c32A5B52a58Eea47b072
-  #     - name: HybraV3Factory
-  #       address: 0x2dC0Ec0F0db8bAF250eCccF268D7dFbF59346E5E
-  #     - name: GLiquidAlgebraFactory
-  #       address: 0x10253594A832f967994b44f33411940533302ACb
-  #     - name: KittenSwapAlgebraFactory
-  #       address: 0x5f95E92c338e6453111Fc55ee66D4AafccE661A7
-  #     - name: UniswapV3Pool
-  #     - name: AlgebraPool_1_2_1
-  #     - name: AlgebraPool_1_2_2
+  - id: 999 # HyperEVM
+    start_block: 11648
+    confirmed_block_threshold: 6
+    hypersync_config:
+      url: https://hyperliquid.hypersync.xyz/
+    contracts:
+      - name: HyperSwapV3Factory
+        address: 0xB1c0fa0B789320044A6F623cFe5eBda9562602E3
+      - name: ProjectXV3Factory
+        address: 0xFf7B3e8C00e57ea31477c32A5B52a58Eea47b072
+      - name: HybraV3Factory
+        address: 0x2dC0Ec0F0db8bAF250eCccF268D7dFbF59346E5E
+      - name: GLiquidAlgebraFactory
+        address: 0x10253594A832f967994b44f33411940533302ACb
+      - name: KittenSwapAlgebraFactory
+        address: 0x5f95E92c338e6453111Fc55ee66D4AafccE661A7
+      - name: UniswapV3Pool
+      - name: AlgebraPool_1_2_1
+      - name: AlgebraPool_1_2_2
   # - id: 8453 # Base
   #   start_block: 1371680
   #   confirmed_block_threshold: 200
