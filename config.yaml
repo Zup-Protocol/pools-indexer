@@ -226,6 +226,8 @@ networks:
   - id: 534352 # Scroll Mainnet
     start_block: 1367
     confirmed_block_threshold: 5
+    hypersync_config:
+      url: https://scroll.hypersync.xyz/
     contracts:
       - name: ZebraProtocolV3Factory
         address: 0x96a7F53f7636c93735bf85dE416A4Ace94B56Bd9
