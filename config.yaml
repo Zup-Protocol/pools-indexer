@@ -238,18 +238,20 @@ networks:
       - name: HoneyPopV3Factory
         address: 0x1d25AF2b0992bf227b350860Ea80Bad47382CAf6
       - name: UniswapV3Pool
-  # - id: 130 # Unichain
-  #   start_block: 0
-  #   confirmed_block_threshold: 200
-  #   contracts:
-  #     - name: UniswapV4PoolManager
-  #       address: 0x1f98400000000000000000000000000000000004
-  #     - name: UniswapV3Factory
-  #       address: 0x1f98400000000000000000000000000000000003
-  #     - name: VelodromeV3Factory
-  #       address: 0x04625B046C69577EfC40e6c0Bb83CDBAfab5a55F
-  #     - name: UniswapV3Pool
-  #     - name: AerodromeV3Pool
+  - id: 130 # Unichain
+    start_block: 0
+    confirmed_block_threshold: 200
+    hypersync_config:
+      url: https://unichain.hypersync.xyz/
+    contracts:
+      - name: UniswapV4PoolManager
+        address: 0x1f98400000000000000000000000000000000004
+      - name: UniswapV3Factory
+        address: 0x1f98400000000000000000000000000000000003
+      - name: VelodromeV3Factory
+        address: 0x04625B046C69577EfC40e6c0Bb83CDBAfab5a55F
+      - name: UniswapV3Pool
+      - name: AerodromeV3Pool
   # - id: 999 # HyperEVM
   #   start_block: 11648
   #   confirmed_block_threshold: 6
