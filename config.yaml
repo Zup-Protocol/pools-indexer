@@ -297,6 +297,6 @@ networks:
         address: 0xcb2436774C3e191c85056d248EF4260ce5f27A9D
       - name: UniswapV3Pool
 
-unordered_multichain_mode: true
+unordered_multichain_mode: false
 preload_handlers: true
 rollback_on_reorg: true
