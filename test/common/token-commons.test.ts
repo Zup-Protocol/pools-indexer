@@ -75,4 +75,54 @@ describe("TokenCommons", () => {
 
     assert.deepEqual(pickMostLiquidPoolForToken(token, otherPool, currentPool), currentPool);
   });
+
+  it(`should return the current pool containing less tokens than the other
+    if the token price is zero, and the current pool tvl USD based on the
+    other token with a price set is higher`, () => {
+    const token: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("0"),
+    };
+
+    const currentPool: Pool = {
+      ...new PoolMock("Sabax ID"),
+      token0_id: token.id,
+      totalValueLockedToken0: BigDecimal("10"),
+      totalValueLockedUSD: BigDecimal("88899988"),
+    };
+
+    const otherPool: Pool = {
+      ...new PoolMock("Xabas ID"),
+      token1_id: token.id,
+      totalValueLockedUSD: BigDecimal("12010"),
+      totalValueLockedToken1: BigDecimal("12618926178921"),
+    };
+
+    assert.deepEqual(pickMostLiquidPoolForToken(token, otherPool, currentPool), currentPool);
+  });
+
+  it(`should return the other pool containing less tokens than the current
+    if the token price is zero, and the other pool tvl USD based on the
+    other token with a price set is higher`, () => {
+    const token: Token = {
+      ...new TokenMock(),
+      usdPrice: BigDecimal("0"),
+    };
+
+    const currentPool: Pool = {
+      ...new PoolMock("Sabax ID"),
+      token0_id: token.id,
+      totalValueLockedToken0: BigDecimal("27190261026182618219"),
+      totalValueLockedUSD: BigDecimal("121212121"),
+    };
+
+    const otherPool: Pool = {
+      ...new PoolMock("Xabas ID"),
+      token1_id: token.id,
+      totalValueLockedUSD: BigDecimal("1261982618962918"),
+      totalValueLockedToken1: BigDecimal("126"),
+    };
+
+    assert.deepEqual(pickMostLiquidPoolForToken(token, otherPool, currentPool), otherPool);
+  });
 });

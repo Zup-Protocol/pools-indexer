@@ -42,6 +42,10 @@ describe("V3PositionManagerAddress", () => {
     );
   });
 
+  it("should return the correct address for uniswap on plasma", async () => {
+    assert.equal(V3PositionManagerAddress.uniswap(IndexerNetwork.PLASMA), "0x743E03cceB4af2efA3CC76838f6E8B50B63F184c");
+  });
+
   it("should throw when calling uniswap on hyper_evm", async () => {
     assert.throws(() => {
       V3PositionManagerAddress.uniswap(IndexerNetwork.HYPER_EVM);
@@ -88,6 +92,12 @@ describe("V3PositionManagerAddress", () => {
     }, Error("PancakeSwap is not supported on HyperEVM"));
   });
 
+  it("should throw when calling pancakeSwap on plasma", async () => {
+    assert.throws(() => {
+      V3PositionManagerAddress.pancakeSwap(IndexerNetwork.PLASMA);
+    }, Error("PancakeSwap is not supported on Plasma"));
+  });
+
   it("should return the correct address for sushiSwap on base", async () => {
     assert.equal(V3PositionManagerAddress.sushiSwap(IndexerNetwork.BASE), "0x80C7DD17B01855a6D2347444a0FCC36136a314de");
   });
@@ -103,6 +113,12 @@ describe("V3PositionManagerAddress", () => {
     assert.throws(() => {
       V3PositionManagerAddress.sushiSwap(IndexerNetwork.UNICHAIN);
     }, Error("SushiSwap is not supported on Unichain"));
+  });
+
+  it("should throw when calling sushiSwap on plasma", async () => {
+    assert.throws(() => {
+      V3PositionManagerAddress.sushiSwap(IndexerNetwork.PLASMA);
+    }, Error("SushiSwap is not supported on Plasma"));
   });
 
   it("should return the correct address for sushiSwap on scroll", async () => {
@@ -165,6 +181,12 @@ describe("V3PositionManagerAddress", () => {
     assert.throws(() => {
       V3PositionManagerAddress.velodrome(IndexerNetwork.ETHEREUM);
     }, Error(`Velodrome is not supported on Mainnet`));
+  });
+
+  it("should throw when calling velodrome on plasma", async () => {
+    assert.throws(() => {
+      V3PositionManagerAddress.velodrome(IndexerNetwork.PLASMA);
+    }, Error(`Velodrome is not supported on Plasma`));
   });
 
   it("should throw when calling velodrome on base", async () => {

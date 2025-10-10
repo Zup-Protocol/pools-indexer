@@ -22,6 +22,10 @@ export function pickMostLiquidPoolForToken(
   const tokenAmountStoredInCurrentPool = getTokenAmountInPool(currentPool, token);
   const tokenAmountStoredInOtherPool = getTokenAmountInPool(otherPool, token);
 
+  if (token.usdPrice.isZero()) {
+    return otherPool.totalValueLockedUSD.gt(currentPool.totalValueLockedUSD) ? otherPool : currentPool;
+  }
+
   if (tokenAmountStoredInOtherPool.gt(tokenAmountStoredInCurrentPool)) {
     return otherPool;
   }

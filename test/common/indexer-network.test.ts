@@ -95,6 +95,10 @@ describe("IndexerNetworkTests", () => {
     assert.equal(IndexerNetwork.getFreeRPCUrl(IndexerNetwork.HYPER_EVM), `https://hyperliquid.drpc.org`);
   });
 
+  it("should return the correct rpc url for Plasma when using free RPC url", () => {
+    assert.equal(IndexerNetwork.getFreeRPCUrl(IndexerNetwork.PLASMA), `https://rpc.plasma.to`);
+  });
+
   it(`should return the right entity id for the given address,
     based on the network in the format $network-$address`, () => {
     Object.values(IndexerNetwork)
@@ -122,6 +126,14 @@ describe("IndexerNetworkTests", () => {
 
   it("should return the correct native token object for sepolia", () => {
     assert.deepEqual(IndexerNetwork.nativeToken(IndexerNetwork.SEPOLIA), NetworkToken.metadata(NetworkToken.ETH));
+  });
+
+  it("should return the correct native token object for hyperEVM", () => {
+    assert.deepEqual(IndexerNetwork.nativeToken(IndexerNetwork.HYPER_EVM), NetworkToken.metadata(NetworkToken.HYPE));
+  });
+
+  it("should return the correct native token object for plasma", () => {
+    assert.deepEqual(IndexerNetwork.nativeToken(IndexerNetwork.PLASMA), NetworkToken.metadata(NetworkToken.XPL));
   });
 
   it("should return the correct stablecoin addresses defined for ethereum", () => {
@@ -164,6 +176,24 @@ describe("IndexerNetworkTests", () => {
     ]);
   });
 
+  it("should return the correct stablecoin addresses defined for HyperEVM", () => {
+    assert.deepEqual(IndexerNetwork.stablecoinsAddresses(IndexerNetwork.HYPER_EVM), [
+      "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb", // USDT0
+      "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34", // USDe
+      "0xb50A96253aBDF803D85efcDce07Ad8becBc52BD5", // USDHL
+      "0x9ab96A4668456896d45c301Bc3A15Cee76AA7B8D", // rUSDC
+      "0x02c6a2fa58cc01a18b8d9e00ea48d65e4df26c70", // feUSD
+    ]);
+  });
+
+  it("should return the correct stablecoin addresses defined for Plasma", () => {
+    assert.deepEqual(IndexerNetwork.stablecoinsAddresses(IndexerNetwork.PLASMA), [
+      "0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb", // USDT0
+      "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34", // USDe
+      "0x0a1a1a107e45b7ced86833863f482bc5f4ed82ef", // USDai
+    ]);
+  });
+
   it("should return the correct wrapped native address for ethereum", () => {
     assert.equal(
       IndexerNetwork.wrappedNativeAddress(IndexerNetwork.ETHEREUM),
@@ -196,6 +226,20 @@ describe("IndexerNetworkTests", () => {
     assert.equal(
       IndexerNetwork.wrappedNativeAddress(IndexerNetwork.SEPOLIA),
       "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"
+    );
+  });
+
+  it("should return the correct wrapped native address for hyperEVM", () => {
+    assert.equal(
+      IndexerNetwork.wrappedNativeAddress(IndexerNetwork.HYPER_EVM),
+      "0x5555555555555555555555555555555555555555"
+    );
+  });
+
+  it("should return the correct wrapped native address for plasma", () => {
+    assert.equal(
+      IndexerNetwork.wrappedNativeAddress(IndexerNetwork.PLASMA),
+      "0x6100e367285b01f48d07953803a2d8dca5d19873"
     );
   });
 });

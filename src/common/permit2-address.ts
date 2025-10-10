@@ -15,6 +15,8 @@ export class Permit2Address {
         return "0x000000000022D473030F116dDEE9F6B43aC78BA3";
       case IndexerNetwork.HYPER_EVM:
         throw Error(`Uniswap is not supported on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`Uniswap is not supported on Plasma`);
     }
   }
 
@@ -32,6 +34,8 @@ export class Permit2Address {
         throw Error(`PancakeSwap is not supported on Sepolia`);
       case IndexerNetwork.HYPER_EVM:
         throw Error(`PancakeSwap is not supported on HyperEVM`);
+      case IndexerNetwork.PLASMA:
+        throw Error(`PancakeSwap is not supported on Plasma`);
     }
   }
 }

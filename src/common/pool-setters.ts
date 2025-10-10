@@ -18,13 +18,12 @@ import {
   getPoolHourlyDataId,
   getSwapFeesFromRawAmounts,
   getSwapVolumeFromAmounts,
-  getTokenAmountInPool,
   isNativePool,
   isStablePool,
   isVariableWithStablePool,
   isWrappedNativePool,
 } from "./pool-commons";
-import { formatFromTokenAmount } from "./token-commons";
+import { formatFromTokenAmount, pickMostLiquidPoolForToken } from "./token-commons";
 import { PoolPrices } from "./types";
 
 export class PoolSetters {
@@ -251,9 +250,11 @@ export class PoolSetters {
     }
 
     const mostLiquidPoolEntity = await this.context.Pool.getOrThrow(forToken.mostLiquidPool_id);
-    const isPriceFromMoreLiquidPool = getTokenAmountInPool(fromPool, forToken).gt(
-      getTokenAmountInPool(mostLiquidPoolEntity, forToken)
-    );
+    const isPriceFromMoreLiquidPool = pickMostLiquidPoolForToken(
+      forToken,
+      fromPool,
+      mostLiquidPoolEntity
+    ).id.lowercasedEquals(fromPool.id);
 
     if (isPriceFromMoreLiquidPool && isNewPoolTvlBalanced) {
       return (forToken = {
@@ -339,20 +340,20 @@ export class PoolSetters {
       };
     }
 
-    let newToken0Price = poolToken0Entity.usdPrice;
-    let newToken1Price = poolToken1Entity.usdPrice;
+    let token0Price = poolToken0Entity.usdPrice;
+    let token1Price = poolToken1Entity.usdPrice;
 
-    if (!newToken1Price.eq(ZERO_BIG_DECIMAL)) {
-      newToken0Price = poolPrices.token1PerToken0.times(newToken1Price);
+    if (!poolToken1Entity.usdPrice.eq(ZERO_BIG_DECIMAL)) {
+      token0Price = poolPrices.token1PerToken0.times(poolToken1Entity.usdPrice);
     }
 
-    if (!newToken0Price.eq(ZERO_BIG_DECIMAL)) {
-      newToken1Price = poolPrices.token0PerToken1.times(newToken0Price);
+    if (!poolToken0Entity.usdPrice.eq(ZERO_BIG_DECIMAL)) {
+      token1Price = poolPrices.token0PerToken1.times(poolToken0Entity.usdPrice);
     }
 
     return {
-      token0UpdatedPrice: newToken0Price.decimalPlaces(poolToken0Entity.decimals),
-      token1UpdatedPrice: newToken1Price.decimalPlaces(poolToken1Entity.decimals),
+      token0UpdatedPrice: token0Price.decimalPlaces(poolToken0Entity.decimals),
+      token1UpdatedPrice: token1Price.decimalPlaces(poolToken1Entity.decimals),
     };
   }
 }

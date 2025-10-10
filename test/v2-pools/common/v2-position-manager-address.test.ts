@@ -41,4 +41,11 @@ describe("V2PositionManagerAddress", () => {
       Error(`Uniswap V2 position manager is not available on Hyper EVM`)
     );
   });
+
+  it("should throw when calling uniswap on plasma", () => {
+    assert.throws(
+      () => V2PositionManagerAddress.uniswap(IndexerNetwork.PLASMA),
+      Error(`Uniswap V2 position manager is not available on Plasma`)
+    );
+  });
 });

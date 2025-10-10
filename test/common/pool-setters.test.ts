@@ -540,13 +540,56 @@ describe("PoolSetters", () => {
     assert.equal(newPrices[1].usdPrice.toString(), "1.01031");
   });
 
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of token1
+    that is not mapped, and a token0 that is not mapped, but the token1 has its usd
+    price set by some reason, the token0 usd price should be returned based on the token1 price.
+    While the token1 usd price should remain unchanged`, async () => {
+    let pool = new PoolMock();
+    const token1UsdPrice = BigDecimal("113848.204254");
+    const sqrtPriceX96 = BigInt("2659594470916659425799358867195");
+
+    pool = {
+      ...pool,
+      totalValueLockedToken0: BigDecimal("1126.3223"),
+      totalValueLockedToken1: BigDecimal("11267186.3223"),
+    };
+
+    const token0: Token = {
+      ...new TokenMock(),
+      id: "toko-0",
+      tokenAddress: "0x0000000000000000000000000000000000000001",
+      decimals: 8,
+      usdPrice: BigDecimal(0),
+    } as Token;
+
+    const token1: Token = {
+      ...new TokenMock(),
+      usdPrice: token1UsdPrice,
+      id: "toko-1",
+      tokenAddress: "0x0000000000000000000000000000000000000002",
+      decimals: 6,
+    } as Token;
+
+    const newPrices = await sut.updateTokenPricesFromPoolPrices(
+      token0,
+      token1,
+      pool,
+      sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
+    );
+
+    assert.equal(newPrices[1].usdPrice.toString(), token1UsdPrice.toString());
+    assert.equal(newPrices[0].usdPrice.toString(), "12829149325.56340982");
+  });
+
   it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of token0
-    that is not mapped, and a token1 that is not mapped, but the token1 has its usd
-    price set by some reason, the token0 usd price should be return
-    based on the token1 price. While the token1 usd price should remain unchanged`, async () => {
+    that is not mapped, and a token1 that is not mapped, and both tokens
+    have their usd price set, the token0 usd price should be return
+    based on the old token1 price, and set the token1 usd price based on the old
+    token0 usd price`, async () => {
     const pool = new PoolMock();
 
-    const token1UsdPrice = BigDecimal("1.002");
+    const token0UsdPrice = BigDecimal("2618.2042535");
+    const token1UsdPrice = BigDecimal("3000.1213");
     const sqrtPriceX96 = BigInt("58252955171373273082115870408");
 
     const token0: Token = {
@@ -554,6 +597,7 @@ describe("PoolSetters", () => {
       id: "toko-0",
       tokenAddress: "0x0000000000000000000000000000000000000001",
       decimals: 18,
+      usdPrice: token0UsdPrice,
     } as Token;
 
     const token1: Token = {
@@ -571,8 +615,12 @@ describe("PoolSetters", () => {
       sqrtPriceX96toPrice(sqrtPriceX96, token0, token1)
     );
 
-    assert.equal(newPrices[1].usdPrice.toString(), token1UsdPrice.toString());
-    assert.equal(newPrices[0].usdPrice.toString(), "0.541682092007859127");
+    console.log(`${newPrices[1].usdPrice.toString()}`);
+    console.log(`${newPrices[0].usdPrice.toString()}`);
+    console.log(`${sqrtPriceX96toPrice(sqrtPriceX96, token0, token1).token0PerToken1.toString()}`);
+
+    assert.equal(newPrices[1].usdPrice.toString(), "4843.137147625949516837");
+    assert.equal(newPrices[0].usdPrice.toString(), "1621.868245570197540664");
   });
 
   it(`When calling set hourly data, with the amount0 negative
@@ -1922,24 +1970,36 @@ describe("PoolSetters", () => {
   it(`should set the token0 usd price if the new price is outside
     the threshold going down with unbalanced TVL, but the pool setting the price,
     is the current most liquid`, async () => {
-    const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
+    const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
     const currentPool = new PoolMock("0xNOT_MOST_LIQUID_POOL_ID");
+    const token0Address = IndexerNetwork.wrappedNativeAddress(network);
+    const token1Address = IndexerNetwork.stablecoinsAddresses(network)[0];
     const token0MostLiquidPool = new PoolMock(currentPool.id);
-    const token1MostLiquidPool = new PoolMock("0xM05ST_LIQUID_POOL_ID_1");
+    const token1MostLiquidPool: Pool = {
+      ...new PoolMock("0xM05ST_LIQUID_POOL_ID_1"),
+      token0_id: "xbas",
+      token1_id: token1Address,
+    };
 
     const token0: Token = {
-      ...new TokenMock("0x0000000000000000000000000000000000000012"),
+      ...new TokenMock(token0Address),
+      tokenAddress: token0Address,
       mostLiquidPool_id: token0MostLiquidPool.id,
       usdPrice: BigDecimal("1289162891628916289162891"),
-      decimals: 8,
+      decimals: 18,
     };
 
     const token1: Token = {
-      ...new TokenMock("0x0000000000000000000000000000000000000002"),
+      ...new TokenMock(token1Address),
+      tokenAddress: token1Address,
       mostLiquidPool_id: token1MostLiquidPool.id,
       usdPrice: BigDecimal("23500"),
-      decimals: 8,
+      decimals: 6,
     };
+
+    context.Pool.set(token1MostLiquidPool);
+    context.Token.set(token0);
+    context.Token.set(token1);
 
     const pool: Pool = {
       ...currentPool,
@@ -1953,7 +2013,7 @@ describe("PoolSetters", () => {
 
     const result = await sut.updateTokenPricesFromPoolPrices(token0, token1, pool, poolPrices);
 
-    assert.deepEqual(result[0].usdPrice.toString(), "23497.55487765");
+    assert.deepEqual(result[0].usdPrice.toString(), "4163.13581664");
   });
 
   it(`should set the token1 usd price if the new price is outside
@@ -2006,7 +2066,7 @@ describe("PoolSetters", () => {
 
     const token0MostLiquidPoolSaved: Pool = {
       ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0_SAVED"),
-      totalValueLockedToken0: BigDecimal("112"),
+      totalValueLockedToken0: BigDecimal("0.05"),
       token0_id: token0Id,
     };
 
@@ -2032,8 +2092,8 @@ describe("PoolSetters", () => {
 
     const pool: Pool = {
       ...new PoolMock("0xMOST_REAL_LIQUID_POOL_ID"),
-      totalValueLockedToken0: BigDecimal("500"),
-      totalValueLockedToken1: BigDecimal("400"),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("4000"),
       token0_id: token0.id,
       token1_id: token1.id,
     };
@@ -2060,7 +2120,7 @@ describe("PoolSetters", () => {
 
     const token0MostLiquidPoolSaved: Pool = {
       ...new PoolMock("0xM05ST_LIQUID_POOL_ID_0_SAVED"),
-      totalValueLockedToken0: BigDecimal("112"),
+      totalValueLockedToken0: BigDecimal("0.01"),
       token0_id: token0Id,
     };
 
@@ -2086,8 +2146,8 @@ describe("PoolSetters", () => {
 
     const pool: Pool = {
       ...new PoolMock("0xMOST_REAL_LIQUID_POOL_ID"),
-      totalValueLockedToken0: BigDecimal("500"),
-      totalValueLockedToken1: BigDecimal("400"),
+      totalValueLockedToken0: BigDecimal("1"),
+      totalValueLockedToken1: BigDecimal("4000"),
       token0_id: token0.id,
       token1_id: token1.id,
     };
