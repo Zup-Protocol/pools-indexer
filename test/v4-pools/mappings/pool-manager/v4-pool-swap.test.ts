@@ -1,5 +1,5 @@
 import assert from "assert";
-import { BigDecimal, handlerContext } from "generated";
+import { BigDecimal, handlerContext, Pool } from "generated";
 import sinon from "sinon";
 import { sqrtPriceX96toPrice } from "../../../../src/common/cl-pool-converters";
 import { getPoolHourlyDataId } from "../../../../src/common/pool-commons";
@@ -1185,5 +1185,49 @@ describe("V4PoolSwapHandler", () => {
     );
 
     assert.deepEqual(token1After.swapVolumeUSD.toString(), expectedToken1SwapVolumeUSD.toString());
+  });
+
+  it("should update the current pool fee tier with the fee tier passed in the event", async () => {
+    let token0 = new TokenMock();
+    let token1 = new TokenMock();
+    let pool: Pool = {
+      ...new PoolMock(),
+      currentFeeTier: 111,
+    };
+    let v4PoolData = new V4PoolDataMock();
+
+    const amount0 = BigInt(100) * 10n ** BigInt(token0.decimals);
+    const amount1 = BigInt(-50) * 10n ** BigInt(token1.decimals);
+    const sqrtPriceX96 = BigInt(3432);
+    const tick = BigInt(989756545);
+    const NewSwapFee = 36287;
+
+    v4PoolData = {
+      ...v4PoolData,
+      id: pool.id,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V4PoolData.set(v4PoolData);
+
+    await handleV4PoolSwap(
+      context,
+      pool,
+      token0,
+      token1,
+      amount0,
+      amount1,
+      sqrtPriceX96,
+      tick,
+      NewSwapFee,
+      eventTimestamp,
+      poolSetters
+    );
+
+    const poolAfter = await context.Pool.getOrThrow(pool.id);
+
+    assert.equal(poolAfter.currentFeeTier, NewSwapFee);
   });
 });

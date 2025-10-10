@@ -63,6 +63,7 @@ export async function handleV4PoolSwap(
 
   poolEntity = {
     ...poolEntity,
+    currentFeeTier: swapFee,
     totalValueLockedUSD: updatedPoolTotalValueLockedUSD,
     swapVolumeToken0: poolEntity.swapVolumeToken0.plus(swapVolumeWithNewPrices.volumeToken0),
     swapVolumeToken1: poolEntity.swapVolumeToken1.plus(swapVolumeWithNewPrices.volumeToken1),
