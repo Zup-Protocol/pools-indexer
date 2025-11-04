@@ -196,11 +196,14 @@ describe("SupportedProtocol enum values", () => {
   it("should return the correct logo url for honeypop v3", () => {
     assert.equal(
       SupportedProtocol.getLogoUrl(SupportedProtocol.HONEYPOP_V3),
-      "https://icons.llamao.fi/icons/protocols/honeypop-dex"
+      "https://assets.coingecko.com/markets/images/22073/large/honeypop.jpg"
     );
   });
   it("should return the correct logo url for oku trade v3", () => {
-    assert.equal(SupportedProtocol.getLogoUrl(SupportedProtocol.OKU_TRADE_V3), "https://oku.trade/favicon.ico");
+    assert.equal(
+      SupportedProtocol.getLogoUrl(SupportedProtocol.OKU_TRADE_V3),
+      "https://img.cryptorank.io/exchanges/150x150.oku_plasma1759142972702.png"
+    );
   });
   it("should return the correct logo url for pancakeswap v3", () => {
     assert.equal(
@@ -223,13 +226,13 @@ describe("SupportedProtocol enum values", () => {
   it("should return the correct logo url for velodrome v3", () => {
     assert.equal(
       SupportedProtocol.getLogoUrl(SupportedProtocol.VELODROME_V3),
-      "https://icons.llamao.fi/icons/protocols/velodrome"
+      "https://img.cryptorank.io/coins/velodrome_finance1662552933961.png"
     );
   });
   it("should return the correct logo url for zebra v3", () => {
     assert.equal(
       SupportedProtocol.getLogoUrl(SupportedProtocol.ZEBRA_V3),
-      "https://icons.llamao.fi/icons/protocols/zebra"
+      "https://img.cryptorank.io/coins/zebra1717767206306.png"
     );
   });
   it("should return the correct logo url for pancakeswap infinity cl", () => {
@@ -247,31 +250,31 @@ describe("SupportedProtocol enum values", () => {
   it("should return the correct logo url for gliquid algebra", () => {
     assert.equal(
       SupportedProtocol.getLogoUrl(SupportedProtocol.GLIQUID_ALGEBRA),
-      "https://icons.llamao.fi/icons/protocols/gliquid"
+      "https://assets.coingecko.com/markets/images/21975/large/GLiquid_PFP_%28New_Logo%29_%281%29.png"
     );
   });
   it("should return the correct logo url for hyperswap v3", () => {
     assert.equal(
       SupportedProtocol.getLogoUrl(SupportedProtocol.HYPER_SWAP_V3),
-      "https://icons.llamao.fi/icons/protocols/hyperswap"
+      "https://img.cryptorank.io/exchanges/150x150.hyper_swap_v_21740409894268.png"
     );
   });
   it("should return the correct logo url for project x v3", () => {
     assert.equal(
       SupportedProtocol.getLogoUrl(SupportedProtocol.PROJECT_X_V3),
-      "https://icons.llamao.fi/icons/protocols/project-x"
+      "https://img.cryptorank.io/exchanges/150x150.project_x1752845857616.png"
     );
   });
   it("should return the correct logo url for hybra v3", () => {
     assert.equal(
       SupportedProtocol.getLogoUrl(SupportedProtocol.HYBRA_V3),
-      "https://icons.llamao.fi/icons/protocols/hybra"
+      "https://img.cryptorank.io/exchanges/150x150.hybra_finance1752836948767.png"
     );
   });
   it("should return the correct logo url for kittenswap algebra", () => {
     assert.equal(
       SupportedProtocol.getLogoUrl(SupportedProtocol.KITTENSWAP_ALGEBRA),
-      "https://icons.llamao.fi/icons/protocols/kittenswap-algebra"
+      "https://img.cryptorank.io/exchanges/150x150.kittenswap1744291199109.png"
     );
   });
   it("should return the correct permit2 address for uniswap v2", () => {
@@ -831,7 +834,7 @@ describe("SupportedProtocol enum values", () => {
     it("should return the correct logo url for ultrasolid v3", () => {
       assert.equal(
         SupportedProtocol.getLogoUrl(SupportedProtocol.ULTRASOLID_V3),
-        "https://icons.llamao.fi/icons/protocols/ultrasolid"
+        "https://img.cryptorank.io/exchanges/150x150.ultra_solid_v_31759320847099.png"
       );
     });
 

@@ -125,9 +125,9 @@ export namespace SupportedProtocol {
       case SupportedProtocol.BASESWAP_V3:
         return "https://s2.coinmarketcap.com/static/img/coins/200x200/27764.png";
       case SupportedProtocol.HONEYPOP_V3:
-        return "https://icons.llamao.fi/icons/protocols/honeypop-dex";
+        return "https://assets.coingecko.com/markets/images/22073/large/honeypop.jpg";
       case SupportedProtocol.OKU_TRADE_V3:
-        return "https://oku.trade/favicon.ico";
+        return "https://img.cryptorank.io/exchanges/150x150.oku_plasma1759142972702.png";
       case SupportedProtocol.PANCAKE_SWAP_V3:
         return "https://assets-cdn.trustwallet.com/dapps/pancakeswap.finance.png";
       case SupportedProtocol.SUSHI_SWAP_V3:
@@ -135,25 +135,25 @@ export namespace SupportedProtocol {
       case SupportedProtocol.UNISWAP_V3:
         return "https://assets-cdn.trustwallet.com/dapps/app.uniswap.org.png";
       case SupportedProtocol.VELODROME_V3:
-        return "https://icons.llamao.fi/icons/protocols/velodrome";
+        return "https://img.cryptorank.io/coins/velodrome_finance1662552933961.png";
       case SupportedProtocol.ZEBRA_V3:
-        return "https://icons.llamao.fi/icons/protocols/zebra";
+        return "https://img.cryptorank.io/coins/zebra1717767206306.png";
       case SupportedProtocol.PANCAKESWAP_INFINITY_CL:
         return "https://assets-cdn.trustwallet.com/dapps/pancakeswap.finance.png";
       case SupportedProtocol.UNISWAP_V4:
         return "https://assets-cdn.trustwallet.com/dapps/app.uniswap.org.png";
       case SupportedProtocol.GLIQUID_ALGEBRA:
-        return "https://icons.llamao.fi/icons/protocols/gliquid";
+        return "https://assets.coingecko.com/markets/images/21975/large/GLiquid_PFP_%28New_Logo%29_%281%29.png";
       case SupportedProtocol.HYPER_SWAP_V3:
-        return "https://icons.llamao.fi/icons/protocols/hyperswap";
+        return "https://img.cryptorank.io/exchanges/150x150.hyper_swap_v_21740409894268.png";
       case SupportedProtocol.PROJECT_X_V3:
-        return "https://icons.llamao.fi/icons/protocols/project-x";
+        return "https://img.cryptorank.io/exchanges/150x150.project_x1752845857616.png";
       case SupportedProtocol.HYBRA_V3:
-        return "https://icons.llamao.fi/icons/protocols/hybra";
+        return "https://img.cryptorank.io/exchanges/150x150.hybra_finance1752836948767.png";
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
-        return "https://icons.llamao.fi/icons/protocols/kittenswap-algebra";
+        return "https://img.cryptorank.io/exchanges/150x150.kittenswap1744291199109.png";
       case SupportedProtocol.ULTRASOLID_V3:
-        return "https://icons.llamao.fi/icons/protocols/ultrasolid";
+        return "https://img.cryptorank.io/exchanges/150x150.ultra_solid_v_31759320847099.png";
     }
   }
 
