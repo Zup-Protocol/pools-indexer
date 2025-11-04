@@ -929,4 +929,60 @@ describe("SupportedProtocol enum values", () => {
       );
     });
   });
+
+  describe("HX Finance Algebra", () => {
+    it("should return the correct id for hx finance algebra", () => {
+      assert.equal(SupportedProtocol.HX_FINANCE_ALGEBRA, "hx-finance-algebra");
+    });
+
+    it("should return the correct name for hx finance algebra", () => {
+      assert.equal(SupportedProtocol.getName(SupportedProtocol.HX_FINANCE_ALGEBRA), "HX Finance Algebra");
+    });
+
+    it("should return the correct url for hx finance algebra", () => {
+      assert.equal(SupportedProtocol.getUrl(SupportedProtocol.HX_FINANCE_ALGEBRA), "https://hx.finance/");
+    });
+
+    it("should return the correct logo url for hx finance algebra", () => {
+      assert.equal(
+        SupportedProtocol.getLogoUrl(SupportedProtocol.HX_FINANCE_ALGEBRA),
+        "https://assets.coingecko.com/markets/images/22066/large/hx_finance.png"
+      );
+    });
+
+    it("should throw for hx finance algebra when calling getPermit2Address", () => {
+      assert.throws(
+        () => SupportedProtocol.getPermit2Address(SupportedProtocol.HX_FINANCE_ALGEBRA, IndexerNetwork.BASE),
+        /Permit2 is not available for HX Finance Algebra/
+      );
+    });
+
+    it("should throw for hx finance algebra when calling getV4PositionManager", () => {
+      assert.throws(
+        () => SupportedProtocol.getV4PositionManager(SupportedProtocol.HX_FINANCE_ALGEBRA, IndexerNetwork.BASE),
+        /V4 position manager is not available for HX Finance Algebra/
+      );
+    });
+
+    it("should throw for hx finance algebra when calling getV4StateView", () => {
+      assert.throws(
+        () => SupportedProtocol.getV4StateView(SupportedProtocol.HX_FINANCE_ALGEBRA, IndexerNetwork.BASE),
+        /V4 state view is not available for HX Finance Algebra/
+      );
+    });
+
+    it("should return the correct v3 position manager for hx finance algebra when calling getV3PositionManager", () => {
+      assert.equal(
+        SupportedProtocol.getV3PositionManager(SupportedProtocol.HX_FINANCE_ALGEBRA, IndexerNetwork.HYPER_EVM),
+        V3PositionManagerAddress.hxFinance(IndexerNetwork.HYPER_EVM)
+      );
+    });
+
+    it("should throw for hx finance algebra when calling getV2PositionManager", () => {
+      assert.throws(
+        () => SupportedProtocol.getV2PositionManager(SupportedProtocol.HX_FINANCE_ALGEBRA, IndexerNetwork.BASE),
+        /V2 position manager is not available for HX Finance Algebra/
+      );
+    });
+  });
 });

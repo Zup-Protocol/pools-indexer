@@ -316,4 +316,17 @@ describe("V3PositionManagerAddress", () => {
       "0xC8352A2EbA29F4d9BD4221c07D3461BaCc779088"
     );
   });
+
+  it("should throw when calling hxFinance on unsupported network", async () => {
+    assert.throws(() => {
+      V3PositionManagerAddress.hxFinance(IndexerNetwork.BASE);
+    }, Error(`HX Finance is not supported on ${IndexerNetwork.BASE}`));
+  });
+
+  it("should return the correct address for hxFinance on hyper_evm", async () => {
+    assert.equal(
+      V3PositionManagerAddress.hxFinance(IndexerNetwork.HYPER_EVM),
+      "0x578D8A2D07B60b12993559f1DDF90EB2af3eA496"
+    );
+  });
 });

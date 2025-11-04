@@ -26,6 +26,7 @@ export enum SupportedProtocol {
   KITTENSWAP_ALGEBRA = "kittenswap-v3",
   ULTRASOLID_V3 = "ultrasolid-v3",
   UPHEAVAL_V3 = "upheaval-v3",
+  HX_FINANCE_ALGEBRA = "hx-finance-algebra",
 }
 
 export namespace SupportedProtocol {
@@ -71,6 +72,8 @@ export namespace SupportedProtocol {
         return "UltraSolid V3";
       case SupportedProtocol.UPHEAVAL_V3:
         return "Upheaval V3";
+      case SupportedProtocol.HX_FINANCE_ALGEBRA:
+        return "HX Finance Algebra";
     }
   }
 
@@ -116,6 +119,8 @@ export namespace SupportedProtocol {
         return "https://ultrasolid.xyz/";
       case SupportedProtocol.UPHEAVAL_V3:
         return "https://upheaval.fi/";
+      case SupportedProtocol.HX_FINANCE_ALGEBRA:
+        return "https://hx.finance/";
     }
   }
 
@@ -161,6 +166,8 @@ export namespace SupportedProtocol {
         return "https://img.cryptorank.io/exchanges/150x150.ultra_solid_v_31759320847099.png";
       case SupportedProtocol.UPHEAVAL_V3:
         return "https://assets.coingecko.com/markets/images/22071/large/upheaval-finance.jpg";
+      case SupportedProtocol.HX_FINANCE_ALGEBRA:
+        return "https://assets.coingecko.com/markets/images/22066/large/hx_finance.png";
     }
   }
 
@@ -206,6 +213,8 @@ export namespace SupportedProtocol {
         throw Error(`Permit2 is not available for UltraSolid V3`);
       case SupportedProtocol.UPHEAVAL_V3:
         throw Error(`Permit2 is not available for Upheaval V3`);
+      case SupportedProtocol.HX_FINANCE_ALGEBRA:
+        throw Error(`Permit2 is not available for HX Finance Algebra`);
     }
   }
 
@@ -251,6 +260,8 @@ export namespace SupportedProtocol {
         throw Error(`V4 position manager is not available for UltraSolid V3`);
       case SupportedProtocol.UPHEAVAL_V3:
         throw Error(`V4 position manager is not available for Upheaval V3`);
+      case SupportedProtocol.HX_FINANCE_ALGEBRA:
+        throw Error(`V4 position manager is not available for HX Finance Algebra`);
     }
   }
 
@@ -296,6 +307,8 @@ export namespace SupportedProtocol {
         throw Error(`V4 state view is not available for UltraSolid V3`);
       case SupportedProtocol.UPHEAVAL_V3:
         throw Error(`V4 state view is not available for Upheaval V3`);
+      case SupportedProtocol.HX_FINANCE_ALGEBRA:
+        throw Error(`V4 state view is not available for HX Finance Algebra`);
     }
   }
 
@@ -341,6 +354,8 @@ export namespace SupportedProtocol {
         return V3PositionManagerAddress.ultraSolid(network);
       case SupportedProtocol.UPHEAVAL_V3:
         return V3PositionManagerAddress.upheaval(network);
+      case SupportedProtocol.HX_FINANCE_ALGEBRA:
+        return V3PositionManagerAddress.hxFinance(network);
     }
   }
 
@@ -386,6 +401,8 @@ export namespace SupportedProtocol {
         throw Error(`V2 position manager is not available for UltraSolid V3`);
       case SupportedProtocol.UPHEAVAL_V3:
         throw Error(`V2 position manager is not available for Upheaval V3`);
+      case SupportedProtocol.HX_FINANCE_ALGEBRA:
+        throw Error(`V2 position manager is not available for HX Finance Algebra`);
     }
   }
 }

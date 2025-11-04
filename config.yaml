@@ -61,6 +61,13 @@ contracts:
       - event: Pool(address indexed token0, address indexed token1, address pool)
       - event: CustomPool(address indexed deployer, address indexed token0, address indexed token1, address pool)
 
+  - name: HxFinanceAlgebraFactory
+    abi_file_path: ./abis/factories/AlgebraFactory_1_2_2.json
+    handler: ./src/v3-pools/mappings/factory/dexs/hx-finance-algebra-factory.ts
+    events:
+      - event: Pool(address indexed token0, address indexed token1, address pool)
+      - event: CustomPool(address indexed deployer, address indexed token0, address indexed token1, address pool)
+
   - name: AlgebraPool_1_2_1
     abi_file_path: ./abis/pools/AlgebraPool_1_2_1.json
     handler: ./src/v3-pools/mappings/pool/algebra/v1.2.1/index.ts
@@ -272,9 +279,12 @@ networks:
         address: 0xD883a0B7889475d362CEA8fDf588266a3da554A1
       - name: UpheavalV3Factory
         address: 0x2566163ea012C9E67c1C7080e0a073f20B548030
+      - name: HxFinanceAlgebraFactory
+        address: 0x41ba59415eC75AC4242dd157F2a7A282F1e75652
       - name: UniswapV3Pool
       - name: AlgebraPool_1_2_1
       - name: AlgebraPool_1_2_2
+      - name: PancakeSwapV3Pool
   - id: 8453 # Base
     start_block: 1371680
     confirmed_block_threshold: 200
