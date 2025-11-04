@@ -34,19 +34,19 @@ export namespace IndexerNetwork {
   export function getPaidRPCUrl(network: IndexerNetwork): string {
     switch (network) {
       case IndexerNetwork.ETHEREUM:
-        return `https://eth-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+        return `${process.env.ENVIO_PAID_ETHEREUM_RPC_URL}`;
       case IndexerNetwork.BASE:
-        return `https://base-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+        return `${process.env.ENVIO_PAID_BASE_RPC_URL}`;
       case IndexerNetwork.SCROLL:
-        return `https://scroll-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+        return `${process.env.ENVIO_PAID_SCROLL_RPC_URL}`;
       case IndexerNetwork.UNICHAIN:
-        return `https://unichain-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+        return `${process.env.ENVIO_PAID_UNICHAIN_RPC_URL}`;
       case IndexerNetwork.SEPOLIA:
-        return `https://eth-sepolia.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+        return `${process.env.ENVIO_PAID_SEPOLIA_RPC_URL}`;
       case IndexerNetwork.HYPER_EVM:
-        return `https://hyperliquid-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+        return `${process.env.ENVIO_PAID_HYPER_EVM_RPC_URL}`;
       case IndexerNetwork.PLASMA:
-        return `https://plasma-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`;
+        return `${process.env.ENVIO_PAID_PLASMA_RPC_URL}`;
     }
   }
 

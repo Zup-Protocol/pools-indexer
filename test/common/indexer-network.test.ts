@@ -28,47 +28,39 @@ describe("IndexerNetworkTests", () => {
   it("should return the correct chain id for sepolia", () => {
     assert.equal(IndexerNetwork.SEPOLIA, 11155111);
   });
-
   it("should return the correct rpc url for ethereum when using paid RPC url", () => {
-    assert.equal(
-      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.ETHEREUM),
-      `https://eth-mainnet.g.alchemy.com/v2/${envioRpcKey}`
-    );
+    process.env.ENVIO_PAID_ETHEREUM_RPC_URL = "https://eth-mainnet.g.alchemy.com/v2/paid-eth-key";
+    assert.equal(IndexerNetwork.getPaidRPCUrl(IndexerNetwork.ETHEREUM), process.env.ENVIO_PAID_ETHEREUM_RPC_URL);
   });
 
   it("should return the correct rpc url for base when using paid RPC url", () => {
-    assert.equal(
-      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.BASE),
-      `https://base-mainnet.g.alchemy.com/v2/${envioRpcKey}`
-    );
+    process.env.ENVIO_PAID_BASE_RPC_URL = "https://base-mainnet.g.alchemy.com/v2/paid-base-key";
+    assert.equal(IndexerNetwork.getPaidRPCUrl(IndexerNetwork.BASE), process.env.ENVIO_PAID_BASE_RPC_URL);
   });
 
   it("should return the correct rpc url for scroll when using paid RPC url", () => {
-    assert.equal(
-      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.SCROLL),
-      `https://scroll-mainnet.g.alchemy.com/v2/${envioRpcKey}`
-    );
+    process.env.ENVIO_PAID_SCROLL_RPC_URL = "https://scroll-mainnet.g.alchemy.com/v2/paid-scroll-key";
+    assert.equal(IndexerNetwork.getPaidRPCUrl(IndexerNetwork.SCROLL), process.env.ENVIO_PAID_SCROLL_RPC_URL);
   });
 
   it("should return the correct rpc url for unichain when using paid RPC url", () => {
-    assert.equal(
-      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.UNICHAIN),
-      `https://unichain-mainnet.g.alchemy.com/v2/${envioRpcKey}`
-    );
+    process.env.ENVIO_PAID_UNICHAIN_RPC_URL = "https://unichain-mainnet.g.alchemy.com/v2/paid-unichain-key";
+    assert.equal(IndexerNetwork.getPaidRPCUrl(IndexerNetwork.UNICHAIN), process.env.ENVIO_PAID_UNICHAIN_RPC_URL);
   });
 
   it("should return the correct rpc url for sepolia when using paid RPC url", () => {
-    assert.equal(
-      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.SEPOLIA),
-      `https://eth-sepolia.g.alchemy.com/v2/${envioRpcKey}`
-    );
+    process.env.ENVIO_PAID_SEPOLIA_RPC_URL = "https://eth-sepolia.g.alchemy.com/v2/paid-sepolia-key";
+    assert.equal(IndexerNetwork.getPaidRPCUrl(IndexerNetwork.SEPOLIA), process.env.ENVIO_PAID_SEPOLIA_RPC_URL);
   });
 
   it("should return the correct rpc url for hyperEVM when using paid RPC url", () => {
-    assert.equal(
-      IndexerNetwork.getPaidRPCUrl(IndexerNetwork.HYPER_EVM),
-      `https://hyperliquid-mainnet.g.alchemy.com/v2/${process.env.ENVIO_RPC_KEY}`
-    );
+    process.env.ENVIO_PAID_HYPER_EVM_RPC_URL = "https://hyperliquid-mainnet.g.alchemy.com/v2/paid-hyper-key";
+    assert.equal(IndexerNetwork.getPaidRPCUrl(IndexerNetwork.HYPER_EVM), process.env.ENVIO_PAID_HYPER_EVM_RPC_URL);
+  });
+
+  it("should return the correct rpc url for plasma when using paid RPC url", () => {
+    process.env.ENVIO_PAID_PLASMA_RPC_URL = "https://plasma-mainnet.g.alchemy.com/v2/paid-plasma-key";
+    assert.equal(IndexerNetwork.getPaidRPCUrl(IndexerNetwork.PLASMA), process.env.ENVIO_PAID_PLASMA_RPC_URL);
   });
 
   it("should return the correct rpc url for ethereum when using free RPC url", () => {
