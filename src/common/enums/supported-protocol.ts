@@ -25,6 +25,7 @@ export enum SupportedProtocol {
   HYBRA_V3 = "hybra-v3",
   KITTENSWAP_ALGEBRA = "kittenswap-v3",
   ULTRASOLID_V3 = "ultrasolid-v3",
+  UPHEAVAL_V3 = "upheaval-v3",
 }
 
 export namespace SupportedProtocol {
@@ -68,6 +69,8 @@ export namespace SupportedProtocol {
         return "Kittenswap Algebra";
       case SupportedProtocol.ULTRASOLID_V3:
         return "UltraSolid V3";
+      case SupportedProtocol.UPHEAVAL_V3:
+        return "Upheaval V3";
     }
   }
 
@@ -111,6 +114,8 @@ export namespace SupportedProtocol {
         return "https://kittenswap.finance/";
       case SupportedProtocol.ULTRASOLID_V3:
         return "https://ultrasolid.xyz/";
+      case SupportedProtocol.UPHEAVAL_V3:
+        return "https://upheaval.fi/";
     }
   }
 
@@ -154,6 +159,8 @@ export namespace SupportedProtocol {
         return "https://img.cryptorank.io/exchanges/150x150.kittenswap1744291199109.png";
       case SupportedProtocol.ULTRASOLID_V3:
         return "https://img.cryptorank.io/exchanges/150x150.ultra_solid_v_31759320847099.png";
+      case SupportedProtocol.UPHEAVAL_V3:
+        return "https://assets.coingecko.com/markets/images/22071/large/upheaval-finance.jpg";
     }
   }
 
@@ -197,6 +204,8 @@ export namespace SupportedProtocol {
         throw Error(`Permit2 is not available for KittenSwap V3`);
       case SupportedProtocol.ULTRASOLID_V3:
         throw Error(`Permit2 is not available for UltraSolid V3`);
+      case SupportedProtocol.UPHEAVAL_V3:
+        throw Error(`Permit2 is not available for Upheaval V3`);
     }
   }
 
@@ -240,6 +249,8 @@ export namespace SupportedProtocol {
         throw Error(`V4 position manager is not available for KittenSwap V3`);
       case SupportedProtocol.ULTRASOLID_V3:
         throw Error(`V4 position manager is not available for UltraSolid V3`);
+      case SupportedProtocol.UPHEAVAL_V3:
+        throw Error(`V4 position manager is not available for Upheaval V3`);
     }
   }
 
@@ -283,6 +294,8 @@ export namespace SupportedProtocol {
         throw Error(`V4 state view is not available for KittenSwap V3`);
       case SupportedProtocol.ULTRASOLID_V3:
         throw Error(`V4 state view is not available for UltraSolid V3`);
+      case SupportedProtocol.UPHEAVAL_V3:
+        throw Error(`V4 state view is not available for Upheaval V3`);
     }
   }
 
@@ -326,6 +339,8 @@ export namespace SupportedProtocol {
         return V3PositionManagerAddress.kittenSwap(network);
       case SupportedProtocol.ULTRASOLID_V3:
         return V3PositionManagerAddress.ultraSolid(network);
+      case SupportedProtocol.UPHEAVAL_V3:
+        return V3PositionManagerAddress.upheaval(network);
     }
   }
 
@@ -369,6 +384,8 @@ export namespace SupportedProtocol {
         throw Error(`V2 position manager is not available for KittenSwap V3`);
       case SupportedProtocol.ULTRASOLID_V3:
         throw Error(`V2 position manager is not available for UltraSolid V3`);
+      case SupportedProtocol.UPHEAVAL_V3:
+        throw Error(`V2 position manager is not available for Upheaval V3`);
     }
   }
 }

@@ -303,4 +303,17 @@ describe("V3PositionManagerAddress", () => {
       "0xE7ffA0ee20Deb1613489556062Fa8cec690C3c02"
     );
   });
+
+  it("should throw when calling upheaval on unsupported network", async () => {
+    assert.throws(() => {
+      V3PositionManagerAddress.upheaval(IndexerNetwork.BASE);
+    }, Error(`Upheaval is not supported on ${IndexerNetwork.BASE}`));
+  });
+
+  it("should return the correct address for upheaval on hyper_evm", async () => {
+    assert.equal(
+      V3PositionManagerAddress.upheaval(IndexerNetwork.HYPER_EVM),
+      "0xC8352A2EbA29F4d9BD4221c07D3461BaCc779088"
+    );
+  });
 });

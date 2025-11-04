@@ -174,4 +174,13 @@ export class V3PositionManagerAddress {
         throw Error(`UltraSolid is not supported on ${network}`);
     }
   }
+
+  static upheaval(network: IndexerNetwork): string {
+    switch (network) {
+      case IndexerNetwork.HYPER_EVM:
+        return "0xC8352A2EbA29F4d9BD4221c07D3461BaCc779088";
+      default:
+        throw Error(`Upheaval is not supported on ${network}`);
+    }
+  }
 }

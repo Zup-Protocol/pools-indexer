@@ -167,11 +167,11 @@ contracts:
     events:
       - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
 
-  # - name: UpheavalV3Factory
-  #   abi_file_path: ./abis/factories/PancakeSwapV3Factory.json
-  #   handler: ./src/v3-pools/mappings/factory/dexs/upheaval-v3-factory.ts
-  #   events:
-  #     - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
+  - name: UpheavalV3Factory
+    abi_file_path: ./abis/factories/PancakeSwapV3Factory.json
+    handler: ./src/v3-pools/mappings/factory/dexs/upheaval-v3-factory.ts
+    events:
+      - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
 
   - name: SushiSwapV3Factory
     abi_file_path: ./abis/factories/UniswapV3Factory.json
@@ -270,6 +270,8 @@ networks:
         address: 0x5f95E92c338e6453111Fc55ee66D4AafccE661A7
       - name: UltrasolidV3Factory
         address: 0xD883a0B7889475d362CEA8fDf588266a3da554A1
+      - name: UpheavalV3Factory
+        address: 0x2566163ea012C9E67c1C7080e0a073f20B548030
       - name: UniswapV3Pool
       - name: AlgebraPool_1_2_1
       - name: AlgebraPool_1_2_2

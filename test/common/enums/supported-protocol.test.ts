@@ -873,4 +873,60 @@ describe("SupportedProtocol enum values", () => {
       );
     });
   });
+
+  describe("Upheaval V3", () => {
+    it("should return the correct id for upheaval v3", () => {
+      assert.equal(SupportedProtocol.UPHEAVAL_V3, "upheaval-v3");
+    });
+
+    it("should return the correct name for upheaval v3", () => {
+      assert.equal(SupportedProtocol.getName(SupportedProtocol.UPHEAVAL_V3), "Upheaval V3");
+    });
+
+    it("should return the correct url for upheaval v3", () => {
+      assert.equal(SupportedProtocol.getUrl(SupportedProtocol.UPHEAVAL_V3), "https://upheaval.fi/");
+    });
+
+    it("should return the correct logo url for upheaval v3", () => {
+      assert.equal(
+        SupportedProtocol.getLogoUrl(SupportedProtocol.UPHEAVAL_V3),
+        "https://assets.coingecko.com/markets/images/22071/large/upheaval-finance.jpg"
+      );
+    });
+
+    it("should throw for upheaval v3 when calling getPermit2Address", () => {
+      assert.throws(
+        () => SupportedProtocol.getPermit2Address(SupportedProtocol.UPHEAVAL_V3, IndexerNetwork.BASE),
+        /Permit2 is not available for Upheaval V3/
+      );
+    });
+
+    it("should throw for upheaval v3 when calling getV4PositionManager", () => {
+      assert.throws(
+        () => SupportedProtocol.getV4PositionManager(SupportedProtocol.UPHEAVAL_V3, IndexerNetwork.BASE),
+        /V4 position manager is not available for Upheaval V3/
+      );
+    });
+
+    it("should throw for upheaval v3 when calling getV4StateView", () => {
+      assert.throws(
+        () => SupportedProtocol.getV4StateView(SupportedProtocol.UPHEAVAL_V3, IndexerNetwork.BASE),
+        /V4 state view is not available for Upheaval V3/
+      );
+    });
+
+    it("should return the correct v3 position manager for upheaval v3 when calling getV3PositionManager", () => {
+      assert.equal(
+        SupportedProtocol.getV3PositionManager(SupportedProtocol.UPHEAVAL_V3, IndexerNetwork.HYPER_EVM),
+        V3PositionManagerAddress.upheaval(IndexerNetwork.HYPER_EVM)
+      );
+    });
+
+    it("should throw for upheaval v3 when calling getV2PositionManager", () => {
+      assert.throws(
+        () => SupportedProtocol.getV2PositionManager(SupportedProtocol.UPHEAVAL_V3, IndexerNetwork.BASE),
+        /V2 position manager is not available for Upheaval V3/
+      );
+    });
+  });
 });
