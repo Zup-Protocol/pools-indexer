@@ -290,4 +290,17 @@ describe("V3PositionManagerAddress", () => {
       V3PositionManagerAddress.kittenSwap(IndexerNetwork.BASE);
     }, Error(`KittenSwap is not supported on ${IndexerNetwork.BASE}`));
   });
+
+  it("should throw when calling ultraSolid on unsupported network", async () => {
+    assert.throws(() => {
+      V3PositionManagerAddress.ultraSolid(IndexerNetwork.BASE);
+    }, Error(`UltraSolid is not supported on ${IndexerNetwork.BASE}`));
+  });
+
+  it("should return the correct address for ultraSolid on hyper_evm", async () => {
+    assert.equal(
+      V3PositionManagerAddress.ultraSolid(IndexerNetwork.HYPER_EVM),
+      "0xE7ffA0ee20Deb1613489556062Fa8cec690C3c02"
+    );
+  });
 });

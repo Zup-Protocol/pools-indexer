@@ -24,6 +24,7 @@ export enum SupportedProtocol {
   PROJECT_X_V3 = "projectx-v3",
   HYBRA_V3 = "hybra-v3",
   KITTENSWAP_ALGEBRA = "kittenswap-v3",
+  ULTRASOLID_V3 = "ultrasolid-v3",
 }
 
 export namespace SupportedProtocol {
@@ -65,6 +66,8 @@ export namespace SupportedProtocol {
         return "Hybra V3";
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
         return "Kittenswap Algebra";
+      case SupportedProtocol.ULTRASOLID_V3:
+        return "UltraSolid V3";
     }
   }
 
@@ -106,6 +109,8 @@ export namespace SupportedProtocol {
         return "https://hybra.finance/";
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
         return "https://kittenswap.finance/";
+      case SupportedProtocol.ULTRASOLID_V3:
+        return "https://ultrasolid.xyz/";
     }
   }
 
@@ -147,6 +152,8 @@ export namespace SupportedProtocol {
         return "https://icons.llamao.fi/icons/protocols/hybra";
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
         return "https://icons.llamao.fi/icons/protocols/kittenswap-algebra";
+      case SupportedProtocol.ULTRASOLID_V3:
+        return "https://icons.llamao.fi/icons/protocols/ultrasolid";
     }
   }
 
@@ -188,6 +195,8 @@ export namespace SupportedProtocol {
         throw Error(`Permit2 is not available for Hybra V3`);
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
         throw Error(`Permit2 is not available for KittenSwap V3`);
+      case SupportedProtocol.ULTRASOLID_V3:
+        throw Error(`Permit2 is not available for UltraSolid V3`);
     }
   }
 
@@ -229,6 +238,8 @@ export namespace SupportedProtocol {
         throw Error(`V4 position manager is not available for Hybra V3`);
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
         throw Error(`V4 position manager is not available for KittenSwap V3`);
+      case SupportedProtocol.ULTRASOLID_V3:
+        throw Error(`V4 position manager is not available for UltraSolid V3`);
     }
   }
 
@@ -270,6 +281,8 @@ export namespace SupportedProtocol {
         throw Error(`V4 state view is not available for Hybra V3`);
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
         throw Error(`V4 state view is not available for KittenSwap V3`);
+      case SupportedProtocol.ULTRASOLID_V3:
+        throw Error(`V4 state view is not available for UltraSolid V3`);
     }
   }
 
@@ -311,6 +324,8 @@ export namespace SupportedProtocol {
         return V3PositionManagerAddress.hybra(network);
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
         return V3PositionManagerAddress.kittenSwap(network);
+      case SupportedProtocol.ULTRASOLID_V3:
+        return V3PositionManagerAddress.ultraSolid(network);
     }
   }
 
@@ -352,6 +367,8 @@ export namespace SupportedProtocol {
         throw Error(`V2 position manager is not available for Hybra V3`);
       case SupportedProtocol.KITTENSWAP_ALGEBRA:
         throw Error(`V2 position manager is not available for KittenSwap V3`);
+      case SupportedProtocol.ULTRASOLID_V3:
+        throw Error(`V2 position manager is not available for UltraSolid V3`);
     }
   }
 }

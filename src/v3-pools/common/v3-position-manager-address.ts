@@ -165,4 +165,13 @@ export class V3PositionManagerAddress {
         throw Error(`KittenSwap is not supported on ${network}`);
     }
   }
+
+  static ultraSolid(network: IndexerNetwork): string {
+    switch (network) {
+      case IndexerNetwork.HYPER_EVM:
+        return "0xE7ffA0ee20Deb1613489556062Fa8cec690C3c02";
+      default:
+        throw Error(`UltraSolid is not supported on ${network}`);
+    }
+  }
 }

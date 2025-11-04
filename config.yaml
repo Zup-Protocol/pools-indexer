@@ -161,6 +161,12 @@ contracts:
       - event: CollectProtocol(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1)
       - event: Burn(address indexed owner, int24 indexed tickLower, int24 indexed tickUpper, uint128 amount, uint256 amount0, uint256 amount1)
 
+  - name: UltrasolidV3Factory
+    abi_file_path: ./abis/factories/UniswapV3Factory.json
+    handler: ./src/v3-pools/mappings/factory/dexs/ultrasolid-v3-factory.ts
+    events:
+      - event: PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)
+
   # - name: UpheavalV3Factory
   #   abi_file_path: ./abis/factories/PancakeSwapV3Factory.json
   #   handler: ./src/v3-pools/mappings/factory/dexs/upheaval-v3-factory.ts
@@ -262,6 +268,8 @@ networks:
         address: 0x10253594A832f967994b44f33411940533302ACb
       - name: KittenSwapAlgebraFactory
         address: 0x5f95E92c338e6453111Fc55ee66D4AafccE661A7
+      - name: UltrasolidV3Factory
+        address: 0xD883a0B7889475d362CEA8fDf588266a3da554A1
       - name: UniswapV3Pool
       - name: AlgebraPool_1_2_1
       - name: AlgebraPool_1_2_2
@@ -291,7 +299,6 @@ networks:
   - id: 9745 # Plasma
     start_block: 430127
     confirmed_block_threshold: 180
-    rpc: https://plasma-mainnet.g.alchemy.com/v2/${ENVIO_RPC_KEY}
     contracts:
       - name: OkuV3Factory
         address: 0xcb2436774C3e191c85056d248EF4260ce5f27A9D

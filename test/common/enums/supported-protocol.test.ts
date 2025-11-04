@@ -814,4 +814,60 @@ describe("SupportedProtocol enum values", () => {
       /V2 position manager is not available for KittenSwap V3/
     );
   });
+
+  describe("Ultrasolid V3", () => {
+    it("should return the correct id for ultrasolid v3", () => {
+      assert.equal(SupportedProtocol.ULTRASOLID_V3, "ultrasolid-v3");
+    });
+
+    it("should return the correct name for ultrasolid v3", () => {
+      assert.equal(SupportedProtocol.getName(SupportedProtocol.ULTRASOLID_V3), "UltraSolid V3");
+    });
+
+    it("should return the correct url for ultrasolid v3", () => {
+      assert.equal(SupportedProtocol.getUrl(SupportedProtocol.ULTRASOLID_V3), "https://ultrasolid.xyz/");
+    });
+
+    it("should return the correct logo url for ultrasolid v3", () => {
+      assert.equal(
+        SupportedProtocol.getLogoUrl(SupportedProtocol.ULTRASOLID_V3),
+        "https://icons.llamao.fi/icons/protocols/ultrasolid"
+      );
+    });
+
+    it("should throw for ultrasolid v3 when calling getPermit2Address", () => {
+      assert.throws(
+        () => SupportedProtocol.getPermit2Address(SupportedProtocol.ULTRASOLID_V3, IndexerNetwork.BASE),
+        /Permit2 is not available for UltraSolid V3/
+      );
+    });
+
+    it("should throw for ultrasolid v3 when calling getV4PositionManager", () => {
+      assert.throws(
+        () => SupportedProtocol.getV4PositionManager(SupportedProtocol.ULTRASOLID_V3, IndexerNetwork.BASE),
+        /V4 position manager is not available for UltraSolid V3/
+      );
+    });
+
+    it("should throw for ultrasolid v3 when calling getV4StateView", () => {
+      assert.throws(
+        () => SupportedProtocol.getV4StateView(SupportedProtocol.ULTRASOLID_V3, IndexerNetwork.BASE),
+        /V4 state view is not available for UltraSolid V3/
+      );
+    });
+
+    it("should return the correct v3 position manager for ultrasolid v3 when calling getV3PositionManager", () => {
+      assert.equal(
+        SupportedProtocol.getV3PositionManager(SupportedProtocol.ULTRASOLID_V3, IndexerNetwork.HYPER_EVM),
+        V3PositionManagerAddress.ultraSolid(IndexerNetwork.HYPER_EVM)
+      );
+    });
+
+    it("should throw for ultrasolid v3 when calling getV2PositionManager", () => {
+      assert.throws(
+        () => SupportedProtocol.getV2PositionManager(SupportedProtocol.ULTRASOLID_V3, IndexerNetwork.BASE),
+        /V2 position manager is not available for UltraSolid V3/
+      );
+    });
+  });
 });
