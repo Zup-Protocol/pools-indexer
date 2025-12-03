@@ -1,8 +1,10 @@
 import assert from "assert";
 import { BaseSwapV3Factory_PoolCreated_event } from "generated";
 import { BaseSwapV3Factory, MockDb } from "generated/src/TestHelpers.gen";
+import sinon from "sinon";
 import { IndexerNetwork } from "../../../../../src/common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../../src/common/enums/supported-protocol";
+import * as factoryHandler from "../../../../../src/v3-pools/mappings/factory/v3-factory";
 
 describe("BaseSwapV3Factory", () => {
   const mockDb = MockDb.createMockDb();
@@ -10,6 +12,7 @@ describe("BaseSwapV3Factory", () => {
   let event: BaseSwapV3Factory_PoolCreated_event;
 
   beforeEach(() => {
+    sinon.stub(factoryHandler, "handleV3PoolCreated").callsFake(async (..._args: any[]) => Promise.resolve());
     network = IndexerNetwork.BASE;
 
     event = BaseSwapV3Factory.PoolCreated.createMockEvent({
@@ -24,13 +27,20 @@ describe("BaseSwapV3Factory", () => {
     });
   });
 
-  it("should pass the correct protocol when calling the pool created handler", async () => {
-    const updatedMockDB = await mockDb.processEvents([event]);
+  afterEach(() => {
+    sinon.restore();
+  });
 
-    assert.equal(
-      updatedMockDB.entities.Pool.get(IndexerNetwork.getEntityIdFromAddress(network, event.params.pool))!.protocol_id,
-      SupportedProtocol.BASESWAP_V3
-    );
+  it("should pass the correct protocol when calling the pool created handler", async () => {
+    let passedProtocol: SupportedProtocol | undefined;
+
+    sinon.restore();
+    sinon.stub(factoryHandler, "handleV3PoolCreated").callsFake(async (params) => {
+      passedProtocol = params.protocol;
+    });
+
+    await mockDb.processEvents([event]);
+    assert.equal(passedProtocol, SupportedProtocol.BASESWAP_V3);
   });
 
   it("should register the pool create in the dynamic contract registry", async () => {

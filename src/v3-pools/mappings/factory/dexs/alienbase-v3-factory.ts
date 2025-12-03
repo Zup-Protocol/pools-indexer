@@ -8,16 +8,16 @@ AlienBaseV3Factory.PoolCreated.contractRegister(({ event, context }) => {
 });
 
 AlienBaseV3Factory.PoolCreated.handler(async ({ event, context }) => {
-  await handleV3PoolCreated(
+  await handleV3PoolCreated({
     context,
-    event.params.pool,
-    event.params.token0,
-    event.params.token1,
-    Number.parseInt(event.params.fee.toString()),
-    Number.parseInt(event.params.tickSpacing.toString()),
-    BigInt(event.block.timestamp),
-    event.chainId,
-    SupportedProtocol.ALIENBASE_V3,
-    TokenService.shared
-  );
+    poolAddress: event.params.pool,
+    token0Address: event.params.token0,
+    token1Address: event.params.token1,
+    feeTier: Number.parseInt(event.params.fee.toString()),
+    tickSpacing: Number.parseInt(event.params.tickSpacing.toString()),
+    eventTimestamp: BigInt(event.block.timestamp),
+    chainId: event.chainId,
+    protocol: SupportedProtocol.ALIENBASE_V3,
+    tokenService: TokenService.shared,
+  });
 });

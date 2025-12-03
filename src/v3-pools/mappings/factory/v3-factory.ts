@@ -11,42 +11,42 @@ import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { TokenService } from "../../../common/services/token-service";
 
-export async function handleV3PoolCreated(
-  context: handlerContext,
-  poolAddress: string,
-  token0Address: string,
-  token1Address: string,
-  feeTier: number,
-  tickSpacing: number,
-  eventTimestamp: bigint,
-  chainId: number,
-  protocol: SupportedProtocol,
-  tokenService: TokenService,
-  algebraPoolData?: AlgebraPoolData
-): Promise<void> {
+export async function handleV3PoolCreated(params: {
+  context: handlerContext;
+  poolAddress: string;
+  token0Address: string;
+  token1Address: string;
+  feeTier: number;
+  tickSpacing: number;
+  eventTimestamp: bigint;
+  chainId: number;
+  protocol: SupportedProtocol;
+  tokenService: TokenService;
+  algebraPoolData?: AlgebraPoolData;
+}): Promise<void> {
   let [token0Entity, token1Entity, defiPoolData]: [TokenEntity, TokenEntity, DeFiPoolDataEntity] = await Promise.all([
-    tokenService.getOrCreateTokenEntity(context, chainId, token0Address),
-    tokenService.getOrCreateTokenEntity(context, chainId, token1Address),
-    context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(eventTimestamp)),
+    params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token0Address),
+    params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token1Address),
+    params.context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(params.eventTimestamp)),
   ]);
 
-  const poolId = IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress);
+  const poolId = IndexerNetwork.getEntityIdFromAddress(params.chainId, params.poolAddress);
 
   const v3PoolEntity: V3PoolDataEntity = {
     id: poolId,
-    tickSpacing: tickSpacing,
+    tickSpacing: params.tickSpacing,
     sqrtPriceX96: ZERO_BIG_INT,
     tick: ZERO_BIG_INT,
   };
 
   const poolEntity: PoolEntity = {
     id: poolId,
-    poolAddress: poolAddress,
-    positionManager: SupportedProtocol.getV3PositionManager(protocol, chainId),
+    poolAddress: params.poolAddress,
+    positionManager: SupportedProtocol.getV3PositionManager(params.protocol, params.chainId),
     token0_id: token0Entity.id,
     token1_id: token1Entity.id,
-    currentFeeTier: feeTier,
-    initialFeeTier: feeTier,
+    currentFeeTier: params.feeTier,
+    initialFeeTier: params.feeTier,
     totalValueLockedToken0: ZERO_BIG_DECIMAL,
     totalValueLockedToken1: ZERO_BIG_DECIMAL,
     liquidityVolumeToken0: ZERO_BIG_DECIMAL,
@@ -61,19 +61,19 @@ export async function handleV3PoolCreated(
     accumulated7dYield: ZERO_BIG_DECIMAL,
     accumulated90dYield: ZERO_BIG_DECIMAL,
     totalAccumulatedYield: ZERO_BIG_DECIMAL,
-    createdAtTimestamp: eventTimestamp,
-    protocol_id: protocol,
+    createdAtTimestamp: params.eventTimestamp,
+    protocol_id: params.protocol,
     isStablePool: undefined,
     poolType: "V3",
     v2PoolData_id: undefined,
     v4PoolData_id: undefined,
     v3PoolData_id: v3PoolEntity.id,
-    chainId: chainId,
-    algebraPoolData_id: algebraPoolData?.id,
-    dataPointTimestamp24h: eventTimestamp,
-    dataPointTimestamp30d: eventTimestamp,
-    dataPointTimestamp7d: eventTimestamp,
-    dataPointTimestamp90d: eventTimestamp,
+    chainId: params.chainId,
+    algebraPoolData_id: params.algebraPoolData?.id,
+    dataPointTimestamp24h: params.eventTimestamp,
+    dataPointTimestamp30d: params.eventTimestamp,
+    dataPointTimestamp7d: params.eventTimestamp,
+    dataPointTimestamp90d: params.eventTimestamp,
   };
 
   defiPoolData = {
@@ -81,18 +81,18 @@ export async function handleV3PoolCreated(
     poolsCount: defiPoolData.poolsCount + 1,
   };
 
-  context.V3PoolData.set(v3PoolEntity);
-  context.Pool.set(poolEntity);
-  context.DeFiPoolData.set(defiPoolData);
-  context.Token.set(token0Entity);
-  context.Token.set(token1Entity);
+  params.context.V3PoolData.set(v3PoolEntity);
+  params.context.Pool.set(poolEntity);
+  params.context.DeFiPoolData.set(defiPoolData);
+  params.context.Token.set(token0Entity);
+  params.context.Token.set(token1Entity);
 
-  if (algebraPoolData) context.AlgebraPoolData.set(algebraPoolData);
+  if (params.algebraPoolData) params.context.AlgebraPoolData.set(params.algebraPoolData);
 
-  context.Protocol.set({
-    id: protocol,
-    name: SupportedProtocol.getName(protocol),
-    logo: SupportedProtocol.getLogoUrl(protocol),
-    url: SupportedProtocol.getUrl(protocol),
+  params.context.Protocol.set({
+    id: params.protocol,
+    name: SupportedProtocol.getName(params.protocol),
+    logo: SupportedProtocol.getLogoUrl(params.protocol),
+    url: SupportedProtocol.getUrl(params.protocol),
   });
 }

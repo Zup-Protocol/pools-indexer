@@ -1,17 +1,20 @@
 import assert from "assert";
-import { UniswapV2Factory_PairCreated_event } from "generated";
 import { MockDb, UniswapV2Factory } from "generated/src/TestHelpers.gen";
+import { UniswapV2Factory_PairCreated_event } from "generated/src/Types.gen";
 import sinon from "sinon";
 import { IndexerNetwork } from "../../../../../src/common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../../src/common/enums/supported-protocol";
 import * as factoryHandler from "../../../../../src/v2-pools/mappings/factory/v2-factory";
 
 describe("UniswapV2Factory", () => {
-  const mockDb = MockDb.createMockDb();
+  let mockDb: ReturnType<typeof MockDb.createMockDb>;
   let network: IndexerNetwork;
   let event: UniswapV2Factory_PairCreated_event;
 
   beforeEach(() => {
+    sinon.stub(factoryHandler, "handleV2PoolCreated").resolves();
+
+    mockDb = MockDb.createMockDb();
     network = IndexerNetwork.ETHEREUM;
 
     event = UniswapV2Factory.PairCreated.createMockEvent({
@@ -30,12 +33,15 @@ describe("UniswapV2Factory", () => {
   });
 
   it("should pass the correct protocol when calling the pool created handler", async () => {
-    const updatedMockDB = await mockDb.processEvents([event]);
+    let passedProtocol: SupportedProtocol | undefined;
 
-    assert.equal(
-      updatedMockDB.entities.Pool.get(IndexerNetwork.getEntityIdFromAddress(network, event.params.pair))!.protocol_id,
-      SupportedProtocol.UNISWAP_V2
-    );
+    sinon.restore();
+    sinon.stub(factoryHandler, "handleV2PoolCreated").callsFake(async (params) => {
+      passedProtocol = params.protocol;
+    });
+
+    await mockDb.processEvents([event]);
+    assert.equal(passedProtocol, SupportedProtocol.UNISWAP_V2);
   });
 
   it("should register the pool create in the dynamic contract registry", async () => {
@@ -46,10 +52,14 @@ describe("UniswapV2Factory", () => {
   });
 
   it("should set the fee tier as 3000 in the pool", async () => {
-    sinon.replace(factoryHandler, "handleV2PoolCreated", async (params) => {
-      assert.equal(params.feeTier, 3000);
+    let passedFeeTier: number | undefined;
+
+    sinon.restore();
+    sinon.stub(factoryHandler, "handleV2PoolCreated").callsFake(async (params) => {
+      passedFeeTier = params.feeTier;
     });
 
     await mockDb.processEvents([event]);
+    assert.equal(passedFeeTier, 3000);
   });
 });

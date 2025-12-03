@@ -123,7 +123,7 @@ describe("TokenService", () => {
       decimals: tokenMetadata.decimals,
       symbol: tokenMetadata.symbol,
       name: tokenMetadata.name,
-      tokenAddress: tokenMetadata.tokenAddress.toLowerCase(),
+      tokenAddress: tokenMetadata.tokenAddress,
       totalTokenPooledAmount: ZERO_BIG_DECIMAL,
       totalValuePooledUsd: ZERO_BIG_DECIMAL,
       usdPrice: ZERO_BIG_DECIMAL,

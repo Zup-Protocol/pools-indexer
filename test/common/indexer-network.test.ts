@@ -28,6 +28,7 @@ describe("IndexerNetworkTests", () => {
   it("should return the correct chain id for sepolia", () => {
     assert.equal(IndexerNetwork.SEPOLIA, 11155111);
   });
+
   it("should return the correct rpc url for ethereum when using paid RPC url", () => {
     process.env.ENVIO_PAID_ETHEREUM_RPC_URL = "https://eth-mainnet.g.alchemy.com/v2/paid-eth-key";
     assert.equal(IndexerNetwork.getPaidRPCUrl(IndexerNetwork.ETHEREUM), process.env.ENVIO_PAID_ETHEREUM_RPC_URL);
@@ -92,7 +93,7 @@ describe("IndexerNetworkTests", () => {
   });
 
   it(`should return the right entity id for the given address,
-    based on the network in the format $network-$address`, () => {
+      based on the network in the format $network-$address`, () => {
     Object.values(IndexerNetwork)
       .filter((network) => typeof network === "number")
       .forEach((network) => {

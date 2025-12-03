@@ -20,19 +20,19 @@ GLiquidAlgebraFactory.Pool.handler(async ({ event, context }) => {
     communityFee: 0,
   };
 
-  await handleV3PoolCreated(
+  await handleV3PoolCreated({
     context,
-    event.params.pool,
-    event.params.token0,
-    event.params.token1,
-    0,
-    0,
-    BigInt(event.block.timestamp),
-    event.chainId,
-    SupportedProtocol.GLIQUID_ALGEBRA,
-    TokenService.shared,
-    algebraPoolData
-  );
+    poolAddress: event.params.pool,
+    token0Address: event.params.token0,
+    token1Address: event.params.token1,
+    feeTier: 0,
+    tickSpacing: 0,
+    eventTimestamp: BigInt(event.block.timestamp),
+    chainId: event.chainId,
+    protocol: SupportedProtocol.GLIQUID_ALGEBRA,
+    tokenService: TokenService.shared,
+    algebraPoolData,
+  });
 });
 
 GLiquidAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
@@ -42,17 +42,17 @@ GLiquidAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
     communityFee: 0,
   };
 
-  await handleV3PoolCreated(
+  await handleV3PoolCreated({
     context,
-    event.params.pool,
-    event.params.token0,
-    event.params.token1,
-    0,
-    0,
-    BigInt(event.block.timestamp),
-    event.chainId,
-    SupportedProtocol.GLIQUID_ALGEBRA,
-    TokenService.shared,
-    algebraPoolData
-  );
+    poolAddress: event.params.pool,
+    token0Address: event.params.token0,
+    token1Address: event.params.token1,
+    feeTier: 0,
+    tickSpacing: 0,
+    eventTimestamp: BigInt(event.block.timestamp),
+    chainId: event.chainId,
+    protocol: SupportedProtocol.GLIQUID_ALGEBRA,
+    tokenService: TokenService.shared,
+    algebraPoolData,
+  });
 });

@@ -250,7 +250,7 @@ describe("PoolSetters", () => {
     );
   });
 
-  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of 
+  it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of
     token0 stable and token1 non-stable it should return the new token1
     and the token0 price`, async () => {
     let pool = new PoolMock();
@@ -367,7 +367,7 @@ describe("PoolSetters", () => {
   });
 
   it(`When calling 'updateTokenPricesFromPoolPrices' with a pool of
-      token0 native and token1 non-native it should correctly 
+      token0 native and token1 non-native it should correctly
       return the token1 price based on the native price.
       The native token should remain unchanged`, async () => {
     let pool = new PoolMock();
@@ -1549,7 +1549,7 @@ describe("PoolSetters", () => {
 
   it(`should update the token1 price, if calling 'updateTokenPricesFromPoolPrices'
     from a pool that is not the current most liquid, but the new price, is within
-    the outlier price threshold compared to the current price. 
+    the outlier price threshold compared to the current price.
     The most liquid pool should remain the same`, async () => {
     const currentSqrtPriceX96 = BigInt("5111988562125188534995516");
     const token0MostLiquidPool = new PoolMock("0xM05ST_LIQUID_POOL_ID_0");
@@ -2122,7 +2122,7 @@ describe("PoolSetters", () => {
     assert.deepEqual(result[0].usdPrice.toString(), "111543.3929522");
   });
 
-  it(`should set the token0 most liquid pool as the current one if 
+  it(`should set the token0 most liquid pool as the current one if
     is more liquid than the saved one. Even if the price is outside
     the threshold`, async () => {
     const currentSqrtPriceX96 = BigInt("79224040650647629793123337304");
@@ -3341,7 +3341,7 @@ describe("PoolSetters", () => {
     assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
   });
 
-  it(`should set the current pool accumulated yield in the current pool daily data when 
+  it(`should set the current pool accumulated yield in the current pool daily data when
       calling 'setIntervalSwapData'`, async () => {
     const eventTimestamp = 1640995200n;
     const token0 = new TokenMock();

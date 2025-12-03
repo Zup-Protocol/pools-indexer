@@ -1,8 +1,10 @@
 import assert from "assert";
 import { HybraV3Factory_PoolCreated_event } from "generated";
 import { HybraV3Factory, MockDb } from "generated/src/TestHelpers.gen";
+import sinon from "sinon";
 import { IndexerNetwork } from "../../../../../src/common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../../src/common/enums/supported-protocol";
+import * as factoryHandler from "../../../../../src/v3-pools/mappings/factory/v3-factory";
 
 describe("HybraV3Factory", () => {
   const mockDb = MockDb.createMockDb();
@@ -10,6 +12,7 @@ describe("HybraV3Factory", () => {
   let event: HybraV3Factory_PoolCreated_event;
 
   beforeEach(() => {
+    sinon.stub(factoryHandler, "handleV3PoolCreated").callsFake(async (..._args: any[]) => Promise.resolve());
     network = IndexerNetwork.HYPER_EVM;
 
     event = HybraV3Factory.PoolCreated.createMockEvent({
@@ -24,13 +27,22 @@ describe("HybraV3Factory", () => {
     });
   });
 
-  it("should pass the correct protocol when calling the pool created handler", async () => {
-    const updatedMockDB = await mockDb.processEvents([event]);
+  afterEach(() => {
+    sinon.restore();
+  });
 
-    assert.equal(
-      updatedMockDB.entities.Pool.get(IndexerNetwork.getEntityIdFromAddress(network, event.params.pool))!.protocol_id,
-      SupportedProtocol.HYBRA_V3
-    );
+  it("should pass the correct protocol when calling the pool created handler", async () => {
+    let passedProtocol: SupportedProtocol | undefined;
+
+    sinon.restore();
+    sinon.stub(factoryHandler, "handleV3PoolCreated").callsFake(async (params) => {
+      passedProtocol = params.protocol;
+      return Promise.resolve();
+    });
+
+    await mockDb.processEvents([event]);
+
+    assert.equal(passedProtocol, SupportedProtocol.HYBRA_V3);
   });
 
   it("should register the pool create in the dynamic contract registry", async () => {

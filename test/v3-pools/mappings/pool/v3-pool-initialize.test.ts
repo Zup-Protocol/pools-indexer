@@ -24,7 +24,7 @@ describe("V3PoolInitializeHandler", () => {
 
     context.V3PoolData.set(v3pool);
 
-    await handleV3PoolInitialize(context, pool, sqrtPriceX96, tick);
+    await handleV3PoolInitialize(context, v3pool, sqrtPriceX96, tick);
 
     const v3PoolData = await context.V3PoolData.getOrThrow(pool.id)!;
     assert.deepEqual(v3PoolData.sqrtPriceX96, sqrtPriceX96);
@@ -39,7 +39,7 @@ describe("V3PoolInitializeHandler", () => {
 
     context.V3PoolData.set(v3pool);
 
-    await handleV3PoolInitialize(context, pool, sqrtPriceX96, tick);
+    await handleV3PoolInitialize(context, v3pool, sqrtPriceX96, tick);
 
     const updatedV3PoolData = await context.V3PoolData.getOrThrow(pool.id)!;
 

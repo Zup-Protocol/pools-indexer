@@ -32,7 +32,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set the pool id in the v3 pool data entity id and assign it to the pool", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -42,8 +42,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const expectedPoolId = IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress);
     const pool = await context.Pool.get(expectedPoolId)!;
@@ -55,7 +55,7 @@ describe("V3FactoryHandler", () => {
     const expectedTickSpacing = 1261892691;
     tickSpacing = expectedTickSpacing;
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -65,8 +65,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const v3PoolData = await context.V3PoolData.get(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -74,7 +74,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set the sqrtPriceX96 of the v3 pool data, as zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -84,8 +84,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const v3PoolData = await context.V3PoolData.get(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -93,7 +93,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set the tick of the v3 pool data, as zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -103,8 +103,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const v3PoolData = await context.V3PoolData.get(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -115,7 +115,7 @@ describe("V3FactoryHandler", () => {
     const expectedPoolAddress = "xabas address";
     poolAddress = expectedPoolAddress;
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -125,8 +125,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -141,7 +141,7 @@ describe("V3FactoryHandler", () => {
     chainId = IndexerNetwork.BASE;
     protocol = expectedProtocol;
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -151,8 +151,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -166,7 +166,7 @@ describe("V3FactoryHandler", () => {
       .withArgs(context, chainId, token0Address)
       .resolves(new TokenMock(expectedToken0Id));
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -176,8 +176,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -191,7 +191,7 @@ describe("V3FactoryHandler", () => {
       .withArgs(context, chainId, token1Address)
       .resolves(new TokenMock(expectedToken1Id));
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -201,8 +201,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -213,7 +213,7 @@ describe("V3FactoryHandler", () => {
     const expectedFeeTier = 12518;
     feeTier = expectedFeeTier;
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -223,8 +223,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -235,7 +235,7 @@ describe("V3FactoryHandler", () => {
     const expectedFeeTier = 12518;
     feeTier = expectedFeeTier;
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -245,8 +245,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -254,7 +254,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set the pool total value locked usd to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -264,8 +264,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -273,7 +273,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set the pool total value locked token 0 to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -283,8 +283,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -292,7 +292,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set the pool total value locked token 1 to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -302,8 +302,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -314,7 +314,7 @@ describe("V3FactoryHandler", () => {
     const expectedEventTimestamp = BigInt("555155155155155551777");
     eventTimestamp = expectedEventTimestamp;
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -324,8 +324,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -337,70 +337,7 @@ describe("V3FactoryHandler", () => {
 
     protocol = expectedProtocol;
 
-    await handleV3PoolCreated(
-      context,
-      poolAddress,
-      token0Address,
-      token1Address,
-      feeTier,
-      tickSpacing,
-      eventTimestamp,
-      chainId,
-      protocol,
-      tokenService
-    );
-
-    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
-
-    assert.deepEqual(pool.protocol_id, expectedProtocol);
-  });
-
-  it("should set the pool type to v3", async () => {
-    await handleV3PoolCreated(
-      context,
-      poolAddress,
-      token0Address,
-      token1Address,
-      feeTier,
-      tickSpacing,
-      eventTimestamp,
-      chainId,
-      protocol,
-      tokenService
-    );
-
-    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
-
-    assert.deepEqual(pool.poolType, "V3");
-  });
-
-  it("should assign the chain id passed from the event to the pool", async () => {
-    const expectedChainId = IndexerNetwork.SCROLL;
-    chainId = expectedChainId;
-
-    await handleV3PoolCreated(
-      context,
-      poolAddress,
-      token0Address,
-      token1Address,
-      feeTier,
-      tickSpacing,
-      eventTimestamp,
-      chainId,
-      protocol,
-      tokenService
-    );
-
-    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
-
-    assert.deepEqual(pool.chainId, expectedChainId);
-  });
-
-  it("should assing the algebra pool id if algebra pool data is passed in the params", async () => {
-    const expectedAlgebraPoolId = "xabas-for-algebra-pool-id";
-    const algebraPoolData = new AlgebraPoolDataMock(expectedAlgebraPoolId);
-
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -411,8 +348,71 @@ describe("V3FactoryHandler", () => {
       chainId,
       protocol,
       tokenService,
-      algebraPoolData
-    );
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+
+    assert.deepEqual(pool.protocol_id, expectedProtocol);
+  });
+
+  it("should set the pool type to v3", async () => {
+    await handleV3PoolCreated({
+      context,
+      poolAddress,
+      token0Address,
+      token1Address,
+      feeTier,
+      tickSpacing,
+      eventTimestamp,
+      chainId,
+      protocol,
+      tokenService,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+
+    assert.deepEqual(pool.poolType, "V3");
+  });
+
+  it("should assign the chain id passed from the event to the pool", async () => {
+    const expectedChainId = IndexerNetwork.SCROLL;
+    chainId = expectedChainId;
+
+    await handleV3PoolCreated({
+      context,
+      poolAddress,
+      token0Address,
+      token1Address,
+      feeTier,
+      tickSpacing,
+      eventTimestamp,
+      chainId,
+      protocol,
+      tokenService,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+
+    assert.deepEqual(pool.chainId, expectedChainId);
+  });
+
+  it("should assing the algebra pool id if algebra pool data is passed in the params", async () => {
+    const expectedAlgebraPoolId = "xabas-for-algebra-pool-id";
+    const algebraPoolData = new AlgebraPoolDataMock(expectedAlgebraPoolId);
+
+    await handleV3PoolCreated({
+      context,
+      poolAddress,
+      token0Address,
+      token1Address,
+      feeTier,
+      tickSpacing,
+      eventTimestamp,
+      chainId,
+      protocol,
+      tokenService,
+      algebraPoolData,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -425,7 +425,7 @@ describe("V3FactoryHandler", () => {
 
     tokenService.getOrCreateTokenEntity.withArgs(context, chainId, token0Address).resolves(expectedToken0);
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -435,8 +435,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const token0Created = await context.Token.getOrThrow(expectedToken0Id)!;
 
@@ -449,7 +449,7 @@ describe("V3FactoryHandler", () => {
 
     tokenService.getOrCreateTokenEntity.withArgs(context, chainId, token1Address).resolves(expectedToken1);
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -459,8 +459,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const token1Created = await context.Token.getOrThrow(expectedToken1Id)!;
 
@@ -468,7 +468,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should correctly save the protocol entity with the correct params based on the protocol from the event", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -478,8 +478,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const protocolCreated = await context.Protocol.getOrThrow(protocol)!;
 
@@ -499,7 +499,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set the liquidity volume token 0 to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -509,15 +509,15 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
     assert.deepEqual(pool.liquidityVolumeToken0, ZERO_BIG_DECIMAL);
   });
 
   it("should set the liquidity volume token 1 to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -527,15 +527,15 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
     assert.deepEqual(pool.liquidityVolumeToken1, ZERO_BIG_DECIMAL);
   });
 
   it("should set the liquidity volume USD to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -545,15 +545,15 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
     assert.deepEqual(pool.liquidityVolumeUSD, ZERO_BIG_DECIMAL);
   });
 
   it("should set the swap volume USD to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -563,15 +563,15 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
     assert.deepEqual(pool.swapVolumeUSD, ZERO_BIG_DECIMAL);
   });
 
   it("should set the swap volume token 0 to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -581,8 +581,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -590,7 +590,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set the swap volume token 1 to zero", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -600,8 +600,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
     assert.deepEqual(pool.swapVolumeToken1, ZERO_BIG_DECIMAL);
@@ -616,7 +616,7 @@ describe("V3FactoryHandler", () => {
 
     context.DeFiPoolData.set(existingDefiPoolData);
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -626,8 +626,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const updatedDefiPoolData = await context.DeFiPoolData.getOrThrow(DEFI_POOL_DATA_ID)!;
     const expectedNewDefiPoolData: DeFiPoolData = {
@@ -640,7 +640,7 @@ describe("V3FactoryHandler", () => {
 
   it(`should create a new defiPoolData entity if it doesn't exist and
       assign one as poolsCount. `, async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -650,8 +650,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const updatedDefiPoolData = await context.DeFiPoolData.getOrThrow(DEFI_POOL_DATA_ID)!;
     const expectedNewDefiPoolData: DeFiPoolData = {
@@ -663,7 +663,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set all the accumulated yield as zero when creating a pool", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -673,8 +673,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -686,7 +686,7 @@ describe("V3FactoryHandler", () => {
   });
 
   it("should set data point timestamps as the event timestamp when creating a pool", async () => {
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -696,8 +696,8 @@ describe("V3FactoryHandler", () => {
       eventTimestamp,
       chainId,
       protocol,
-      tokenService
-    );
+      tokenService,
+    });
 
     const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
 
@@ -726,7 +726,7 @@ describe("V3FactoryHandler", () => {
   it("should save the passed algebra pool data entity if provided", async () => {
     const algebraPoolData = new AlgebraPoolDataMock("xabas-algebra-pool-id");
 
-    await handleV3PoolCreated(
+    await handleV3PoolCreated({
       context,
       poolAddress,
       token0Address,
@@ -737,8 +737,8 @@ describe("V3FactoryHandler", () => {
       chainId,
       protocol,
       tokenService,
-      algebraPoolData
-    );
+      algebraPoolData,
+    });
 
     const savedAlgebraPoolData = await context.AlgebraPoolData.getOrThrow(algebraPoolData.id)!;
 

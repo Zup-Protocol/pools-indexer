@@ -453,7 +453,7 @@ describe("DeFiPoolDataSetters", () => {
   });
 
   it(`should modify a single hourly liquidity data entity if calling 'setIntervalLiquidityData'
-    multiple times within 1h of each other adding liquidity`, async () => {
+      multiple times within 1h of each other adding liquidity`, async () => {
     let existingHourlyLiquidityData = new DeFiPoolHourlyDataMock();
     let token0 = new TokenMock();
     let token1 = new TokenMock();
@@ -544,7 +544,7 @@ describe("DeFiPoolDataSetters", () => {
   });
 
   it(`should modify a single hourly liquidity data entity if calling 'setIntervalLiquidityData'
-    multiple times within 1h of each other removing liquidity`, async () => {
+      multiple times within 1h of each other removing liquidity`, async () => {
     let existingHourlyLiquidityData = new DeFiPoolHourlyDataMock();
     let token0 = new TokenMock();
     let token1 = new TokenMock();

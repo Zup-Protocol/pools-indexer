@@ -1,8 +1,10 @@
 import assert from "assert";
 import { VelodromeV3Factory_PoolCreated_event } from "generated";
 import { MockDb, VelodromeV3Factory } from "generated/src/TestHelpers.gen";
+import sinon from "sinon";
 import { IndexerNetwork } from "../../../../../src/common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../../src/common/enums/supported-protocol";
+import * as factoryHandler from "../../../../../src/v3-pools/mappings/factory/v3-factory";
 
 describe("VelodromeV3Factory", () => {
   const mockDb = MockDb.createMockDb();
@@ -10,6 +12,8 @@ describe("VelodromeV3Factory", () => {
   let event: VelodromeV3Factory_PoolCreated_event;
 
   beforeEach(() => {
+    sinon.stub(factoryHandler, "handleV3PoolCreated").callsFake(async (..._args: any[]) => Promise.resolve());
+
     network = IndexerNetwork.UNICHAIN;
 
     event = VelodromeV3Factory.PoolCreated.createMockEvent({
@@ -23,31 +27,34 @@ describe("VelodromeV3Factory", () => {
     });
   });
 
-  it("should pass the correct protocol when calling the pool created handler", async () => {
-    const updatedMockDB = await mockDb.processEvents([event]);
+  afterEach(() => {
+    sinon.restore();
+  });
 
-    assert.equal(
-      updatedMockDB.entities.Pool.get(IndexerNetwork.getEntityIdFromAddress(network, event.params.pool))!.protocol_id,
-      SupportedProtocol.VELODROME_V3
-    );
+  it("should pass the correct protocol when calling the pool created handler", async () => {
+    let passedProtocol: SupportedProtocol | undefined;
+    sinon.restore();
+    sinon.stub(factoryHandler, "handleV3PoolCreated").callsFake(async (params) => {
+      passedProtocol = params.protocol;
+      return Promise.resolve();
+    });
+
+    await mockDb.processEvents([event]);
+
+    assert.equal(passedProtocol, SupportedProtocol.VELODROME_V3);
   });
 
   it("should pass the fee tier as zero when calling the pool created handler", async () => {
-    const updatedMockDB = await mockDb.processEvents([event]);
+    let passedFeeTier: number | undefined;
+    sinon.restore();
+    sinon.stub(factoryHandler, "handleV3PoolCreated").callsFake(async (params) => {
+      passedFeeTier = params.feeTier;
+      return Promise.resolve();
+    });
 
-    assert.equal(
-      updatedMockDB.entities.Pool.get(IndexerNetwork.getEntityIdFromAddress(network, event.params.pool))!
-        .initialFeeTier,
-      0,
-      "initialFeeTier should be zero"
-    );
+    await mockDb.processEvents([event]);
 
-    assert.equal(
-      updatedMockDB.entities.Pool.get(IndexerNetwork.getEntityIdFromAddress(network, event.params.pool))!
-        .currentFeeTier,
-      0,
-      "currentFeeTier should be zero"
-    );
+    assert.equal(passedFeeTier, 0, "feeTier should be zero");
   });
 
   it("should register the pool create in the dynamic contract registry", async () => {

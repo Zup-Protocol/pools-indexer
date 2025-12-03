@@ -265,10 +265,10 @@ export class PoolMock implements Pool {
   accumulated7dYield: BigDecimal = BigDecimal("9.2");
   accumulated90dYield: BigDecimal = BigDecimal("12.92");
   totalAccumulatedYield: BigDecimal = BigDecimal("24.56");
-  dataPointTimestamp24h: bigint | undefined = undefined;
-  dataPointTimestamp30d: bigint | undefined = undefined;
-  dataPointTimestamp7d: bigint | undefined = undefined;
-  dataPointTimestamp90d: bigint | undefined = undefined;
+  dataPointTimestamp24h: bigint = BigInt((Date.now() / 1000).toFixed(0));
+  dataPointTimestamp30d: bigint = BigInt((Date.now() / 1000).toFixed(0));
+  dataPointTimestamp7d: bigint = BigInt((Date.now() / 1000).toFixed(0));
+  dataPointTimestamp90d: bigint = BigInt((Date.now() / 1000).toFixed(0));
 }
 
 export class PoolHourlyDataMock implements PoolHourlyData {

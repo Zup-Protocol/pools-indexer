@@ -1,8 +1,10 @@
 import assert from "assert";
 import { UniswapV4PoolManager_Initialize_event } from "generated";
 import { MockDb, UniswapV4PoolManager } from "generated/src/TestHelpers.gen";
+import sinon from "sinon";
 import { IndexerNetwork } from "../../../../../../src/common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../../../src/common/enums/supported-protocol";
+import * as poolInitHandler from "../../../../../../src/v4-pools/mappings/pool-manager/v4-pool-initialize";
 
 describe("UniswapV4PoolInitialize", () => {
   const mockDb = MockDb.createMockDb();
@@ -10,6 +12,8 @@ describe("UniswapV4PoolInitialize", () => {
   let event: UniswapV4PoolManager_Initialize_event;
 
   beforeEach(() => {
+    sinon.stub(poolInitHandler, "handleV4PoolInitialize").resolves();
+
     network = IndexerNetwork.UNICHAIN;
 
     event = UniswapV4PoolManager.Initialize.createMockEvent({
@@ -27,12 +31,21 @@ describe("UniswapV4PoolInitialize", () => {
     });
   });
 
-  it("Should pass the correct protocol when calling the handler", async () => {
-    const updatedMockDb = await mockDb.processEvents([event]);
+  afterEach(() => {
+    sinon.restore();
+  });
 
-    assert.deepEqual(
-      updatedMockDb.entities.Pool.get(IndexerNetwork.getEntityIdFromAddress(network, event.params.id))!.protocol_id,
-      SupportedProtocol.UNISWAP_V4
-    );
+  it("Should pass the correct protocol when calling the handler", async () => {
+    let passedProtocol: SupportedProtocol | undefined;
+
+    sinon.restore();
+    sinon.stub(poolInitHandler, "handleV4PoolInitialize").callsFake(async (params) => {
+      passedProtocol = params.protocol;
+      return Promise.resolve();
+    });
+
+    await mockDb.processEvents([event]);
+
+    assert.equal(passedProtocol, SupportedProtocol.UNISWAP_V4);
   });
 });

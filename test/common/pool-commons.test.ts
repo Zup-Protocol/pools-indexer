@@ -263,7 +263,7 @@ describe("PoolCommons", () => {
     );
   });
 
-  it(`When a pool has the token0 as wrapped native, 
+  it(`When a pool has the token0 as wrapped native,
         'findWrappedNative' should return the token 0
         `, () => {
     const network = IndexerNetwork.ETHEREUM;
@@ -281,7 +281,7 @@ describe("PoolCommons", () => {
     assert.equal(findWrappedNative(token0, token1, network).id, token0.id);
   });
 
-  it(`When a pool has the token1 as wrapped native, 
+  it(`When a pool has the token1 as wrapped native,
         'findWrappedNative' should return the token 1
         `, () => {
     const network = IndexerNetwork.ETHEREUM;

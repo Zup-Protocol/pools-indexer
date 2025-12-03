@@ -10,52 +10,52 @@ import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { TokenService } from "../../../common/services/token-service";
 
-export async function handleV4PoolInitialize(
-  context: handlerContext,
-  poolAddress: string,
-  token0Address: string,
-  token1Address: string,
-  feeTier: number,
-  tickSpacing: number,
-  tick: bigint,
-  sqrtPriceX96: bigint,
-  protocol: SupportedProtocol,
-  hooks: string,
-  eventTimestamp: bigint,
-  chainId: number,
-  poolManagerAddress: string,
-  tokenService: TokenService
-): Promise<void> {
+export async function handleV4PoolInitialize(params: {
+  context: handlerContext;
+  poolAddress: string;
+  token0Address: string;
+  token1Address: string;
+  feeTier: number;
+  tickSpacing: number;
+  tick: bigint;
+  sqrtPriceX96: bigint;
+  protocol: SupportedProtocol;
+  hooks: string;
+  eventTimestamp: bigint;
+  chainId: number;
+  poolManagerAddress: string;
+  tokenService: TokenService;
+}): Promise<void> {
   let [token0Entity, token1Entity, defiPoolDataEntity]: [TokenEntity, TokenEntity, DeFiPoolDataEntity] =
     await Promise.all([
-      tokenService.getOrCreateTokenEntity(context, chainId, token0Address),
-      tokenService.getOrCreateTokenEntity(context, chainId, token1Address),
-      context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(eventTimestamp)),
+      params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token0Address),
+      params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token1Address),
+      params.context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(params.eventTimestamp)),
     ]);
 
-  const poolId = IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress);
+  const poolId = IndexerNetwork.getEntityIdFromAddress(params.chainId, params.poolAddress);
 
   const v4PoolEntity: V4PoolEntity = {
     id: poolId,
-    permit2: SupportedProtocol.getPermit2Address(protocol, chainId),
-    poolManager: poolManagerAddress,
-    stateView: SupportedProtocol.getV4StateView(protocol, chainId),
-    hooks: hooks,
-    sqrtPriceX96: sqrtPriceX96,
-    tickSpacing: tickSpacing,
-    tick: tick,
+    permit2: SupportedProtocol.getPermit2Address(params.protocol, params.chainId),
+    poolManager: params.poolManagerAddress,
+    stateView: SupportedProtocol.getV4StateView(params.protocol, params.chainId),
+    hooks: params.hooks,
+    sqrtPriceX96: params.sqrtPriceX96,
+    tickSpacing: params.tickSpacing,
+    tick: params.tick,
   };
 
   const poolEntity: PoolEntity = {
     id: poolId,
-    positionManager: SupportedProtocol.getV4PositionManager(protocol, chainId),
-    poolAddress: poolAddress,
-    createdAtTimestamp: eventTimestamp,
-    currentFeeTier: feeTier,
-    initialFeeTier: feeTier,
+    positionManager: SupportedProtocol.getV4PositionManager(params.protocol, params.chainId),
+    poolAddress: params.poolAddress,
+    createdAtTimestamp: params.eventTimestamp,
+    currentFeeTier: params.feeTier,
+    initialFeeTier: params.feeTier,
     isStablePool: undefined,
     poolType: "V4",
-    protocol_id: protocol,
+    protocol_id: params.protocol,
     token0_id: token0Entity.id,
     token1_id: token1Entity.id,
     algebraPoolData_id: undefined,
@@ -76,11 +76,11 @@ export async function handleV4PoolInitialize(
     v2PoolData_id: undefined,
     v3PoolData_id: undefined,
     v4PoolData_id: v4PoolEntity.id,
-    chainId: chainId,
-    dataPointTimestamp24h: eventTimestamp,
-    dataPointTimestamp30d: eventTimestamp,
-    dataPointTimestamp7d: eventTimestamp,
-    dataPointTimestamp90d: eventTimestamp,
+    chainId: params.chainId,
+    dataPointTimestamp24h: params.eventTimestamp,
+    dataPointTimestamp30d: params.eventTimestamp,
+    dataPointTimestamp7d: params.eventTimestamp,
+    dataPointTimestamp90d: params.eventTimestamp,
   };
 
   defiPoolDataEntity = {
@@ -88,15 +88,15 @@ export async function handleV4PoolInitialize(
     poolsCount: defiPoolDataEntity.poolsCount + 1,
   };
 
-  context.Token.set(token0Entity);
-  context.Token.set(token1Entity);
-  context.Pool.set(poolEntity);
-  context.V4PoolData.set(v4PoolEntity);
-  context.DeFiPoolData.set(defiPoolDataEntity);
-  context.Protocol.set({
-    id: protocol,
-    name: SupportedProtocol.getName(protocol),
-    logo: SupportedProtocol.getLogoUrl(protocol),
-    url: SupportedProtocol.getUrl(protocol),
+  params.context.Token.set(token0Entity);
+  params.context.Token.set(token1Entity);
+  params.context.Pool.set(poolEntity);
+  params.context.V4PoolData.set(v4PoolEntity);
+  params.context.DeFiPoolData.set(defiPoolDataEntity);
+  params.context.Protocol.set({
+    id: params.protocol,
+    name: SupportedProtocol.getName(params.protocol),
+    logo: SupportedProtocol.getLogoUrl(params.protocol),
+    url: SupportedProtocol.getUrl(params.protocol),
   });
 }

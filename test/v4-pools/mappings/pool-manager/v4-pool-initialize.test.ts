@@ -35,22 +35,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0x0000000000000000000000000000000000000001";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      pool.token1_id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: pool.token1_id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
     assert.equal(createdPool.protocol_id, expectedProtocolId);
@@ -67,22 +67,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0x0000000000000000000000000000000000000001";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      pool.token1_id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: pool.token1_id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -103,22 +103,22 @@ describe("V4PoolInitialize", () => {
 
     tokenService.getOrCreateTokenEntity.withArgs(context, chainId, token0Id).resolves(new TokenMock(token0Id));
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      token0Id,
-      pool.token1_id,
+      poolAddress: pool.id,
+      token0Address: token0Id,
+      token1Address: pool.token1_id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -139,22 +139,22 @@ describe("V4PoolInitialize", () => {
 
     tokenService.getOrCreateTokenEntity.withArgs(context, chainId, token1Id).resolves(new TokenMock(token1Id));
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -173,22 +173,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0x0000000000000000000000000000000000000001";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -208,22 +208,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0x0000000000000000000000000000000000000001";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.V4PoolData.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -242,22 +242,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0x0000000000000000000000000000000000000001";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.V4PoolData.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -276,22 +276,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0x0000000000000000000000000000000000000001";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.V4PoolData.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -310,22 +310,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0x0000000000000000000000000000000000000001";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.V4PoolData.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -344,22 +344,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0x0000000000000000000000000000000000000001";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.V4PoolData.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -378,22 +378,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.V4PoolData.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -412,22 +412,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.V4PoolData.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -446,22 +446,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -482,22 +482,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -516,22 +516,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      pool.token0_id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: pool.token0_id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
     assert.equal(createdPool.v4PoolData_id, IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
@@ -550,22 +550,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      token0Id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: token0Id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const protocol = await context.Protocol.getOrThrow(expectedProtocolId);
 
@@ -588,22 +588,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      token0Id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: token0Id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -625,22 +625,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      token0Id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: token0Id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const createdPool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, pool.id));
 
@@ -670,22 +670,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      token0Id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: token0Id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const updatedDefiPoolData = await context.DeFiPoolData.getOrThrow(DEFI_POOL_DATA_ID)!;
     const expectedNewDefiPoolData: DeFiPoolData = {
@@ -710,22 +710,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.id,
-      token0Id,
-      token1Id,
+      poolAddress: pool.id,
+      token0Address: token0Id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const updatedDefiPoolData = await context.DeFiPoolData.getOrThrow(DEFI_POOL_DATA_ID)!;
     const expectedNewDefiPoolData: DeFiPoolData = {
@@ -749,22 +749,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.poolAddress,
-      token0Id,
-      token1Id,
+      poolAddress: pool.poolAddress,
+      token0Address: token0Id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const updatedPool = await context.Pool.getOrThrow(
       IndexerNetwork.getEntityIdFromAddress(chainId, pool.poolAddress)
@@ -790,22 +790,22 @@ describe("V4PoolInitialize", () => {
     let chainId = IndexerNetwork.ETHEREUM;
     let poolManagerAddress = "0xXabas";
 
-    await handleV4PoolInitialize(
+    await handleV4PoolInitialize({
       context,
-      pool.poolAddress,
-      token0Id,
-      token1Id,
+      poolAddress: pool.poolAddress,
+      token0Address: token0Id,
+      token1Address: token1Id,
       feeTier,
       tickSpacing,
       tick,
       sqrtPriceX96,
-      expectedProtocolId,
+      protocol: expectedProtocolId,
       hooks,
       eventTimestamp,
       chainId,
       poolManagerAddress,
-      tokenService
-    );
+      tokenService,
+    });
 
     const updatedPool = await context.Pool.getOrThrow(
       IndexerNetwork.getEntityIdFromAddress(chainId, pool.poolAddress)
