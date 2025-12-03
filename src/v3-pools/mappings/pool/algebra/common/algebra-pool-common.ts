@@ -14,7 +14,7 @@ export function getPoolDeductingAlgebraNonLPFees(params: {
   overrideSwapFee?: number;
 }): PoolEntity {
   let newPool = { ...params.currentPoolEntity };
-  let swapFee = params.overrideSwapFee ?? params.currentPoolEntity.currentFeeTier;
+  const swapFee = params.overrideSwapFee ?? params.currentPoolEntity.currentFeeTier;
 
   if (params.amount0SwapAmount > 0n) {
     const swapFeeForAmount0 = getRawFeeFromTokenAmount(params.amount0SwapAmount, swapFee);

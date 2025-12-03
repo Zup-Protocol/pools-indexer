@@ -1,7 +1,5 @@
 import { handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
-import { defaultDeFiPoolData } from "../../../common/constants";
 import { DeFiPoolDataSetters } from "../../../common/defi-pool-data-setters";
-import { isPoolSwapVolumeValid } from "../../../common/pool-commons";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount } from "../../../common/token-commons";
 
@@ -20,7 +18,6 @@ export async function handleV3PoolBurn(
   // This handler is only used to updated liquidity volume data
   const formattedToken0BurnedAmount = formatFromTokenAmount(amount0, token0Entity);
   const formattedToken1BurnedAmount = formatFromTokenAmount(amount1, token1Entity);
-  const defiPoolDataEntity = await context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(eventTimestamp));
 
   const operationVolumeUSD = formattedToken0BurnedAmount
     .times(token0Entity.usdPrice)
@@ -54,16 +51,19 @@ export async function handleV3PoolBurn(
     token1: token1Entity,
   });
 
-  if (isPoolSwapVolumeValid(poolEntity)) {
-    await defiPoolDataSetters.setIntervalLiquidityData(
-      eventTimestamp,
-      defiPoolDataEntity,
-      -amount0,
-      -amount1,
-      token0Entity,
-      token1Entity
-    );
-  }
+  poolEntity = await v3PoolSetters.updatePoolAccumulatedYield(eventTimestamp, poolEntity);
+
+  // TODO: Maybe implement -> Currently removed as is not needed and it makes the sync slower
+  // if (isPoolSwapVolumeValid(poolEntity)) {
+  //   await defiPoolDataSetters.setIntervalLiquidityData(
+  //     eventTimestamp,
+  //     defiPoolDataEntity,
+  //     -amount0,
+  //     -amount1,
+  //     token0Entity,
+  //     token1Entity
+  //   );
+  // }
 
   context.Pool.set(poolEntity);
   context.Token.set(token0Entity);

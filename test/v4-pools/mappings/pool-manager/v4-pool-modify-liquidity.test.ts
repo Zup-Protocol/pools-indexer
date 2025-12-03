@@ -1,7 +1,7 @@
 import assert from "assert";
 import { BigDecimal, handlerContext, Pool, Token } from "generated";
 import sinon from "sinon";
-import { defaultDeFiPoolData, ZERO_ADDRESS } from "../../../../src/common/constants";
+import { ZERO_ADDRESS } from "../../../../src/common/constants";
 import { DeFiPoolDataSetters } from "../../../../src/common/defi-pool-data-setters";
 import { IndexerNetwork } from "../../../../src/common/enums/indexer-network";
 import { PoolSetters } from "../../../../src/common/pool-setters";
@@ -23,6 +23,12 @@ describe("V4PoolModifyLiquidity", () => {
 
     poolSetters = sinon.createStubInstance(PoolSetters);
     defiPoolDataSetters = sinon.createStubInstance(DeFiPoolDataSetters);
+
+    poolSetters.updatePoolAccumulatedYield.resolvesArg(1);
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   it(`When calling the handler adding liquidity, it should correctly modify the
@@ -1692,75 +1698,76 @@ describe("V4PoolModifyLiquidity", () => {
     assert.deepEqual(token0After.mostLiquidPool_id, previousMoreLiquidPool.id);
   });
 
-  it(`should call the defi pool setters to set interval liquidity data
-    if the pool has more than 0 of swap volume usd`, async () => {
-    let pool: Pool = {
-      ...new PoolMock(),
-      swapVolumeUSD: BigDecimal("100"),
-    };
+  // TODO: re-enable test when implementing defi liquidity tracking for v4 pools
+  // it(`should call the defi pool setters to set interval liquidity data
+  //   if the pool has more than 0 of swap volume usd`, async () => {
+  //   let pool: Pool = {
+  //     ...new PoolMock(),
+  //     swapVolumeUSD: BigDecimal("100"),
+  //   };
 
-    let v4Pool = {
-      ...new V4PoolDataMock(),
-      id: pool.id,
-      tick: BigInt("-197765"),
-      sqrtPriceX96: BigInt("4024415889252221097743020"),
-    };
+  //   let v4Pool = {
+  //     ...new V4PoolDataMock(),
+  //     id: pool.id,
+  //     tick: BigInt("-197765"),
+  //     sqrtPriceX96: BigInt("4024415889252221097743020"),
+  //   };
 
-    let token0: Token = {
-      ...new TokenMock(),
-      id: "0x1",
-      usdPrice: BigDecimal("3132"),
-      tokenLiquidityVolume: BigDecimal("11111111"),
-      liquidityVolumeUSD: BigDecimal("20197290179201"),
-    };
+  //   let token0: Token = {
+  //     ...new TokenMock(),
+  //     id: "0x1",
+  //     usdPrice: BigDecimal("3132"),
+  //     tokenLiquidityVolume: BigDecimal("11111111"),
+  //     liquidityVolumeUSD: BigDecimal("20197290179201"),
+  //   };
 
-    let token1: Token = {
-      ...new TokenMock(),
-      id: "0x2",
-      usdPrice: BigDecimal("1212"),
-      tokenLiquidityVolume: BigDecimal("2619216281921"),
-      liquidityVolumeUSD: BigDecimal("11111"),
-    };
+  //   let token1: Token = {
+  //     ...new TokenMock(),
+  //     id: "0x2",
+  //     usdPrice: BigDecimal("1212"),
+  //     tokenLiquidityVolume: BigDecimal("2619216281921"),
+  //     liquidityVolumeUSD: BigDecimal("11111"),
+  //   };
 
-    let liquidityDelta = BigInt("2739387638594388447");
-    let tickLower = -197770;
-    let tickUpper = -197760;
+  //   let liquidityDelta = BigInt("2739387638594388447");
+  //   let tickLower = -197770;
+  //   let tickUpper = -197760;
 
-    let token0totalAmountAdded = getAmount0(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96);
-    let token1totalAmountAdded = getAmount1(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96);
+  //   let token0totalAmountAdded = getAmount0(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96);
+  //   let token1totalAmountAdded = getAmount1(tickLower, tickUpper, v4Pool.tick, liquidityDelta, v4Pool.sqrtPriceX96);
 
-    context.Pool.set(pool);
-    context.V4PoolData.set(v4Pool);
-    context.Token.set(token0);
-    context.Token.set(token1);
+  //   context.Pool.set(pool);
+  //   context.V4PoolData.set(v4Pool);
+  //   context.Token.set(token0);
+  //   context.Token.set(token1);
 
-    await handleV4PoolModifyLiquidity(
-      context,
-      pool,
-      token0,
-      token1,
-      liquidityDelta,
-      tickLower,
-      tickUpper,
-      eventTimestamp,
-      poolSetters,
-      defiPoolDataSetters
-    );
+  //   await handleV4PoolModifyLiquidity(
+  //     context,
+  //     pool,
+  //     token0,
+  //     token1,
+  //     liquidityDelta,
+  //     tickLower,
+  //     tickUpper,
+  //     eventTimestamp,
+  //     poolSetters,
+  //     defiPoolDataSetters
+  //   );
 
-    const updatedToken0 = await context.Token.getOrThrow(token0.id);
-    const updatedToken1 = await context.Token.getOrThrow(token1.id);
+  //   const updatedToken0 = await context.Token.getOrThrow(token0.id);
+  //   const updatedToken1 = await context.Token.getOrThrow(token1.id);
 
-    assert(
-      defiPoolDataSetters.setIntervalLiquidityData.calledWith(
-        eventTimestamp,
-        defaultDeFiPoolData(eventTimestamp),
-        token0totalAmountAdded,
-        token1totalAmountAdded,
-        updatedToken0,
-        updatedToken1
-      )
-    );
-  });
+  //   assert(
+  //     defiPoolDataSetters.setIntervalLiquidityData.calledWith(
+  //       eventTimestamp,
+  //       defaultDeFiPoolData(eventTimestamp),
+  //       token0totalAmountAdded,
+  //       token1totalAmountAdded,
+  //       updatedToken0,
+  //       updatedToken1
+  //     )
+  //   );
+  // });
 
   it(`should not call the defi pool setters to set interval liquidity data
     if the pool has  0 of swap volume usd`, async () => {
@@ -1942,5 +1949,61 @@ describe("V4PoolModifyLiquidity", () => {
         poolEntity: updatedPool,
       })
     );
+  });
+
+  it("should update the pool entity with the result from 'updatePoolAccumulatedYield'", async () => {
+    const token0: Token = {
+      ...new TokenMock(),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+    };
+
+    const v4Pool = {
+      ...new V4PoolDataMock(),
+      id: pool.id,
+    };
+
+    const resultPool: Pool = {
+      ...pool,
+      accumulated24hYield: BigDecimal("212121"),
+      accumulated7dYield: BigDecimal("555555"),
+      accumulated90dYield: BigDecimal("333333"),
+      accumulated30dYield: BigDecimal("8181818"),
+      totalAccumulatedYield: BigDecimal("9999999"),
+      dataPointTimestamp24h: 0x10n,
+      dataPointTimestamp7d: 0x20n,
+      dataPointTimestamp30d: 0x30n,
+      dataPointTimestamp90d: 0x40n,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+    context.V4PoolData.set(v4Pool);
+
+    poolSetters.updatePoolAccumulatedYield.reset();
+    poolSetters.updatePoolAccumulatedYield.resolves(resultPool);
+
+    await handleV4PoolModifyLiquidity(
+      context,
+      pool,
+      token0,
+      token1,
+      0n,
+      0,
+      0,
+      eventTimestamp,
+      poolSetters,
+      defiPoolDataSetters
+    );
+
+    const updatedPool = await context.Pool.getOrThrow(pool.id)!;
+    assert.deepEqual(updatedPool, resultPool, "The pool should be updated with the accumulated yield data");
   });
 });

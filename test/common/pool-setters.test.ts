@@ -1,18 +1,25 @@
 import assert from "assert";
 import { BigDecimal, handlerContext, Pool, PoolDailyData, PoolHourlyData, Token } from "generated";
+import sinon from "sinon";
 import { sqrtPriceX96toPrice } from "../../src/common/cl-pool-converters";
 import {
   defaultPoolDailyData,
   defaultPoolHourlyData,
+  ONE_DAY_IN_SECONDS,
   ONE_HOUR_IN_SECONDS,
   ZERO_ADDRESS,
   ZERO_BIG_DECIMAL,
 } from "../../src/common/constants";
+import { subtractDaysFromSecondsTimestamp, subtractHoursFromSecondsTimestamp } from "../../src/common/date-commons";
 import { IndexerNetwork } from "../../src/common/enums/indexer-network";
+import * as PoolCommons from "../../src/common/pool-commons";
 import {
+  calculateDayYearlyYield,
+  calculateHourYearlyYield,
   getLiquidityInflowAndOutflowFromRawAmounts,
   getPoolDailyDataId,
   getPoolHourlyDataId,
+  getSwapFeesFromRawAmounts,
 } from "../../src/common/pool-commons";
 import { PoolSetters } from "../../src/common/pool-setters";
 import { formatFromTokenAmount } from "../../src/common/token-commons";
@@ -34,6 +41,10 @@ describe("PoolSetters", () => {
   beforeEach(() => {
     context = handlerContextCustomMock();
     sut = new PoolSetters(context, network);
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   it(`When calling 'setIntervalDataTVL' and a PoolDailyData entity
@@ -3258,5 +3269,655 @@ describe("PoolSetters", () => {
     };
 
     assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
+  });
+
+  it(`should calculate the yearly yield from the day fees and tvl then set it
+    to the daily data entity when calling 'setIntervalSwapData'`, async () => {
+    const eventTimestamp = 1640995200n;
+    const pool = new PoolMock();
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 1082198621n * 10n ** 6n;
+    const amount1 = -7555555n * 10n ** 18n;
+    const swapFees = getSwapFeesFromRawAmounts(amount0, amount1, pool.currentFeeTier, token0, token1);
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, pool),
+      feesUSD: BigDecimal("100"),
+      totalValueLockedUSD: BigDecimal("1000"),
+      yearlyYield: BigDecimal("0"),
+    };
+
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const actualUpdatedDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+
+    const expectedNewPoolDailyData: PoolDailyData = {
+      ...actualUpdatedDailyData,
+      feesUSD: swapFees.feesUSD.plus(currentPoolDailyData.feesUSD),
+      yearlyYield: calculateDayYearlyYield(
+        actualUpdatedDailyData.totalValueLockedUSD,
+        currentPoolDailyData.feesUSD.plus(swapFees.feesUSD)
+      ),
+    };
+
+    assert.deepEqual(actualUpdatedDailyData, expectedNewPoolDailyData);
+  });
+
+  it(`should calculate the yearly yield from the hour fees and tvl then set it
+    to the hourly data entity when calling 'setIntervalSwapData'`, async () => {
+    const eventTimestamp = 1640995200n;
+    const pool = new PoolMock();
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 1082198621n * 10n ** 6n;
+    const amount1 = -7555555n * 10n ** 18n;
+    const swapFees = getSwapFeesFromRawAmounts(amount0, amount1, pool.currentFeeTier, token0, token1);
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      feesUSD: BigDecimal("1213"),
+      totalValueLockedUSD: BigDecimal("82169821"),
+      yearlyYield: BigDecimal("22"),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const actualUpdatedHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+
+    const expectedNewPoolHourlyData: PoolHourlyData = {
+      ...actualUpdatedHourlyData,
+      feesUSD: swapFees.feesUSD.plus(currentPoolHourlyData.feesUSD),
+      yearlyYield: calculateHourYearlyYield(
+        actualUpdatedHourlyData.totalValueLockedUSD,
+        currentPoolHourlyData.feesUSD.plus(swapFees.feesUSD)
+      ),
+    };
+
+    assert.deepEqual(actualUpdatedHourlyData, expectedNewPoolHourlyData);
+  });
+
+  it(`should set the current pool accumulated yield in the current pool daily data when 
+      calling 'setIntervalSwapData'`, async () => {
+    const eventTimestamp = 1640995200n;
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 1082198621n * 10n ** 6n;
+    const amount1 = -7555555n * 10n ** 18n;
+    const poolTotalAccumulatedYield = BigDecimal("5000");
+
+    const pool: Pool = { ...new PoolMock(), totalAccumulatedYield: poolTotalAccumulatedYield };
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, pool),
+      totalAccumulatedYield: BigDecimal("26108261892618921"),
+    };
+
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const actualUpdatedDailyData = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
+
+    assert.deepEqual(actualUpdatedDailyData.totalAccumulatedYield, poolTotalAccumulatedYield);
+  });
+
+  it(`should set the current pool accumulated yield in the current pool hourly data when
+      calling 'setIntervalSwapData'`, async () => {
+    const eventTimestamp = 1640995200n;
+    const token0 = new TokenMock();
+    const token1 = new TokenMock();
+    const amount0 = 1082198621n * 10n ** 6n;
+    const amount1 = -7555555n * 10n ** 18n;
+    const poolTotalAccumulatedYield = BigDecimal("10201211111");
+
+    const pool: Pool = { ...new PoolMock(), totalAccumulatedYield: poolTotalAccumulatedYield };
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, pool),
+      totalAccumulatedYield: BigDecimal("11111111"),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+
+    await sut.setIntervalSwapData(eventTimestamp, context, pool, token0, token1, amount0, amount1);
+    const actualUpdatedHourlyData = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+
+    assert.deepEqual(actualUpdatedHourlyData.totalAccumulatedYield, poolTotalAccumulatedYield);
+  });
+
+  it(`should not change the passed pool entity if the passed event timestamp
+    is more than 100 days ago from the current date time when calling 'updatePoolAccumulatedYield'`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp - BigInt(ONE_DAY_IN_SECONDS * 200);
+    const currentPool = new PoolMock();
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    assert.deepEqual(resultPool, currentPool);
+  });
+
+  it(`should not change the passed pool entity if the current daily data and hourly data
+    entity hasn't been created in the same event timestamp when calling 'updatePoolAccumulatedYield'`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp - BigInt(ONE_DAY_IN_SECONDS * 200);
+    const currentPool = new PoolMock();
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    assert.deepEqual(resultPool, currentPool);
+  });
+
+  it(`should update pool 24h accumulated yield with current yield minus 24h-ago yield,
+    and set datapoint timestamp to 24h-ago hourly data timestamp when calling
+    'updatePoolAccumulatedYield' and the current pool hourly data is a new one`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("8000");
+    const totalAccumulatedYield24hAgo = BigDecimal("5000");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp - BigInt(ONE_DAY_IN_SECONDS),
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+      hourStartTimestamp: eventTimestamp,
+    };
+
+    const poolHourlyData24hAgo: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(subtractHoursFromSecondsTimestamp(eventTimestamp, 24), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield24hAgo,
+      hourStartTimestamp: subtractHoursFromSecondsTimestamp(eventTimestamp, 24),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    sinon.stub(PoolCommons, "getPoolHourlyDataAgo").resolves(poolHourlyData24hAgo);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...resultPool,
+      accumulated24hYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield24hAgo),
+      dataPointTimestamp24h: poolHourlyData24hAgo.hourStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
+  });
+
+  it(`should not update the pool entity when calling 'updatePoolAccumulatedYield' and the current
+    pool hourly data is a new one, but the 24h-ago hourly data is not found`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+
+    const currentPool: Pool = {
+      ...new PoolMock(),
+    };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp - BigInt(ONE_DAY_IN_SECONDS),
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+      hourStartTimestamp: eventTimestamp,
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    sinon.stub(PoolCommons, "getPoolHourlyDataAgo").withArgs(24).resolves(null);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+    assert.deepEqual(resultPool, currentPool);
+  });
+
+  it(`should update pool 7d accumulated yield with current yield minus 7d ago yield,
+    and set datapoint timestamp to 7d ago daily data timestamp when calling
+    'updatePoolAccumulatedYield' and the current pool daily data is a new one`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+    const totalAccumulatedYield7dAgo = BigDecimal("9000");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+    };
+
+    const poolDailyData7dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 7), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield7dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 7),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    sinon.stub(PoolCommons, "getPoolDailyDataAgo").resolves(poolDailyData7dAgo);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...resultPool,
+      accumulated7dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield7dAgo),
+      dataPointTimestamp7d: poolDailyData7dAgo.dayStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
+  });
+
+  it(`should update pool 30d accumulated yield with current yield minus 30d ago yield,
+    and set datapoint timestamp to 30d ago daily data timestamp when calling
+    'updatePoolAccumulatedYield' and the current pool daily data is a new one`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+    const totalAccumulatedYield30dAgo = BigDecimal("2000");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+    };
+
+    const poolDailyData30dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 30), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield30dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 30),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    sinon.stub(PoolCommons, "getPoolDailyDataAgo").resolves(poolDailyData30dAgo);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...resultPool,
+      accumulated30dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield30dAgo),
+      dataPointTimestamp30d: poolDailyData30dAgo.dayStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
+  });
+
+  it(`should update pool 90d accumulated yield with current yield minus 90d ago yield,
+    and set datapoint timestamp to 90d ago daily data timestamp when calling
+    'updatePoolAccumulatedYield' and the current pool daily data is a new one`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+    const totalAccumulatedYield90dAgo = BigDecimal("100");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+    };
+
+    const poolDailyData90dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 90), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield90dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 90),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    sinon.stub(PoolCommons, "getPoolDailyDataAgo").resolves(poolDailyData90dAgo);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...resultPool,
+      accumulated90dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield90dAgo),
+      dataPointTimestamp90d: poolDailyData90dAgo.dayStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
+  });
+
+  it(`should not update the pool entity when calling 'updatePoolAccumulatedYield' and the current
+    pool daily data is a new one, but the 7d, 30d and 90d ago datas are not found`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    sinon.stub(PoolCommons, "getPoolDailyDataAgo").resolves(null);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    assert.deepEqual(resultPool, currentPool);
+  });
+
+  it(`should update pool 7d and 30d accumulated yield, but not 90d when calling 'updatePoolAccumulatedYield'
+    if 7d and 30d data are found but 90d data is not found`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+    const totalAccumulatedYield7dAgo = BigDecimal("9000");
+    const totalAccumulatedYield30dAgo = BigDecimal("2000");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+    };
+
+    const poolDailyData7dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 7), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield7dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 7),
+    };
+
+    const poolDailyData30dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 30), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield30dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 30),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    const getPoolDailyDataAgoStub = sinon.stub(PoolCommons, "getPoolDailyDataAgo");
+    getPoolDailyDataAgoStub.withArgs(7).resolves(poolDailyData7dAgo);
+    getPoolDailyDataAgoStub.withArgs(30).resolves(poolDailyData30dAgo);
+    getPoolDailyDataAgoStub.withArgs(90).resolves(null);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...currentPool,
+      accumulated7dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield7dAgo),
+      dataPointTimestamp7d: poolDailyData7dAgo.dayStartTimestamp,
+      accumulated30dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield30dAgo),
+      dataPointTimestamp30d: poolDailyData30dAgo.dayStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
+  });
+
+  it(`should update pool 7d accumulated yield, but not 30d and 90d when calling 'updatePoolAccumulatedYield'
+    if 7d data is found but 30d and 90d data are not found`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+    const totalAccumulatedYield7dAgo = BigDecimal("9000");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+    };
+
+    const poolDailyData7dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 7), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield7dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 7),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    const getPoolDailyDataAgoStub = sinon.stub(PoolCommons, "getPoolDailyDataAgo");
+    getPoolDailyDataAgoStub.withArgs(7).resolves(poolDailyData7dAgo);
+    getPoolDailyDataAgoStub.withArgs(30).resolves(null);
+    getPoolDailyDataAgoStub.withArgs(90).resolves(null);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...currentPool,
+      accumulated7dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield7dAgo),
+      dataPointTimestamp7d: poolDailyData7dAgo.dayStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
+  });
+
+  it(`should update pool 30d and 90d accumulated yield, but not 7d when calling 'updatePoolAccumulatedYield'
+    if 30d and 90d data are found but 7d data is not found`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+    const totalAccumulatedYield30dAgo = BigDecimal("2000");
+    const totalAccumulatedYield90dAgo = BigDecimal("100");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+    };
+
+    const poolDailyData30dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 30), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield30dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 30),
+    };
+
+    const poolDailyData90dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 90), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield90dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 90),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    const getPoolDailyDataAgoStub = sinon.stub(PoolCommons, "getPoolDailyDataAgo");
+    getPoolDailyDataAgoStub.withArgs(7).resolves(null);
+    getPoolDailyDataAgoStub.withArgs(30).resolves(poolDailyData30dAgo);
+    getPoolDailyDataAgoStub.withArgs(90).resolves(poolDailyData90dAgo);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...currentPool,
+      accumulated30dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield30dAgo),
+      dataPointTimestamp30d: poolDailyData30dAgo.dayStartTimestamp,
+      accumulated90dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield90dAgo),
+      dataPointTimestamp90d: poolDailyData90dAgo.dayStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
+  });
+
+  it(`should update pool 90d accumulated yield, but not 7d and 30d when calling 'updatePoolAccumulatedYield'
+    if 90d data is found but 7d and 30d data are not found`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+    const totalAccumulatedYield90dAgo = BigDecimal("100");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+    };
+
+    const poolDailyData90dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 90), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield90dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 90),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    const getPoolDailyDataAgoStub = sinon.stub(PoolCommons, "getPoolDailyDataAgo");
+    getPoolDailyDataAgoStub.withArgs(7).resolves(null);
+    getPoolDailyDataAgoStub.withArgs(30).resolves(null);
+    getPoolDailyDataAgoStub.withArgs(90).resolves(poolDailyData90dAgo);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...currentPool,
+      accumulated90dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield90dAgo),
+      dataPointTimestamp90d: poolDailyData90dAgo.dayStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
+  });
+
+  it(`should update pool 24h and 7d accumulated yield, but not 30d and 90d when calling 'updatePoolAccumulatedYield'
+    if hourly 24h data and daily 7d data are found but 30d and 90d are not found`, async () => {
+    const todaySecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
+    const eventTimestamp = todaySecondsTimestamp;
+    const currentTotalAccumulatedYield = BigDecimal("10000");
+    const totalAccumulatedYield24hAgo = BigDecimal("6000");
+    const totalAccumulatedYield7dAgo = BigDecimal("9000");
+
+    const currentPool: Pool = { ...new PoolMock(), totalAccumulatedYield: currentTotalAccumulatedYield };
+
+    const currentPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(eventTimestamp, currentPool),
+      dayStartTimestamp: eventTimestamp,
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+    };
+
+    const currentPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(eventTimestamp, currentPool),
+      totalAccumulatedYield: currentTotalAccumulatedYield,
+      hourStartTimestamp: eventTimestamp,
+    };
+
+    const poolHourlyData24hAgo: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(subtractHoursFromSecondsTimestamp(eventTimestamp, 24), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield24hAgo,
+      hourStartTimestamp: subtractHoursFromSecondsTimestamp(eventTimestamp, 24),
+    };
+
+    const poolDailyData7dAgo: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, 7), currentPool),
+      totalAccumulatedYield: totalAccumulatedYield7dAgo,
+      dayStartTimestamp: subtractDaysFromSecondsTimestamp(eventTimestamp, 7),
+    };
+
+    context.PoolHourlyData.set(currentPoolHourlyData);
+    context.PoolDailyData.set(currentPoolDailyData);
+
+    sinon.stub(PoolCommons, "getPoolHourlyDataAgo").resolves(poolHourlyData24hAgo);
+
+    const getPoolDailyDataAgoStub = sinon.stub(PoolCommons, "getPoolDailyDataAgo");
+    getPoolDailyDataAgoStub.withArgs(7).resolves(poolDailyData7dAgo);
+    getPoolDailyDataAgoStub.withArgs(30).resolves(null);
+    getPoolDailyDataAgoStub.withArgs(90).resolves(null);
+
+    const resultPool = await sut.updatePoolAccumulatedYield(eventTimestamp, currentPool);
+
+    const expectedResultPool: Pool = {
+      ...currentPool,
+      accumulated24hYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield24hAgo),
+      dataPointTimestamp24h: poolHourlyData24hAgo.hourStartTimestamp,
+      accumulated7dYield: currentTotalAccumulatedYield.minus(totalAccumulatedYield7dAgo),
+      dataPointTimestamp7d: poolDailyData7dAgo.dayStartTimestamp,
+    };
+
+    assert.deepEqual(resultPool, expectedResultPool);
   });
 });

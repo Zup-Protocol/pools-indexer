@@ -1,12 +1,19 @@
-import { BigDecimal, handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import {
+  BigDecimal,
+  handlerContext,
+  Pool as PoolEntity,
+  Token as TokenEntity,
+  V4PoolData as V4PoolDataEntity,
+} from "generated";
 import { sqrtPriceX96toPrice } from "../../../common/cl-pool-converters";
-import { getSwapVolumeFromAmounts } from "../../../common/pool-commons";
+import { getSwapFeesFromRawAmounts, getSwapVolumeFromAmounts } from "../../../common/pool-commons";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount } from "../../../common/token-commons";
 
 export async function handleV4PoolSwap(
   context: handlerContext,
   poolEntity: PoolEntity,
+  v4PoolEntity: V4PoolDataEntity,
   token0Entity: TokenEntity,
   token1Entity: TokenEntity,
   amount0: bigint,
@@ -22,8 +29,6 @@ export async function handleV4PoolSwap(
   const amount1SignInverted = amount1 * -1n;
   const tokenAmount0Formatted = formatFromTokenAmount(amount0, token0Entity).times(BigDecimal("-1"));
   const tokenAmount1Formatted = formatFromTokenAmount(amount1, token1Entity).times(BigDecimal("-1"));
-
-  let v4PoolEntity = await context.V4PoolData.getOrThrow(poolEntity.id);
 
   poolEntity = {
     ...poolEntity,
@@ -55,6 +60,16 @@ export async function handleV4PoolSwap(
   const updatedToken0TotalValuePooledUsd = updatedToken0TotalTokenPooledAmount.times(token0Entity.usdPrice);
   const updatedToken1TotalValuePooledUsd = updatedToken1TotalTokenPooledAmount.times(token1Entity.usdPrice);
 
+  const swapFees = getSwapFeesFromRawAmounts(
+    amount0SignInverted,
+    amount1SignInverted,
+    swapFee,
+    token0Entity,
+    token1Entity
+  );
+
+  const swapYield = swapFees.feesUSD.div(updatedPoolTotalValueLockedUSD).times(100);
+
   v4PoolEntity = {
     ...v4PoolEntity,
     sqrtPriceX96: sqrtPriceX96,
@@ -68,6 +83,11 @@ export async function handleV4PoolSwap(
     swapVolumeToken0: poolEntity.swapVolumeToken0.plus(swapVolumeWithNewPrices.volumeToken0),
     swapVolumeToken1: poolEntity.swapVolumeToken1.plus(swapVolumeWithNewPrices.volumeToken1),
     swapVolumeUSD: poolEntity.swapVolumeUSD.plus(swapVolumeWithNewPrices.volumeUSD),
+    totalAccumulatedYield: poolEntity.totalAccumulatedYield.plus(swapYield),
+    accumulated24hYield: poolEntity.accumulated24hYield.plus(swapYield),
+    accumulated7dYield: poolEntity.accumulated7dYield.plus(swapYield),
+    accumulated30dYield: poolEntity.accumulated30dYield.plus(swapYield),
+    accumulated90dYield: poolEntity.accumulated90dYield.plus(swapYield),
   };
 
   token0Entity = {
@@ -96,6 +116,8 @@ export async function handleV4PoolSwap(
     amount1SignInverted,
     swapFee
   );
+
+  poolEntity = await v4PoolSetters.updatePoolAccumulatedYield(eventTimestamp, poolEntity);
 
   context.Pool.set(poolEntity);
   context.Token.set(token0Entity);

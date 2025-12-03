@@ -16,6 +16,7 @@ import {
   DEFI_POOL_DATA_ID,
   MAX_UINT256,
   ONE_BIG_INT,
+  ONE_DAY_IN_SECONDS,
   ONE_HOUR_IN_SECONDS,
   OUTLIER_POOL_TVL_PERCENT_THRESHOLD,
   OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
@@ -82,6 +83,8 @@ describe("Constants", () => {
     const expectedObject: PoolHourlyData = {
       id: hourlyId,
       pool_id: poolId,
+      yearlyYield: ZERO_BIG_DECIMAL,
+      totalAccumulatedYield: ZERO_BIG_DECIMAL,
       hourStartTimestamp: hourStartTimestamp,
       feesToken0: ZERO_BIG_DECIMAL,
       feesToken1: ZERO_BIG_DECIMAL,
@@ -123,6 +126,8 @@ describe("Constants", () => {
     const poolId = "pool-id";
 
     const expectedObject: PoolDailyData = {
+      totalAccumulatedYield: ZERO_BIG_DECIMAL,
+      yearlyYield: ZERO_BIG_DECIMAL,
       id: dailyId,
       pool_id: poolId,
       dayStartTimestamp: dayStartTimestamp,
@@ -216,5 +221,9 @@ describe("Constants", () => {
       }),
       expectedObject
     );
+  });
+
+  it("should return the correct seconds for one day in seconds", () => {
+    assert.equal(ONE_DAY_IN_SECONDS, 86400);
   });
 });

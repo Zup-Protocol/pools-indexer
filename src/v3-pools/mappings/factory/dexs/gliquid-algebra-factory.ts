@@ -1,4 +1,4 @@
-import { GLiquidAlgebraFactory } from "generated";
+import { AlgebraPoolData, GLiquidAlgebraFactory } from "generated";
 import { ZERO_ADDRESS } from "../../../../common/constants";
 import { IndexerNetwork } from "../../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
@@ -14,11 +14,11 @@ GLiquidAlgebraFactory.CustomPool.contractRegister(({ event, context }) => {
 });
 
 GLiquidAlgebraFactory.Pool.handler(async ({ event, context }) => {
-  const algebraPoolData = await context.AlgebraPoolData.getOrCreate({
+  const algebraPoolData: AlgebraPoolData = {
     id: IndexerNetwork.getEntityIdFromAddress(event.chainId, event.params.pool),
     deployer: ZERO_ADDRESS,
     communityFee: 0,
-  });
+  };
 
   await handleV3PoolCreated(
     context,
@@ -36,11 +36,11 @@ GLiquidAlgebraFactory.Pool.handler(async ({ event, context }) => {
 });
 
 GLiquidAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
-  const algebraPoolData = await context.AlgebraPoolData.getOrCreate({
+  const algebraPoolData: AlgebraPoolData = {
     id: IndexerNetwork.getEntityIdFromAddress(event.chainId, event.params.pool),
-    deployer: event.params.deployer.toLowerCase(),
+    deployer: event.params.deployer,
     communityFee: 0,
-  });
+  };
 
   await handleV3PoolCreated(
     context,

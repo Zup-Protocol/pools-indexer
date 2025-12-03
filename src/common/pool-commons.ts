@@ -1,7 +1,9 @@
 import { createHash } from "crypto";
-import { BigDecimal, Pool as PoolEntity, Token, Token as TokenEntity } from "generated";
+import { BigDecimal, PoolDailyData, Pool as PoolEntity, PoolHourlyData, Token, Token as TokenEntity } from "generated";
+import { HandlerContext } from "generated/src/Types";
 import "../../src/common/string.extension";
 import { ONE_HOUR_IN_SECONDS, ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "./constants";
+import { subtractDaysFromSecondsTimestamp, subtractHoursFromSecondsTimestamp } from "./date-commons";
 import { IndexerNetwork } from "./enums/indexer-network";
 import { formatFromTokenAmount } from "./token-commons";
 
@@ -193,11 +195,11 @@ export function findNativeToken(token0: TokenEntity, token1: TokenEntity): Token
 }
 
 export function getPoolHourlyDataId(blockTimestampInSeconds: bigint, pool: PoolEntity): string {
-  let secondsPerHour = BigInt(ONE_HOUR_IN_SECONDS);
-  let hourId = (blockTimestampInSeconds - pool.createdAtTimestamp) / secondsPerHour;
+  const secondsPerHour = BigInt(ONE_HOUR_IN_SECONDS);
+  const hourId = (blockTimestampInSeconds - pool.createdAtTimestamp) / secondsPerHour;
 
-  let hourIdAddress = createHash("sha256").update(hourId.toString()).digest("hex");
-  let id = pool.poolAddress + hourIdAddress;
+  const hourIdAddress = createHash("sha256").update(hourId.toString()).digest("hex");
+  const id = pool.poolAddress + hourIdAddress;
 
   return IndexerNetwork.getEntityIdFromAddress(pool.chainId, id);
 }
@@ -217,4 +219,39 @@ export function getTokenAmountInPool(pool: PoolEntity, token: TokenEntity): BigD
   if (pool.token1_id.lowercasedEquals(token.id)) return pool.totalValueLockedToken1;
 
   throw new Error("The passed token doesn't match any token in the passed pool");
+}
+
+export function calculateDayYearlyYield(totalValueLockedUSD: BigDecimal, dayFeesUSD: BigDecimal) {
+  return dayFeesUSD.div(totalValueLockedUSD).times(100).times(365);
+}
+
+export function calculateHourYearlyYield(totalValueLockedUSD: BigDecimal, feesUSD: BigDecimal) {
+  return feesUSD
+    .div(totalValueLockedUSD)
+    .times(100)
+    .times(24 * 365);
+}
+
+export async function getPoolHourlyDataAgo(
+  hoursAgo: number,
+  eventTimestamp: bigint,
+  context: HandlerContext,
+  pool: PoolEntity
+): Promise<PoolHourlyData | null | undefined> {
+  const timestampAgo = subtractHoursFromSecondsTimestamp(eventTimestamp, hoursAgo);
+  if (timestampAgo < pool.createdAtTimestamp) return null;
+
+  return await context.PoolHourlyData.get(getPoolHourlyDataId(timestampAgo, pool));
+}
+
+export async function getPoolDailyDataAgo(
+  daysAgo: number,
+  eventTimestamp: bigint,
+  context: HandlerContext,
+  pool: PoolEntity
+): Promise<PoolDailyData | undefined | null> {
+  const timestampAgo = subtractDaysFromSecondsTimestamp(eventTimestamp, daysAgo);
+  if (timestampAgo < pool.createdAtTimestamp) return null;
+
+  return await context.PoolDailyData.get(getPoolDailyDataId(timestampAgo, pool));
 }

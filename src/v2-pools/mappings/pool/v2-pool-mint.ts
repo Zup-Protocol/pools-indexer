@@ -1,7 +1,5 @@
 import { handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
-import { defaultDeFiPoolData } from "../../../common/constants";
 import { DeFiPoolDataSetters } from "../../../common/defi-pool-data-setters";
-import { isPoolSwapVolumeValid } from "../../../common/pool-commons";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount, pickMostLiquidPoolForToken } from "../../../common/token-commons";
 
@@ -16,9 +14,11 @@ export async function handleV2PoolMint(
   v2PoolSetters: PoolSetters,
   defiPoolDataSetters: DeFiPoolDataSetters
 ): Promise<void> {
-  const token0SourcePricePoolEntity = await context.Pool.get(token0Entity.mostLiquidPool_id);
-  const token1SourcePricePoolEntity = await context.Pool.get(token1Entity.mostLiquidPool_id);
-  const defiPoolDataEntity = await context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(eventTimestamp));
+  let [token0SourcePricePoolEntity, token1SourcePricePoolEntity]: [PoolEntity | undefined, PoolEntity | undefined] =
+    await Promise.all([
+      context.Pool.get(token0Entity.mostLiquidPool_id),
+      context.Pool.get(token1Entity.mostLiquidPool_id),
+    ]);
 
   const token0FormattedAmount = formatFromTokenAmount(amount0, token0Entity);
   const token1FormattedAmount = formatFromTokenAmount(amount1, token1Entity);
@@ -68,16 +68,17 @@ export async function handleV2PoolMint(
     mostLiquidPool_id: pickMostLiquidPoolForToken(token1Entity, poolEntity, token1SourcePricePoolEntity).id,
   };
 
-  if (isPoolSwapVolumeValid(poolEntity)) {
-    await defiPoolDataSetters.setIntervalLiquidityData(
-      eventTimestamp,
-      defiPoolDataEntity,
-      amount0,
-      amount1,
-      token0Entity,
-      token1Entity
-    );
-  }
+  // TODO: Maybe implement -> Currently removed as is not needed and it makes the sync slower
+  // if (isPoolSwapVolumeValid(poolEntity)) {
+  //   await defiPoolDataSetters.setIntervalLiquidityData(
+  //     eventTimestamp,
+  //     defiPoolDataEntity,
+  //     amount0,
+  //     amount1,
+  //     token0Entity,
+  //     token1Entity
+  //   );
+  // }
 
   await v2PoolSetters.setIntervalDataTVL(eventTimestamp, poolEntity);
   await v2PoolSetters.setLiquidityIntervalData({
@@ -88,6 +89,8 @@ export async function handleV2PoolMint(
     amount0AddedOrRemoved: amount0,
     amount1AddedOrRemoved: amount1,
   });
+
+  poolEntity = await v2PoolSetters.updatePoolAccumulatedYield(eventTimestamp, poolEntity);
 
   context.Pool.set(poolEntity);
   context.Token.set(token0Entity);

@@ -1,18 +1,16 @@
-import { handlerContext, Pool as PoolEntity } from "generated";
+import { handlerContext, V3PoolData as V3PoolDataEntity } from "generated";
 
 export async function handleV3PoolInitialize(
   context: handlerContext,
-  poolEntity: PoolEntity,
+  v3PoolData: V3PoolDataEntity,
   sqrtPriceX96: bigint,
   tick: bigint
 ): Promise<void> {
-  let v3PoolEntity = await context.V3PoolData.getOrThrow(poolEntity.id);
-
-  v3PoolEntity = {
-    ...v3PoolEntity,
+  v3PoolData = {
+    ...v3PoolData,
     sqrtPriceX96: sqrtPriceX96,
     tick: tick,
   };
 
-  context.V3PoolData.set(v3PoolEntity);
+  context.V3PoolData.set(v3PoolData);
 }

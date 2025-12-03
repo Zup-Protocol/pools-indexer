@@ -1,4 +1,10 @@
-import { handlerContext, Pool as PoolEntity, V2PoolData as V2PoolDataEntity } from "generated";
+import {
+  DeFiPoolData as DeFiPoolDataEntity,
+  handlerContext,
+  Pool as PoolEntity,
+  Token as TokenEntity,
+  V2PoolData as V2PoolDataEntity,
+} from "generated";
 
 import { defaultDeFiPoolData, ZERO_BIG_DECIMAL } from "../../../common/constants";
 import { IndexerNetwork } from "../../../common/enums/indexer-network";
@@ -16,18 +22,11 @@ export async function handleV2PoolCreated(params: {
   protocol: SupportedProtocol;
   tokenService: TokenService;
 }): Promise<void> {
-  const token0Entity = await params.tokenService.getOrCreateTokenEntity(
-    params.context,
-    params.chainId,
-    params.token0Address
-  );
-  const token1Entity = await params.tokenService.getOrCreateTokenEntity(
-    params.context,
-    params.chainId,
-    params.token1Address
-  );
-
-  let defiPoolData = await params.context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(params.eventTimestamp));
+  let [token0Entity, token1Entity, defiPoolData]: [TokenEntity, TokenEntity, DeFiPoolDataEntity] = await Promise.all([
+    params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token0Address),
+    params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token1Address),
+    params.context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(params.eventTimestamp)),
+  ]);
 
   const poolId = IndexerNetwork.getEntityIdFromAddress(params.chainId, params.poolAddress);
 
@@ -46,6 +45,11 @@ export async function handleV2PoolCreated(params: {
     protocol_id: params.protocol,
     token0_id: token0Entity.id,
     token1_id: token1Entity.id,
+    accumulated24hYield: ZERO_BIG_DECIMAL,
+    accumulated30dYield: ZERO_BIG_DECIMAL,
+    accumulated7dYield: ZERO_BIG_DECIMAL,
+    accumulated90dYield: ZERO_BIG_DECIMAL,
+    totalAccumulatedYield: ZERO_BIG_DECIMAL,
     totalValueLockedToken1: ZERO_BIG_DECIMAL,
     totalValueLockedUSD: ZERO_BIG_DECIMAL,
     liquidityVolumeToken0: ZERO_BIG_DECIMAL,
@@ -60,7 +64,11 @@ export async function handleV2PoolCreated(params: {
     v4PoolData_id: undefined,
     algebraPoolData_id: undefined,
     chainId: params.chainId,
-    poolAddress: params.poolAddress.toLowerCase(),
+    poolAddress: params.poolAddress,
+    dataPointTimestamp24h: undefined,
+    dataPointTimestamp30d: undefined,
+    dataPointTimestamp7d: undefined,
+    dataPointTimestamp90d: undefined,
   };
 
   defiPoolData = {
@@ -74,7 +82,7 @@ export async function handleV2PoolCreated(params: {
   params.context.V2PoolData.set(v2PoolEntity);
   params.context.DeFiPoolData.set(defiPoolData);
 
-  await params.context.Protocol.getOrCreate({
+  params.context.Protocol.set({
     id: params.protocol,
     name: SupportedProtocol.getName(params.protocol),
     logo: SupportedProtocol.getLogoUrl(params.protocol),

@@ -48,6 +48,7 @@ export const handlerContextCustomMock = (): handlerContext => {
   let defiPoolDataSaves: Record<string, any> = {};
   let defiPoolDailyDataSaves: Record<string, any> = {};
   let defiPoolHourlyDataSaves: Record<string, any> = {};
+  let algebraPoolDataSaves: Record<string, any> = {};
 
   function getOrCreateEntity<T>(entity: T, datasource: Record<string, any>): T {
     if (!datasource[(entity as any).id]) {
@@ -158,6 +159,14 @@ export const handlerContextCustomMock = (): handlerContext => {
         poolhourlyDataSaves[entity.id] = entity;
       },
     },
+    AlgebraPoolData: {
+      getOrCreate: async (entity: AlgebraPoolData) => getOrCreateEntity(entity, algebraPoolDataSaves),
+      getOrThrow: (id: string) => getOrThrow(id, algebraPoolDataSaves),
+      get: async (id: string) => algebraPoolDataSaves[id],
+      set: (entity: AlgebraPoolData) => {
+        algebraPoolDataSaves[entity.id] = entity;
+      },
+    },
   } as handlerContext;
 };
 
@@ -251,9 +260,20 @@ export class PoolMock implements Pool {
   v2PoolData_id: string | undefined = new V2PoolDataMock().id;
   v3PoolData_id: string | undefined = new V3PoolDataMock().id;
   v4PoolData_id: string | undefined = new V4PoolDataMock().id;
+  accumulated24hYield: BigDecimal = BigDecimal("2.2");
+  accumulated30dYield: BigDecimal = BigDecimal("0.22");
+  accumulated7dYield: BigDecimal = BigDecimal("9.2");
+  accumulated90dYield: BigDecimal = BigDecimal("12.92");
+  totalAccumulatedYield: BigDecimal = BigDecimal("24.56");
+  dataPointTimestamp24h: bigint | undefined = undefined;
+  dataPointTimestamp30d: bigint | undefined = undefined;
+  dataPointTimestamp7d: bigint | undefined = undefined;
+  dataPointTimestamp90d: bigint | undefined = undefined;
 }
 
 export class PoolHourlyDataMock implements PoolHourlyData {
+  totalAccumulatedYield: BigDecimal = BigDecimal("32");
+  yearlyYield: BigDecimal = BigDecimal("0.32");
   liquidityInflowToken0: BigDecimal = BigDecimal("0");
   liquidityInflowToken1: BigDecimal = BigDecimal("0");
   liquidityInflowUSD: BigDecimal = BigDecimal("0");
@@ -281,6 +301,8 @@ export class PoolHourlyDataMock implements PoolHourlyData {
 }
 
 export class PoolDailyDataMock implements PoolDailyData {
+  totalAccumulatedYield: BigDecimal = BigDecimal("32");
+  yearlyYield: BigDecimal = BigDecimal("982.97");
   liquidityInflowToken0: BigDecimal = BigDecimal("0");
   liquidityInflowToken1: BigDecimal = BigDecimal("0");
   liquidityInflowUSD: BigDecimal = BigDecimal("0");

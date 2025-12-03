@@ -1,7 +1,6 @@
 import assert from "assert";
-import { BigDecimal, DeFiPoolData, handlerContext, Pool, Token } from "generated";
+import { BigDecimal, handlerContext, Pool, Token } from "generated";
 import sinon from "sinon";
-import { DEFI_POOL_DATA_ID } from "../../../../src/common/constants";
 import { DeFiPoolDataSetters } from "../../../../src/common/defi-pool-data-setters";
 import { PoolSetters } from "../../../../src/common/pool-setters";
 import { formatFromTokenAmount } from "../../../../src/common/token-commons";
@@ -18,6 +17,8 @@ describe("V2PoolMintHandler", () => {
     context = handlerContextCustomMock();
     poolSetters = sinon.createStubInstance(PoolSetters, defiPoolSetters);
     defiPoolSetters = sinon.createStubInstance(DeFiPoolDataSetters);
+
+    poolSetters.updatePoolAccumulatedYield.resolvesArg(1);
   });
 
   it(`Should sum the pool token0 tvl with the amount passed in the event`, async () => {
@@ -927,67 +928,68 @@ describe("V2PoolMintHandler", () => {
     );
   });
 
-  it(`should call the defi pool setters to set interval liquidity data if the current pool has a swap volume usd greater than 0, passing the current saved defi pool data entity and the amount0 and amount1 positive, as it is a mint`, async () => {
-    const token0Id = "0x0000000000000000000000000000000000000001";
-    const token1Id = "0x0000000000000000000000000000000000000002";
+  // TODO: Uncomment when implemented
+  // it(`should call the defi pool setters to set interval liquidity data if the current pool has a swap volume usd greater than 0, passing the current saved defi pool data entity and the amount0 and amount1 positive, as it is a mint`, async () => {
+  //   const token0Id = "0x0000000000000000000000000000000000000001";
+  //   const token1Id = "0x0000000000000000000000000000000000000002";
 
-    const token0: Token = {
-      ...new TokenMock(),
-      id: token0Id,
-    };
+  //   const token0: Token = {
+  //     ...new TokenMock(),
+  //     id: token0Id,
+  //   };
 
-    const token1: Token = {
-      ...new TokenMock(),
-      id: token1Id,
-    };
+  //   const token1: Token = {
+  //     ...new TokenMock(),
+  //     id: token1Id,
+  //   };
 
-    const currentDeFiPoolData: DeFiPoolData = {
-      id: DEFI_POOL_DATA_ID,
-      poolsCount: 126109,
-      startedAtTimestamp: 1758582407n,
-    };
+  //   const currentDeFiPoolData: DeFiPoolData = {
+  //     id: DEFI_POOL_DATA_ID,
+  //     poolsCount: 126109,
+  //     startedAtTimestamp: 1758582407n,
+  //   };
 
-    const amount0 = BigInt(123) * 10n ** BigInt(token0.decimals);
-    const amount1 = BigInt(456) * 10n ** BigInt(token1.decimals);
+  //   const amount0 = BigInt(123) * 10n ** BigInt(token0.decimals);
+  //   const amount1 = BigInt(456) * 10n ** BigInt(token1.decimals);
 
-    const pool: Pool = {
-      ...new PoolMock(),
-      token0_id: token0.id,
-      token1_id: token1.id,
-      swapVolumeUSD: BigDecimal("2121"),
-    };
+  //   const pool: Pool = {
+  //     ...new PoolMock(),
+  //     token0_id: token0.id,
+  //     token1_id: token1.id,
+  //     swapVolumeUSD: BigDecimal("2121"),
+  //   };
 
-    context.Pool.set(pool);
-    context.Token.set(token0);
-    context.Token.set(token1);
-    context.DeFiPoolData.set(currentDeFiPoolData);
+  //   context.Pool.set(pool);
+  //   context.Token.set(token0);
+  //   context.Token.set(token1);
+  //   context.DeFiPoolData.set(currentDeFiPoolData);
 
-    await handleV2PoolMint(
-      context,
-      pool,
-      token0,
-      token1,
-      amount0,
-      amount1,
-      eventTimestamp,
-      poolSetters,
-      defiPoolSetters
-    );
+  //   await handleV2PoolMint(
+  //     context,
+  //     pool,
+  //     token0,
+  //     token1,
+  //     amount0,
+  //     amount1,
+  //     eventTimestamp,
+  //     poolSetters,
+  //     defiPoolSetters
+  //   );
 
-    const updatedToken0 = await context.Token.getOrThrow(token0.id)!;
-    const updatedToken1 = await context.Token.getOrThrow(token1.id)!;
+  //   const updatedToken0 = await context.Token.getOrThrow(token0.id)!;
+  //   const updatedToken1 = await context.Token.getOrThrow(token1.id)!;
 
-    assert(
-      defiPoolSetters.setIntervalLiquidityData.calledOnceWith(
-        eventTimestamp,
-        currentDeFiPoolData,
-        amount0,
-        amount1,
-        updatedToken0,
-        updatedToken1
-      )
-    );
-  });
+  //   assert(
+  //     defiPoolSetters.setIntervalLiquidityData.calledOnceWith(
+  //       eventTimestamp,
+  //       currentDeFiPoolData,
+  //       amount0,
+  //       amount1,
+  //       updatedToken0,
+  //       updatedToken1
+  //     )
+  //   );
+  // });
 
   it(`should not call the defi pool setters to set interval liquidity data if the current pool has a swap volume usd as 0`, async () => {
     const token0Id = "0x0000000000000000000000000000000000000001";
@@ -1168,5 +1170,46 @@ describe("V2PoolMintHandler", () => {
 
     const updatedToken1 = await context.Token.getOrThrow(token1.id)!;
     assert.strictEqual(updatedToken1.mostLiquidPool_id, pool.id);
+  });
+
+  it("should update the pool entity with the result from 'updatePoolAccumulatedYield'", async () => {
+    const token0: Token = {
+      ...new TokenMock(),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+    };
+
+    const resultPool: Pool = {
+      ...pool,
+      accumulated24hYield: BigDecimal("212121"),
+      accumulated7dYield: BigDecimal("555555"),
+      accumulated90dYield: BigDecimal("333333"),
+      accumulated30dYield: BigDecimal("8181818"),
+      totalAccumulatedYield: BigDecimal("9999999"),
+      dataPointTimestamp24h: 0x10n,
+      dataPointTimestamp7d: 0x20n,
+      dataPointTimestamp30d: 0x30n,
+      dataPointTimestamp90d: 0x40n,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    poolSetters.updatePoolAccumulatedYield.reset();
+    poolSetters.updatePoolAccumulatedYield.resolves(resultPool);
+
+    sinon.replace(poolSetters, "updatePoolAccumulatedYield", poolSetters.updatePoolAccumulatedYield);
+
+    await handleV2PoolMint(context, pool, token0, token1, 0n, 0n, eventTimestamp, poolSetters, defiPoolSetters);
+    const updatedPool = await context.Pool.getOrThrow(pool.id)!;
+
+    assert.deepEqual(updatedPool, resultPool);
   });
 });

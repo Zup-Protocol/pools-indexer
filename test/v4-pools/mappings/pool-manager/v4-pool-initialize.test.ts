@@ -20,6 +20,10 @@ describe("V4PoolInitialize", () => {
     tokenService.getOrCreateTokenEntity.resolves(new TokenMock());
   });
 
+  afterEach(() => {
+    sinon.restore();
+  });
+
   it("When calling the handler, it should correctly assign the protocol to the pool", async () => {
     let expectedProtocolId = SupportedProtocol.UNISWAP_V4;
     let pool = new PoolMock();
@@ -730,5 +734,86 @@ describe("V4PoolInitialize", () => {
     };
 
     assert.deepEqual(updatedDefiPoolData, expectedNewDefiPoolData);
+  });
+
+  it("should set all the accumulated yield as zero when creating a pool", async () => {
+    let token1Id = "sabax id";
+    let token0Id = "xabas id";
+    let expectedProtocolId = SupportedProtocol.UNISWAP_V4;
+    let pool = new PoolMock();
+    let feeTier = 568;
+    let tickSpacing = 62;
+    let tick = BigInt(989756545);
+    let sqrtPriceX96 = BigInt("398789276389263782");
+    let hooks = "0xA6eB3d9dDdD2DdDdDdDdDdDdDdDdDdDdDdDdDdD";
+    let chainId = IndexerNetwork.ETHEREUM;
+    let poolManagerAddress = "0xXabas";
+
+    await handleV4PoolInitialize(
+      context,
+      pool.poolAddress,
+      token0Id,
+      token1Id,
+      feeTier,
+      tickSpacing,
+      tick,
+      sqrtPriceX96,
+      expectedProtocolId,
+      hooks,
+      eventTimestamp,
+      chainId,
+      poolManagerAddress,
+      tokenService
+    );
+
+    const updatedPool = await context.Pool.getOrThrow(
+      IndexerNetwork.getEntityIdFromAddress(chainId, pool.poolAddress)
+    )!;
+
+    assert.deepEqual(updatedPool.accumulated24hYield, ZERO_BIG_DECIMAL, "the 24h yield should be zero");
+    assert.deepEqual(updatedPool.accumulated7dYield, ZERO_BIG_DECIMAL, "the 7d yield should be zero");
+    assert.deepEqual(updatedPool.accumulated30dYield, ZERO_BIG_DECIMAL, "the 30d yield should be zero");
+    assert.deepEqual(updatedPool.accumulated90dYield, ZERO_BIG_DECIMAL, "the 90d yield should be zero");
+    assert.deepEqual(updatedPool.totalAccumulatedYield, ZERO_BIG_DECIMAL, "the total accumulated yield should be zero");
+  });
+
+  it("should set data point timestamps as undefined when creating a pool", async () => {
+    let token1Id = "sabax id";
+    let token0Id = "xabas id";
+    let expectedProtocolId = SupportedProtocol.UNISWAP_V4;
+    let pool = new PoolMock();
+    let feeTier = 568;
+    let tickSpacing = 62;
+    let tick = BigInt(989756545);
+    let sqrtPriceX96 = BigInt("398789276389263782");
+    let hooks = "0xA6eB3d9dDdD2DdDdDdDdDdDdDdDdDdDdDdDdDdD";
+    let chainId = IndexerNetwork.ETHEREUM;
+    let poolManagerAddress = "0xXabas";
+
+    await handleV4PoolInitialize(
+      context,
+      pool.poolAddress,
+      token0Id,
+      token1Id,
+      feeTier,
+      tickSpacing,
+      tick,
+      sqrtPriceX96,
+      expectedProtocolId,
+      hooks,
+      eventTimestamp,
+      chainId,
+      poolManagerAddress,
+      tokenService
+    );
+
+    const updatedPool = await context.Pool.getOrThrow(
+      IndexerNetwork.getEntityIdFromAddress(chainId, pool.poolAddress)
+    )!;
+
+    assert.equal(updatedPool.dataPointTimestamp24h, undefined, "the 24h data point timestamp should be undefined");
+    assert.equal(updatedPool.dataPointTimestamp7d, undefined, "the 7d data point timestamp should be undefined");
+    assert.equal(updatedPool.dataPointTimestamp30d, undefined, "the 30d data point timestamp should be undefined");
+    assert.equal(updatedPool.dataPointTimestamp90d, undefined, "the 90d data point timestamp should be undefined");
   });
 });

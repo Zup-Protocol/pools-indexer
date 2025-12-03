@@ -4,7 +4,7 @@ import { handleV3PoolInitialize } from "../../v3-pool-initialize";
 
 AlgebraPool_1_2_1.Initialize.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
-  const poolEntity = await context.Pool.getOrThrow(poolId);
+  const v3PoolData = await context.V3PoolData.getOrThrow(poolId);
 
-  await handleV3PoolInitialize(context, poolEntity, event.params.price, BigInt(event.params.tick));
+  await handleV3PoolInitialize(context, v3PoolData, event.params.price, BigInt(event.params.tick));
 });

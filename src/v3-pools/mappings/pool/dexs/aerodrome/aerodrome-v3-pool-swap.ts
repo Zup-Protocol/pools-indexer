@@ -1,5 +1,5 @@
 import { experimental_createEffect, S } from "envio";
-import { AerodromeV3Pool } from "generated";
+import { AerodromeV3Pool, Pool as PoolEntity, Token as TokenEntity, V3PoolData as V3PoolDataEntity } from "generated";
 import { getContract } from "viem";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
@@ -8,15 +8,23 @@ import { handleV3PoolSwap } from "../../v3-pool-swap";
 
 AerodromeV3Pool.Swap.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
-  const poolEntity = await context.Pool.getOrThrow(poolId);
-  const token0Entity = await context.Token.getOrThrow(poolEntity.token0_id);
-  const token1Entity = await context.Token.getOrThrow(poolEntity.token1_id);
+
+  const [poolEntity, v3PoolEntity]: [PoolEntity, V3PoolDataEntity] = await Promise.all([
+    context.Pool.getOrThrow(poolId),
+    context.V3PoolData.getOrThrow(poolId),
+  ]);
+
+  const [token0Entity, token1Entity]: [TokenEntity, TokenEntity] = await Promise.all([
+    context.Token.getOrThrow(poolEntity.token0_id),
+    context.Token.getOrThrow(poolEntity.token1_id),
+  ]);
 
   const swapFee = await context.effect(swapFeeEffect, { chainId: event.chainId, poolAddress: event.srcAddress });
 
   await handleV3PoolSwap({
     context,
     poolEntity,
+    v3PoolEntity,
     token0Entity,
     token1Entity,
     swapAmount0: event.params.amount0,

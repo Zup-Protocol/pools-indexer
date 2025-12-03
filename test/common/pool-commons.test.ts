@@ -1,13 +1,18 @@
 import assert from "assert";
-import { BigDecimal, Pool, Token } from "generated";
-import { ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "../../src/common/constants";
+import { BigDecimal, Pool, PoolDailyData, PoolHourlyData, Token } from "generated";
+import { ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS, ZERO_ADDRESS, ZERO_BIG_DECIMAL } from "../../src/common/constants";
+import { subtractDaysFromSecondsTimestamp, subtractHoursFromSecondsTimestamp } from "../../src/common/date-commons";
 import { IndexerNetwork } from "../../src/common/enums/indexer-network";
 import {
+  calculateDayYearlyYield,
+  calculateHourYearlyYield,
   findNativeToken,
   findStableToken,
   findWrappedNative,
   getLiquidityInflowAndOutflowFromRawAmounts,
+  getPoolDailyDataAgo,
   getPoolDailyDataId,
+  getPoolHourlyDataAgo,
   getPoolHourlyDataId,
   getRawFeeFromTokenAmount,
   getSwapFeesFromRawAmounts,
@@ -20,7 +25,7 @@ import {
   isWrappedNativePool,
 } from "../../src/common/pool-commons";
 import { formatFromTokenAmount } from "../../src/common/token-commons";
-import { PoolMock, TokenMock } from "../mocks";
+import { handlerContextCustomMock, PoolDailyDataMock, PoolHourlyDataMock, PoolMock, TokenMock } from "../mocks";
 
 describe("PoolCommons", () => {
   it(`When a pool has the token 0 as stablecoin,
@@ -1402,5 +1407,116 @@ describe("PoolCommons", () => {
       () => getTokenAmountInPool(pool, token0),
       Error("The passed token doesn't match any token in the passed pool")
     );
+  });
+
+  it(`should calculate the correct yearly yield from day fees
+    and tvl when calling 'calculateDayYearlyYield'`, () => {
+    const dayFees = BigDecimal("10");
+    const tvl = BigDecimal("100");
+
+    const expectedYield = BigDecimal(3650);
+
+    assert.deepEqual(calculateDayYearlyYield(tvl, dayFees), expectedYield);
+  });
+
+  it(`should calculate the correct yearly yield from hour fees
+    and tvl when calling 'calculateHourYearlyYield'`, () => {
+    const hourFees = BigDecimal("0.4166666667");
+    const tvl = BigDecimal("100");
+
+    const expectedYield = BigDecimal(3650.000000292);
+    const actualYield = calculateHourYearlyYield(tvl, hourFees);
+
+    assert.deepEqual(actualYield, expectedYield);
+  });
+
+  it(`should return null if the passed hours ago to 'getPoolHourlyDataAgo'
+    is less than the passed pool creation date`, async () => {
+    const eventTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000));
+    const poolCreationTimestamp: bigint = eventTimestamp - BigInt(ONE_HOUR_IN_SECONDS); // Pool created 1 hour ago
+    const hoursAgo = 20;
+    const contextMock = handlerContextCustomMock();
+    const pool: Pool = { ...new PoolMock(), createdAtTimestamp: poolCreationTimestamp };
+
+    const result = await getPoolHourlyDataAgo(hoursAgo, eventTimestamp, contextMock, pool);
+
+    assert.strictEqual(result, null);
+  });
+
+  it(`should return the correct pool hourly data when calling 'getPoolHourlyDataAgo'
+    with the passed hours ago, if it exists`, async () => {
+    const eventTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000));
+    const poolCreationTimestamp: bigint = eventTimestamp - BigInt(ONE_DAY_IN_SECONDS);
+    const hoursAgo = 5;
+    const contextMock = handlerContextCustomMock();
+
+    const pool: Pool = { ...new PoolMock(), createdAtTimestamp: poolCreationTimestamp };
+    const expectedPoolHourlyData: PoolHourlyData = {
+      ...new PoolHourlyDataMock(),
+      id: getPoolHourlyDataId(subtractHoursFromSecondsTimestamp(eventTimestamp, hoursAgo), pool),
+    };
+
+    contextMock.PoolHourlyData.set(expectedPoolHourlyData);
+
+    const result = await getPoolHourlyDataAgo(hoursAgo, eventTimestamp, contextMock, pool);
+
+    assert.deepEqual(result, expectedPoolHourlyData);
+  });
+
+  it(`should return undefined when calling 'getPoolHourlyDataAgo'
+    and the passed hours ago entity doesn't exist`, async () => {
+    const eventTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000));
+    const poolCreationTimestamp: bigint = eventTimestamp - BigInt(ONE_DAY_IN_SECONDS);
+    const hoursAgo = 5;
+    const contextMock = handlerContextCustomMock();
+    const pool: Pool = { ...new PoolMock(), createdAtTimestamp: poolCreationTimestamp };
+    const result = await getPoolHourlyDataAgo(hoursAgo, eventTimestamp, contextMock, pool);
+
+    assert.deepEqual(result, undefined);
+  });
+
+  it(`should return null if the passed days ago to 'getPoolDailyDataAgo'
+    is less than the passed pool creation date`, async () => {
+    const eventTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000));
+    const poolCreationTimestamp: bigint = eventTimestamp - BigInt(ONE_DAY_IN_SECONDS); // Pool created 1 day ago
+    const daysAgo = 12;
+    const contextMock = handlerContextCustomMock();
+    const pool: Pool = { ...new PoolMock(), createdAtTimestamp: poolCreationTimestamp };
+
+    const result = await getPoolDailyDataAgo(daysAgo, eventTimestamp, contextMock, pool);
+
+    assert.strictEqual(result, null);
+  });
+
+  it(`should return the correct pool daily data when calling 'getPoolDailyDataAgo'
+    with the passed days ago, if it exists`, async () => {
+    const eventTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000));
+    const poolCreationTimestamp: bigint = eventTimestamp - BigInt(ONE_DAY_IN_SECONDS * 10);
+    const daysAgo = 5;
+    const contextMock = handlerContextCustomMock();
+
+    const pool: Pool = { ...new PoolMock(), createdAtTimestamp: poolCreationTimestamp };
+    const expectedPoolDailyData: PoolDailyData = {
+      ...new PoolDailyDataMock(),
+      id: getPoolDailyDataId(subtractDaysFromSecondsTimestamp(eventTimestamp, daysAgo), pool),
+    };
+
+    contextMock.PoolDailyData.set(expectedPoolDailyData);
+
+    const result = await getPoolDailyDataAgo(daysAgo, eventTimestamp, contextMock, pool);
+
+    assert.deepEqual(result, expectedPoolDailyData);
+  });
+
+  it(`should return undefined when calling 'getPoolDailyDataAgo'
+    and the passed days ago entity doesn't exist`, async () => {
+    const eventTimestamp: bigint = BigInt(Math.floor(Date.now() / 1000));
+    const poolCreationTimestamp: bigint = eventTimestamp - BigInt(ONE_DAY_IN_SECONDS * 10);
+    const daysAgo = 5;
+    const contextMock = handlerContextCustomMock();
+    const pool: Pool = { ...new PoolMock(), createdAtTimestamp: poolCreationTimestamp };
+    const result = await getPoolDailyDataAgo(daysAgo, eventTimestamp, contextMock, pool);
+
+    assert.deepEqual(result, undefined);
   });
 });

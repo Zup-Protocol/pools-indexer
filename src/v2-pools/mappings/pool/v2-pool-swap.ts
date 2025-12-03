@@ -1,5 +1,5 @@
 import { handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
-import { getSwapVolumeFromAmounts } from "../../../common/pool-commons";
+import { getSwapFeesFromRawAmounts, getSwapVolumeFromAmounts } from "../../../common/pool-commons";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount } from "../../../common/token-commons";
 import { poolReservesToPrice } from "../../common/v2-pool-converters";
@@ -59,6 +59,16 @@ export async function handleV2PoolSwap(params: {
   const updatedToken0TotalValuePooledUsd = updatedToken0TotalTokenPooledAmount.times(params.token0Entity.usdPrice);
   const updatedToken1TotalValuePooledUsd = updatedToken1TotalTokenPooledAmount.times(params.token1Entity.usdPrice);
 
+  const swapFees = getSwapFeesFromRawAmounts(
+    rawAmount0,
+    rawAmount1,
+    params.updatedFeeTier ?? params.poolEntity.currentFeeTier,
+    params.token0Entity,
+    params.token1Entity
+  );
+
+  const swapYield = swapFees.feesUSD.div(updatedPoolTotalValueLockedUSD).times(100);
+
   params.poolEntity = {
     ...params.poolEntity,
     totalValueLockedUSD: updatedPoolTotalValueLockedUSD,
@@ -66,6 +76,11 @@ export async function handleV2PoolSwap(params: {
     swapVolumeToken0: params.poolEntity.swapVolumeToken0.plus(swapVolumeWithNewPrices.volumeToken0),
     swapVolumeToken1: params.poolEntity.swapVolumeToken1.plus(swapVolumeWithNewPrices.volumeToken1),
     swapVolumeUSD: params.poolEntity.swapVolumeUSD.plus(swapVolumeWithNewPrices.volumeUSD),
+    accumulated24hYield: params.poolEntity.accumulated24hYield.plus(swapYield),
+    accumulated7dYield: params.poolEntity.accumulated7dYield.plus(swapYield),
+    accumulated30dYield: params.poolEntity.accumulated30dYield.plus(swapYield),
+    accumulated90dYield: params.poolEntity.accumulated90dYield.plus(swapYield),
+    totalAccumulatedYield: params.poolEntity.totalAccumulatedYield.plus(swapYield),
   };
 
   params.token0Entity = {
@@ -93,6 +108,8 @@ export async function handleV2PoolSwap(params: {
     rawAmount0,
     rawAmount1
   );
+
+  params.poolEntity = await params.v2PoolSetters.updatePoolAccumulatedYield(params.eventTimestamp, params.poolEntity);
 
   params.context.Pool.set(params.poolEntity);
   params.context.Token.set(params.token0Entity);

@@ -1,4 +1,10 @@
-import { handlerContext, Pool as PoolEntity, V4PoolData as V4PoolEntity } from "generated";
+import {
+  DeFiPoolData as DeFiPoolDataEntity,
+  handlerContext,
+  Pool as PoolEntity,
+  Token as TokenEntity,
+  V4PoolData as V4PoolEntity,
+} from "generated";
 import { defaultDeFiPoolData, ZERO_BIG_DECIMAL } from "../../../common/constants";
 import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
@@ -20,9 +26,12 @@ export async function handleV4PoolInitialize(
   poolManagerAddress: string,
   tokenService: TokenService
 ): Promise<void> {
-  let token0Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token0Address);
-  let token1Entity = await tokenService.getOrCreateTokenEntity(context, chainId, token1Address);
-  let defiPoolDataEntity = await context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(eventTimestamp));
+  let [token0Entity, token1Entity, defiPoolDataEntity]: [TokenEntity, TokenEntity, DeFiPoolDataEntity] =
+    await Promise.all([
+      tokenService.getOrCreateTokenEntity(context, chainId, token0Address),
+      tokenService.getOrCreateTokenEntity(context, chainId, token1Address),
+      context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(eventTimestamp)),
+    ]);
 
   const poolId = IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress);
 
@@ -40,7 +49,7 @@ export async function handleV4PoolInitialize(
   const poolEntity: PoolEntity = {
     id: poolId,
     positionManager: SupportedProtocol.getV4PositionManager(protocol, chainId),
-    poolAddress: poolAddress.toLowerCase(),
+    poolAddress: poolAddress,
     createdAtTimestamp: eventTimestamp,
     currentFeeTier: feeTier,
     initialFeeTier: feeTier,
@@ -59,10 +68,19 @@ export async function handleV4PoolInitialize(
     swapVolumeToken0: ZERO_BIG_DECIMAL,
     swapVolumeToken1: ZERO_BIG_DECIMAL,
     swapVolumeUSD: ZERO_BIG_DECIMAL,
+    accumulated24hYield: ZERO_BIG_DECIMAL,
+    accumulated30dYield: ZERO_BIG_DECIMAL,
+    accumulated7dYield: ZERO_BIG_DECIMAL,
+    accumulated90dYield: ZERO_BIG_DECIMAL,
+    totalAccumulatedYield: ZERO_BIG_DECIMAL,
     v2PoolData_id: undefined,
     v3PoolData_id: undefined,
     v4PoolData_id: v4PoolEntity.id,
     chainId: chainId,
+    dataPointTimestamp24h: undefined,
+    dataPointTimestamp30d: undefined,
+    dataPointTimestamp7d: undefined,
+    dataPointTimestamp90d: undefined,
   };
 
   defiPoolDataEntity = {
@@ -75,8 +93,7 @@ export async function handleV4PoolInitialize(
   context.Pool.set(poolEntity);
   context.V4PoolData.set(v4PoolEntity);
   context.DeFiPoolData.set(defiPoolDataEntity);
-
-  await context.Protocol.getOrCreate({
+  context.Protocol.set({
     id: protocol,
     name: SupportedProtocol.getName(protocol),
     logo: SupportedProtocol.getLogoUrl(protocol),

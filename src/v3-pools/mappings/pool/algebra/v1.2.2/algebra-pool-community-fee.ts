@@ -2,7 +2,7 @@ import { AlgebraPool_1_2_2 } from "generated";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 
 AlgebraPool_1_2_2.CommunityFee.handler(async ({ event, context }) => {
-  let poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
+  const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
   let algebraPoolData = await context.AlgebraPoolData.getOrThrow(poolId);
 
   algebraPoolData = {

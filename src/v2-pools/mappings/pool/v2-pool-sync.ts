@@ -12,8 +12,12 @@ export async function handleV2PoolSync(
   eventTimestamp: bigint,
   v2PoolSetters: PoolSetters
 ): Promise<void> {
-  const token0SourcePricePoolEntity = await context.Pool.get(token0Entity.mostLiquidPool_id);
-  const token1SourcePricePoolEntity = await context.Pool.get(token1Entity.mostLiquidPool_id);
+  let [token0SourcePricePoolEntity, token1SourcePricePoolEntity]: [PoolEntity | undefined, PoolEntity | undefined] =
+    await Promise.all([
+      context.Pool.get(token0Entity.mostLiquidPool_id),
+      context.Pool.get(token1Entity.mostLiquidPool_id),
+    ]);
+
   const oldToken0LockedValue = poolEntity.totalValueLockedToken0;
   const oldToken1LockedValue = poolEntity.totalValueLockedToken1;
   const reserve0Formatted = formatFromTokenAmount(reserve0, token0Entity);
@@ -56,6 +60,7 @@ export async function handleV2PoolSync(
   };
 
   await v2PoolSetters.setIntervalDataTVL(eventTimestamp, poolEntity);
+  poolEntity = await v2PoolSetters.updatePoolAccumulatedYield(eventTimestamp, poolEntity);
 
   context.Pool.set(poolEntity);
   context.Token.set(token0Entity);

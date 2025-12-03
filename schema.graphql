@@ -45,7 +45,7 @@ type Token {
   chainId: Int! @index
 }
 
-type Pool {
+type Pool @index(fields: ["token0", "token1", "totalValueLockedUSD"]) {
   id: ID!
   token0: Token! @index
   token1: Token! @index
@@ -56,13 +56,13 @@ type Pool {
   totalValueLockedUSD: BigDecimal! @index
   totalValueLockedToken0: BigDecimal!
   totalValueLockedToken1: BigDecimal!
-  swapVolumeUSD: BigDecimal! @index
+  swapVolumeUSD: BigDecimal!
   swapVolumeToken0: BigDecimal!
   swapVolumeToken1: BigDecimal!
-  liquidityVolumeUSD: BigDecimal! @index
+  liquidityVolumeUSD: BigDecimal!
   liquidityVolumeToken0: BigDecimal!
   liquidityVolumeToken1: BigDecimal!
-  createdAtTimestamp: BigInt!
+  createdAtTimestamp: BigInt! @index
   hourlyData: [PoolHourlyData!]! @derivedFrom(field: "pool")
   dailyData: [PoolDailyData!]! @derivedFrom(field: "pool")
   protocol: Protocol! @index
@@ -73,6 +73,15 @@ type Pool {
   v2PoolData: V2PoolData
   algebraPoolData: AlgebraPoolData
   chainId: Int! @index
+  totalAccumulatedYield: BigDecimal!
+  accumulated90dYield: BigDecimal!
+  accumulated30dYield: BigDecimal!
+  accumulated7dYield: BigDecimal!
+  accumulated24hYield: BigDecimal!
+  dataPointTimestamp24h: BigInt @index
+  dataPointTimestamp7d: BigInt @index
+  dataPointTimestamp30d: BigInt @index
+  dataPointTimestamp90d: BigInt @index
 }
 
 type V2PoolData {
@@ -103,9 +112,11 @@ type AlgebraPoolData {
   communityFee: Int!
 }
 
-type PoolHourlyData {
+type PoolHourlyData @index(fields: ["hourStartTimestamp", "totalValueLockedUSD"]) {
   id: ID!
   pool: Pool!
+  totalAccumulatedYield: BigDecimal!
+  yearlyYield: BigDecimal!
   feesUSD: BigDecimal! @index
   feesToken0: BigDecimal!
   feesToken1: BigDecimal!
@@ -115,24 +126,26 @@ type PoolHourlyData {
   totalValueLockedToken1: BigDecimal!
   swapVolumeToken0: BigDecimal!
   swapVolumeToken1: BigDecimal!
-  swapVolumeUSD: BigDecimal! @index
-  liquidityVolumeUSD: BigDecimal! @index
+  swapVolumeUSD: BigDecimal!
+  liquidityVolumeUSD: BigDecimal!
   liquidityVolumeToken0: BigDecimal!
   liquidityVolumeToken1: BigDecimal!
-  liquidityNetInflowUSD: BigDecimal! @index
+  liquidityNetInflowUSD: BigDecimal!
   liquidityNetInflowToken0: BigDecimal!
   liquidityNetInflowToken1: BigDecimal!
-  liquidityInflowUSD: BigDecimal! @index
+  liquidityInflowUSD: BigDecimal!
   liquidityInflowToken0: BigDecimal!
   liquidityInflowToken1: BigDecimal!
-  liquidityOutflowUSD: BigDecimal! @index
+  liquidityOutflowUSD: BigDecimal!
   liquidityOutflowToken0: BigDecimal!
   liquidityOutflowToken1: BigDecimal!
 }
 
-type PoolDailyData {
+type PoolDailyData @index(fields: ["dayStartTimestamp", "totalValueLockedUSD"]) {
   id: ID!
   pool: Pool!
+  totalAccumulatedYield: BigDecimal!
+  yearlyYield: BigDecimal!
   feesUSD: BigDecimal! @index
   feesToken0: BigDecimal!
   feesToken1: BigDecimal!
@@ -142,17 +155,17 @@ type PoolDailyData {
   totalValueLockedToken1: BigDecimal!
   swapVolumeToken0: BigDecimal!
   swapVolumeToken1: BigDecimal!
-  swapVolumeUSD: BigDecimal! @index
-  liquidityVolumeUSD: BigDecimal! @index
+  swapVolumeUSD: BigDecimal!
+  liquidityVolumeUSD: BigDecimal!
   liquidityVolumeToken0: BigDecimal!
   liquidityVolumeToken1: BigDecimal!
-  liquidityNetInflowUSD: BigDecimal! @index
+  liquidityNetInflowUSD: BigDecimal!
   liquidityNetInflowToken0: BigDecimal!
   liquidityNetInflowToken1: BigDecimal!
-  liquidityInflowUSD: BigDecimal! @index
+  liquidityInflowUSD: BigDecimal!
   liquidityInflowToken0: BigDecimal!
   liquidityInflowToken1: BigDecimal!
-  liquidityOutflowUSD: BigDecimal! @index
+  liquidityOutflowUSD: BigDecimal!
   liquidityOutflowToken0: BigDecimal!
   liquidityOutflowToken1: BigDecimal!
 }

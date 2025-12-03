@@ -5,7 +5,7 @@ import sinon from "sinon";
 import { DeFiPoolDataSetters } from "../../../../src/common/defi-pool-data-setters";
 import { PoolSetters } from "../../../../src/common/pool-setters";
 import { handleV3PoolBurn } from "../../../../src/v3-pools/mappings/pool/v3-pool-burn";
-import { DeFiPoolDataMock, handlerContextCustomMock, PoolMock, TokenMock } from "../../../mocks";
+import { handlerContextCustomMock, PoolMock, TokenMock } from "../../../mocks";
 
 describe("V3PoolBurn", () => {
   let context: handlerContext;
@@ -30,6 +30,12 @@ describe("V3PoolBurn", () => {
     context = handlerContextCustomMock();
     poolSetters = sinon.createStubInstance(PoolSetters);
     defiPoolDataSetters = sinon.createStubInstance(DeFiPoolDataSetters);
+
+    poolSetters.updatePoolAccumulatedYield.resolvesArg(1);
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   it(`should not change the pool tvl when calling the burn
@@ -389,48 +395,49 @@ describe("V3PoolBurn", () => {
     );
   });
 
-  it(`should call the defi pool setters to set interval liquidity data if the current pool has a swap volume usd greater than 0,
-    passing the current saved defi pool data entity and the amount0 and amount1 negative, as it is a burn`, async () => {
-    pool = {
-      ...pool,
-      swapVolumeUSD: BigDecimal("12200"),
-    };
+  // TODO: re-enable this test when the defi pool data is Implemented for v3 pools
+  // it(`should call the defi pool setters to set interval liquidity data if the current pool has a swap volume usd greater than 0,
+  //   passing the current saved defi pool data entity and the amount0 and amount1 negative, as it is a burn`, async () => {
+  //   pool = {
+  //     ...pool,
+  //     swapVolumeUSD: BigDecimal("12200"),
+  //   };
 
-    const defiPoolData = new DeFiPoolDataMock();
-    const amount0 = BigInt(123) * 10n ** BigInt(token0.decimals);
-    const amount1 = BigInt(456) * 10n ** BigInt(token1.decimals);
+  //   const defiPoolData = new DeFiPoolDataMock();
+  //   const amount0 = BigInt(123) * 10n ** BigInt(token0.decimals);
+  //   const amount1 = BigInt(456) * 10n ** BigInt(token1.decimals);
 
-    context.Pool.set(pool);
-    context.Token.set(token0);
-    context.Token.set(token1);
-    context.DeFiPoolData.set(defiPoolData);
+  //   context.Pool.set(pool);
+  //   context.Token.set(token0);
+  //   context.Token.set(token1);
+  //   context.DeFiPoolData.set(defiPoolData);
 
-    await handleV3PoolBurn(
-      context,
-      pool,
-      token0,
-      token1,
-      amount0,
-      amount1,
-      eventTimestamp,
-      poolSetters,
-      defiPoolDataSetters
-    );
+  //   await handleV3PoolBurn(
+  //     context,
+  //     pool,
+  //     token0,
+  //     token1,
+  //     amount0,
+  //     amount1,
+  //     eventTimestamp,
+  //     poolSetters,
+  //     defiPoolDataSetters
+  //   );
 
-    const updatedToken0 = await context.Token.getOrThrow(token0.id)!;
-    const updatedToken1 = await context.Token.getOrThrow(token1.id)!;
+  //   const updatedToken0 = await context.Token.getOrThrow(token0.id)!;
+  //   const updatedToken1 = await context.Token.getOrThrow(token1.id)!;
 
-    assert(
-      defiPoolDataSetters.setIntervalLiquidityData.calledWith(
-        eventTimestamp,
-        defiPoolData,
-        -amount0,
-        -amount1,
-        updatedToken0,
-        updatedToken1
-      )
-    );
-  });
+  //   assert(
+  //     defiPoolDataSetters.setIntervalLiquidityData.calledWith(
+  //       eventTimestamp,
+  //       defiPoolData,
+  //       -amount0,
+  //       -amount1,
+  //       updatedToken0,
+  //       updatedToken1
+  //     )
+  //   );
+  // });
 
   it(`should not call the defi pool setters to set interval liquidity data if the current pool has a swap volume usd as 0`, async () => {
     pool = {
@@ -458,5 +465,46 @@ describe("V3PoolBurn", () => {
     );
 
     assert(defiPoolDataSetters.setIntervalLiquidityData.notCalled);
+  });
+
+  it("should update the pool entity with the result from 'updatePoolAccumulatedYield'", async () => {
+    const token0: Token = {
+      ...new TokenMock(),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+    };
+
+    const resultPool: Pool = {
+      ...pool,
+      accumulated24hYield: BigDecimal("212121"),
+      accumulated7dYield: BigDecimal("555555"),
+      accumulated90dYield: BigDecimal("333333"),
+      accumulated30dYield: BigDecimal("8181818"),
+      totalAccumulatedYield: BigDecimal("9999999"),
+      dataPointTimestamp24h: 0x10n,
+      dataPointTimestamp7d: 0x20n,
+      dataPointTimestamp30d: 0x30n,
+      dataPointTimestamp90d: 0x40n,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    poolSetters.updatePoolAccumulatedYield.reset();
+    poolSetters.updatePoolAccumulatedYield.resolves(resultPool);
+
+    sinon.replace(poolSetters, "updatePoolAccumulatedYield", poolSetters.updatePoolAccumulatedYield);
+
+    await handleV3PoolBurn(context, pool, token0, token1, 0n, 0n, eventTimestamp, poolSetters, defiPoolDataSetters);
+    const updatedPool = await context.Pool.getOrThrow(pool.id)!;
+
+    assert.deepEqual(updatedPool, resultPool, "The pool should be updated with the accumulated yield data");
   });
 });

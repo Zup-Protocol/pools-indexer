@@ -1,4 +1,10 @@
-import { AlgebraPool_1_2_2 } from "generated";
+import {
+  AlgebraPool_1_2_2,
+  AlgebraPoolData as AlgebraPoolDataEntity,
+  Pool as PoolEntity,
+  Token as TokenEntity,
+  V3PoolData as V3PoolDataEntity,
+} from "generated";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV3PoolSwap } from "../../v3-pool-swap";
@@ -14,11 +20,18 @@ AlgebraPool_1_2_2.SwapFee.handler(async ({ event }) => {
 
 AlgebraPool_1_2_2.Swap.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
-  let poolEntity = await context.Pool.getOrThrow(poolId);
 
-  const algebraPoolData = await context.AlgebraPoolData.getOrThrow(poolId);
-  const token0Entity = await context.Token.getOrThrow(poolEntity.token0_id);
-  const token1Entity = await context.Token.getOrThrow(poolEntity.token1_id);
+  let [poolEntity, algebraPoolData, v3PoolData]: [PoolEntity, AlgebraPoolDataEntity, V3PoolDataEntity] =
+    await Promise.all([
+      context.Pool.getOrThrow(poolId),
+      context.AlgebraPoolData.getOrThrow(poolId),
+      context.V3PoolData.getOrThrow(poolId),
+    ]);
+
+  const [token0Entity, token1Entity]: [TokenEntity, TokenEntity] = await Promise.all([
+    context.Token.getOrThrow(poolEntity.token0_id),
+    context.Token.getOrThrow(poolEntity.token1_id),
+  ]);
 
   poolEntity = getPoolDeductingAlgebraNonLPFees({
     amount0SwapAmount: event.params.amount0,
@@ -34,6 +47,7 @@ AlgebraPool_1_2_2.Swap.handler(async ({ event, context }) => {
   await handleV3PoolSwap({
     context,
     poolEntity,
+    v3PoolEntity: v3PoolData,
     token0Entity,
     token1Entity,
     swapAmount0: event.params.amount0,

@@ -15,6 +15,11 @@ describe("V2PoolSyncHandler", () => {
   beforeEach(() => {
     context = handlerContextCustomMock();
     poolSetters = sinon.createStubInstance(PoolSetters);
+    poolSetters.updatePoolAccumulatedYield.resolvesArg(1);
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   it(`When calling the handler, it should correctly update the pool total
@@ -485,5 +490,44 @@ describe("V2PoolSyncHandler", () => {
     const updatedToken1 = await context.Token.getOrThrow(token1.id)!;
 
     assert.deepEqual(updatedToken1.mostLiquidPool_id, pool.id);
+  });
+
+  it("should update the pool entity with the result from 'updatePoolAccumulatedYield'", async () => {
+    const token0: Token = {
+      ...new TokenMock(),
+    };
+
+    const token1: Token = {
+      ...new TokenMock(),
+    };
+
+    const pool: Pool = {
+      ...new PoolMock(),
+    };
+
+    const resultPool: Pool = {
+      ...pool,
+      accumulated24hYield: BigDecimal("212121"),
+      accumulated7dYield: BigDecimal("555555"),
+      accumulated90dYield: BigDecimal("333333"),
+      accumulated30dYield: BigDecimal("8181818"),
+      totalAccumulatedYield: BigDecimal("9999999"),
+      dataPointTimestamp24h: 0x10n,
+      dataPointTimestamp7d: 0x20n,
+      dataPointTimestamp30d: 0x30n,
+      dataPointTimestamp90d: 0x40n,
+    };
+
+    context.Pool.set(pool);
+    context.Token.set(token0);
+    context.Token.set(token1);
+
+    poolSetters.updatePoolAccumulatedYield.reset();
+    poolSetters.updatePoolAccumulatedYield.resolves(resultPool);
+
+    await handleV2PoolClaimFees(context, pool, token0, token1, 0n, 0n, eventTimestamp, poolSetters);
+
+    const updatedPool = await context.Pool.getOrThrow(pool.id)!;
+    assert.deepEqual(updatedPool, resultPool, "The pool should be updated with the accumulated yield data");
   });
 });

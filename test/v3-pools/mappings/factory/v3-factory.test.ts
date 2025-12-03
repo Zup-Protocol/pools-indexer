@@ -661,4 +661,71 @@ describe("V3FactoryHandler", () => {
 
     assert.deepEqual(updatedDefiPoolData, expectedNewDefiPoolData);
   });
+
+  it("should set all the accumulated yield as zero when creating a pool", async () => {
+    await handleV3PoolCreated(
+      context,
+      poolAddress,
+      token0Address,
+      token1Address,
+      feeTier,
+      tickSpacing,
+      eventTimestamp,
+      chainId,
+      protocol,
+      tokenService
+    );
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+
+    assert.deepEqual(pool.accumulated24hYield, ZERO_BIG_DECIMAL, "the 24h yield should be zero");
+    assert.deepEqual(pool.accumulated7dYield, ZERO_BIG_DECIMAL, "the 7d yield should be zero");
+    assert.deepEqual(pool.accumulated30dYield, ZERO_BIG_DECIMAL, "the 30d yield should be zero");
+    assert.deepEqual(pool.accumulated90dYield, ZERO_BIG_DECIMAL, "the 90d yield should be zero");
+    assert.deepEqual(pool.totalAccumulatedYield, ZERO_BIG_DECIMAL, "the total accumulated yield should be zero");
+  });
+
+  it("should set data point timestamps as undefined when creating a pool", async () => {
+    await handleV3PoolCreated(
+      context,
+      poolAddress,
+      token0Address,
+      token1Address,
+      feeTier,
+      tickSpacing,
+      eventTimestamp,
+      chainId,
+      protocol,
+      tokenService
+    );
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+
+    assert.equal(pool.dataPointTimestamp24h, undefined, "the 24h data point timestamp should be undefined");
+    assert.equal(pool.dataPointTimestamp7d, undefined, "the 7d data point timestamp should be undefined");
+    assert.equal(pool.dataPointTimestamp30d, undefined, "the 30d data point timestamp should be undefined");
+    assert.equal(pool.dataPointTimestamp90d, undefined, "the 90d data point timestamp should be undefined");
+  });
+
+  it("should save the passed algebra pool data entity if provided", async () => {
+    const algebraPoolData = new AlgebraPoolDataMock("xabas-algebra-pool-id");
+
+    await handleV3PoolCreated(
+      context,
+      poolAddress,
+      token0Address,
+      token1Address,
+      feeTier,
+      tickSpacing,
+      eventTimestamp,
+      chainId,
+      protocol,
+      tokenService,
+      algebraPoolData
+    );
+
+    const savedAlgebraPoolData = await context.AlgebraPoolData.getOrThrow(algebraPoolData.id)!;
+
+    assert.deepEqual(savedAlgebraPoolData, algebraPoolData);
+  });
 });

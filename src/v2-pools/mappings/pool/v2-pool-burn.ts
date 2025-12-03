@@ -1,7 +1,5 @@
 import { handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
-import { defaultDeFiPoolData } from "../../../common/constants";
 import { DeFiPoolDataSetters } from "../../../common/defi-pool-data-setters";
-import { isPoolSwapVolumeValid } from "../../../common/pool-commons";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount, pickMostLiquidPoolForToken } from "../../../common/token-commons";
 
@@ -16,9 +14,12 @@ export async function handleV2PoolBurn(
   v2PoolSetters: PoolSetters,
   defiPoolDataSetters: DeFiPoolDataSetters
 ): Promise<void> {
-  const token0SourcePricePoolEntity = await context.Pool.get(token0Entity.mostLiquidPool_id);
-  const token1SourcePricePoolEntity = await context.Pool.get(token1Entity.mostLiquidPool_id);
-  const defiPoolData = await context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(eventTimestamp));
+  let [token0SourcePricePoolEntity, token1SourcePricePoolEntity]: [PoolEntity | undefined, PoolEntity | undefined] =
+    await Promise.all([
+      context.Pool.get(token0Entity.mostLiquidPool_id),
+      context.Pool.get(token1Entity.mostLiquidPool_id),
+    ]);
+
   const formattedToken0BurnedAmount = formatFromTokenAmount(amount0, token0Entity);
   const formattedToken1BurnedAmount = formatFromTokenAmount(amount1, token1Entity);
 
@@ -77,16 +78,19 @@ export async function handleV2PoolBurn(
     amount1AddedOrRemoved: -amount1,
   });
 
-  if (isPoolSwapVolumeValid(poolEntity)) {
-    await defiPoolDataSetters.setIntervalLiquidityData(
-      eventTimestamp,
-      defiPoolData,
-      -amount0,
-      -amount1,
-      token0Entity,
-      token1Entity
-    );
-  }
+  // TODO: Maybe implement -> Currently removed as is not needed and it makes the sync slower
+  // if (isPoolSwapVolumeValid(poolEntity)) {
+  //   await defiPoolDataSetters.setIntervalLiquidityData(
+  //     eventTimestamp,
+  //     defiPoolData,
+  //     -amount0,
+  //     -amount1,
+  //     token0Entity,
+  //     token1Entity
+  //   );
+  // }
+
+  poolEntity = await v2PoolSetters.updatePoolAccumulatedYield(eventTimestamp, poolEntity);
 
   context.Pool.set(poolEntity);
   context.Token.set(token0Entity);

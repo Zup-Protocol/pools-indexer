@@ -1,4 +1,4 @@
-import { HxFinanceAlgebraFactory } from "generated";
+import { AlgebraPoolData, HxFinanceAlgebraFactory } from "generated";
 import { ZERO_ADDRESS } from "../../../../common/constants";
 import { IndexerNetwork } from "../../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../common/enums/supported-protocol";
@@ -14,11 +14,11 @@ HxFinanceAlgebraFactory.CustomPool.contractRegister(({ event, context }) => {
 });
 
 HxFinanceAlgebraFactory.Pool.handler(async ({ event, context }) => {
-  const algebraPoolData = await context.AlgebraPoolData.getOrCreate({
+  const algebraPoolData: AlgebraPoolData = {
     id: IndexerNetwork.getEntityIdFromAddress(event.chainId, event.params.pool),
     deployer: ZERO_ADDRESS,
     communityFee: 0,
-  });
+  };
 
   await handleV3PoolCreated(
     context,
@@ -36,11 +36,11 @@ HxFinanceAlgebraFactory.Pool.handler(async ({ event, context }) => {
 });
 
 HxFinanceAlgebraFactory.CustomPool.handler(async ({ event, context }) => {
-  const algebraPoolData = await context.AlgebraPoolData.getOrCreate({
+  const algebraPoolData: AlgebraPoolData = {
     id: IndexerNetwork.getEntityIdFromAddress(event.chainId, event.params.pool),
-    deployer: event.params.deployer.toLowerCase(),
+    deployer: event.params.deployer,
     communityFee: 0,
-  });
+  };
 
   await handleV3PoolCreated(
     context,

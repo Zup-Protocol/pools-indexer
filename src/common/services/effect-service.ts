@@ -1,4 +1,4 @@
-import { experimental_createEffect, S } from "envio";
+import { createEffect, S } from "envio";
 
 import "../string.extension";
 import { TokenService } from "./token-service";
@@ -33,11 +33,12 @@ export class EffectService {
   private readonly GET_TOKEN_METADATA_EFFECT_NAME = "getTokenMetadata";
   private readonly tokenService = TokenService.shared;
 
-  readonly getTokenMetadataEffect = experimental_createEffect(
+  readonly getTokenMetadataEffect = createEffect(
     {
       name: this.GET_TOKEN_METADATA_EFFECT_NAME,
       input: TokenMetadataSchemaInput,
       output: TokenMetadataSchemaOutput,
+      rateLimit: false,
       cache: true,
     },
     async ({ context, input }) => {

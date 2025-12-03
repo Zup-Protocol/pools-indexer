@@ -1,7 +1,5 @@
-import { handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
-import { defaultDeFiPoolData } from "../../../common/constants";
+import { handlerContext, Pool as PoolEntity, Token as TokenEntity, V4PoolData as V4PoolDataEntity } from "generated";
 import { DeFiPoolDataSetters } from "../../../common/defi-pool-data-setters";
-import { isPoolSwapVolumeValid } from "../../../common/pool-commons";
 import { PoolSetters } from "../../../common/pool-setters";
 import { formatFromTokenAmount, pickMostLiquidPoolForToken } from "../../../common/token-commons";
 import { getAmount0, getAmount1 } from "../../common/liquidity-amounts";
@@ -18,16 +16,20 @@ export async function handleV4PoolModifyLiquidity(
   v4PoolSetters: PoolSetters,
   defiPoolDataSetters: DeFiPoolDataSetters
 ): Promise<void> {
-  const v4PoolEntity = await context.V4PoolData.getOrThrow(poolEntity.id);
-  const token0SourcePricePoolEntity = await context.Pool.get(token0Entity.mostLiquidPool_id);
-  const token1SourcePricePoolEntity = await context.Pool.get(token1Entity.mostLiquidPool_id);
+  let [v4PoolEntity, token0SourcePricePoolEntity, token1SourcePricePoolEntity]: [
+    V4PoolDataEntity,
+    PoolEntity | undefined,
+    PoolEntity | undefined
+  ] = await Promise.all([
+    context.V4PoolData.getOrThrow(poolEntity.id),
+    context.Pool.get(token0Entity.mostLiquidPool_id),
+    context.Pool.get(token1Entity.mostLiquidPool_id),
+  ]);
 
   const amount0 = getAmount0(tickLower, tickUpper, v4PoolEntity.tick, liqudityDelta, v4PoolEntity.sqrtPriceX96);
   const amount1 = getAmount1(tickLower, tickUpper, v4PoolEntity.tick, liqudityDelta, v4PoolEntity.sqrtPriceX96);
   const amount0Formatted = formatFromTokenAmount(amount0, token0Entity);
   const amount1Formatted = formatFromTokenAmount(amount1, token1Entity);
-
-  const defiPoolData = await context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(eventTimestamp));
 
   const updatedPoolTotalValueLockedToken0 = poolEntity.totalValueLockedToken0.plus(amount0Formatted);
   const updatedPoolTotalValueLockedToken1 = poolEntity.totalValueLockedToken1.plus(amount1Formatted);
@@ -75,16 +77,17 @@ export async function handleV4PoolModifyLiquidity(
     mostLiquidPool_id: pickMostLiquidPoolForToken(token1Entity, poolEntity, token1SourcePricePoolEntity).id,
   };
 
-  if (isPoolSwapVolumeValid(poolEntity)) {
-    await defiPoolDataSetters.setIntervalLiquidityData(
-      eventTimestamp,
-      defiPoolData,
-      amount0,
-      amount1,
-      token0Entity,
-      token1Entity
-    );
-  }
+  // TODO: Maybe implement -> Currently removed as is not needed and it makes the sync slower
+  // if (isPoolSwapVolumeValid(poolEntity)) {
+  //   await defiPoolDataSetters.setIntervalLiquidityData(
+  //     eventTimestamp,
+  //     defiPoolData,
+  //     amount0,
+  //     amount1,
+  //     token0Entity,
+  //     token1Entity
+  //   );
+  // }
 
   await v4PoolSetters.setIntervalDataTVL(eventTimestamp, poolEntity);
   await v4PoolSetters.setLiquidityIntervalData({
@@ -95,6 +98,8 @@ export async function handleV4PoolModifyLiquidity(
     token0: token0Entity,
     token1: token1Entity,
   });
+
+  poolEntity = await v4PoolSetters.updatePoolAccumulatedYield(eventTimestamp, poolEntity);
 
   context.Pool.set(poolEntity);
   context.Token.set(token0Entity);

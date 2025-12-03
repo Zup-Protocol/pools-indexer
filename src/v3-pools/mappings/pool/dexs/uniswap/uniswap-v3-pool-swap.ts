@@ -1,17 +1,25 @@
-import { UniswapV3Pool } from "generated";
+import { Pool as PoolEntity, Token as TokenEntity, UniswapV3Pool, V3PoolData as V3PoolDataEntity } from "generated";
 import { IndexerNetwork } from "../../../../../common/enums/indexer-network";
 import { PoolSetters } from "../../../../../common/pool-setters";
 import { handleV3PoolSwap } from "../../v3-pool-swap";
 
 UniswapV3Pool.Swap.handler(async ({ event, context }) => {
   const poolId = IndexerNetwork.getEntityIdFromAddress(event.chainId, event.srcAddress);
-  let poolEntity = await context.Pool.getOrThrow(poolId);
-  let token0Entity = await context.Token.getOrThrow(poolEntity.token0_id);
-  let token1Entity = await context.Token.getOrThrow(poolEntity.token1_id);
+
+  let [poolEntity, v3PoolEntity]: [PoolEntity, V3PoolDataEntity] = await Promise.all([
+    context.Pool.getOrThrow(poolId),
+    context.V3PoolData.getOrThrow(poolId),
+  ]);
+
+  const [token0Entity, token1Entity]: [TokenEntity, TokenEntity] = await Promise.all([
+    context.Token.getOrThrow(poolEntity.token0_id),
+    context.Token.getOrThrow(poolEntity.token1_id),
+  ]);
 
   await handleV3PoolSwap({
     context,
     poolEntity,
+    v3PoolEntity,
     token0Entity,
     token1Entity,
     swapAmount0: event.params.amount0,

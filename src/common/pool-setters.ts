@@ -1,4 +1,11 @@
-import { BigDecimal, handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import {
+  BigDecimal,
+  handlerContext,
+  PoolDailyData,
+  Pool as PoolEntity,
+  PoolHourlyData,
+  Token as TokenEntity,
+} from "generated";
 import {
   defaultPoolDailyData,
   defaultPoolHourlyData,
@@ -7,14 +14,19 @@ import {
   ZERO_ADDRESS,
   ZERO_BIG_DECIMAL,
 } from "./constants";
+import { isSecondsTimestampMoreThanDaysAgo } from "./date-commons";
 import { IndexerNetwork } from "./enums/indexer-network";
 import { isPercentageDifferenceWithinThreshold } from "./math";
 import {
+  calculateDayYearlyYield,
+  calculateHourYearlyYield,
   findNativeToken,
   findStableToken,
   findWrappedNative,
   getLiquidityInflowAndOutflowFromRawAmounts,
+  getPoolDailyDataAgo,
   getPoolDailyDataId,
+  getPoolHourlyDataAgo,
   getPoolHourlyDataId,
   getSwapFeesFromRawAmounts,
   getSwapVolumeFromAmounts,
@@ -30,21 +42,23 @@ export class PoolSetters {
   constructor(readonly context: handlerContext, readonly network: IndexerNetwork) {}
 
   async setIntervalDataTVL(eventTimestamp: bigint, poolEntity: PoolEntity): Promise<void> {
-    let poolDailyDataEntity = await this.context.PoolDailyData.getOrCreate(
-      defaultPoolDailyData({
-        dayDataId: getPoolDailyDataId(eventTimestamp, poolEntity),
-        dayStartTimestamp: eventTimestamp,
-        poolId: poolEntity.id,
-      })
-    );
+    let [poolDailyDataEntity, poolHourlyDataEntity]: [PoolDailyData, PoolHourlyData] = await Promise.all([
+      this.context.PoolDailyData.getOrCreate(
+        defaultPoolDailyData({
+          dayDataId: getPoolDailyDataId(eventTimestamp, poolEntity),
+          dayStartTimestamp: eventTimestamp,
+          poolId: poolEntity.id,
+        })
+      ),
 
-    let poolHourlyDataEntity = await this.context.PoolHourlyData.getOrCreate(
-      defaultPoolHourlyData({
-        hourlyDataId: getPoolHourlyDataId(eventTimestamp, poolEntity),
-        hourStartTimestamp: eventTimestamp,
-        poolId: poolEntity.id,
-      })
-    );
+      this.context.PoolHourlyData.getOrCreate(
+        defaultPoolHourlyData({
+          hourlyDataId: getPoolHourlyDataId(eventTimestamp, poolEntity),
+          hourStartTimestamp: eventTimestamp,
+          poolId: poolEntity.id,
+        })
+      ),
+    ]);
 
     poolDailyDataEntity = {
       ...poolDailyDataEntity,
@@ -78,7 +92,7 @@ export class PoolSetters {
       OUTLIER_POOL_TVL_PERCENT_THRESHOLD
     );
 
-    return [
+    return await Promise.all([
       await this._maybeUpdateTokenPrice(
         poolToken0Entity,
         tokenPrices.token0UpdatedPrice,
@@ -92,7 +106,7 @@ export class PoolSetters {
         pool,
         isNewPoolTvlUsdBalancedWithinThreshold
       ),
-    ];
+    ]);
   }
 
   async setLiquidityIntervalData(params: {
@@ -103,21 +117,23 @@ export class PoolSetters {
     token0: TokenEntity;
     token1: TokenEntity;
   }): Promise<void> {
-    let poolDailyData = await this.context.PoolDailyData.getOrCreate(
-      defaultPoolDailyData({
-        dayDataId: getPoolDailyDataId(params.eventTimestamp, params.poolEntity),
-        dayStartTimestamp: params.eventTimestamp,
-        poolId: params.poolEntity.id,
-      })
-    );
+    let [poolDailyData, poolHourlyData]: [PoolDailyData, PoolHourlyData] = await Promise.all([
+      this.context.PoolDailyData.getOrCreate(
+        defaultPoolDailyData({
+          dayDataId: getPoolDailyDataId(params.eventTimestamp, params.poolEntity),
+          dayStartTimestamp: params.eventTimestamp,
+          poolId: params.poolEntity.id,
+        })
+      ),
 
-    let poolHourlyData = await this.context.PoolHourlyData.getOrCreate(
-      defaultPoolHourlyData({
-        hourlyDataId: getPoolHourlyDataId(params.eventTimestamp, params.poolEntity),
-        hourStartTimestamp: params.eventTimestamp,
-        poolId: params.poolEntity.id,
-      })
-    );
+      this.context.PoolHourlyData.getOrCreate(
+        defaultPoolHourlyData({
+          hourlyDataId: getPoolHourlyDataId(params.eventTimestamp, params.poolEntity),
+          hourStartTimestamp: params.eventTimestamp,
+          poolId: params.poolEntity.id,
+        })
+      ),
+    ]);
 
     const amountInflowsAndOuflows = getLiquidityInflowAndOutflowFromRawAmounts(
       params.amount0AddedOrRemoved,
@@ -180,8 +196,10 @@ export class PoolSetters {
   ): Promise<void> {
     await this.setIntervalDataTVL(eventTimestamp, pool);
 
-    let poolDailyDataEntity = await context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool));
-    let poolHourlyDataEntity = await context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool));
+    let [poolDailyDataEntity, poolHourlyDataEntity]: [PoolDailyData, PoolHourlyData] = await Promise.all([
+      context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, pool)),
+      context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, pool)),
+    ]);
 
     const swapVolume = getSwapVolumeFromAmounts(
       formatFromTokenAmount(amount0, token0),
@@ -191,6 +209,11 @@ export class PoolSetters {
     );
 
     const swapFees = getSwapFeesFromRawAmounts(amount0, amount1, swapFee, token0, token1);
+    const totalDayFeesUSD = poolDailyDataEntity.feesUSD.plus(swapFees.feesUSD);
+    const totalHourFeesUSD = poolHourlyDataEntity.feesUSD.plus(swapFees.feesUSD);
+
+    const dayYearlyYield = calculateDayYearlyYield(poolDailyDataEntity.totalValueLockedUSD, totalDayFeesUSD);
+    const hourYearlyYield = calculateHourYearlyYield(poolHourlyDataEntity.totalValueLockedUSD, totalHourFeesUSD);
 
     poolDailyDataEntity = {
       ...poolDailyDataEntity,
@@ -199,7 +222,9 @@ export class PoolSetters {
       swapVolumeUSD: poolDailyDataEntity.swapVolumeUSD.plus(swapVolume.volumeUSD),
       feesToken0: poolDailyDataEntity.feesToken0.plus(swapFees.feeToken0),
       feesToken1: poolDailyDataEntity.feesToken1.plus(swapFees.feeToken1),
-      feesUSD: poolDailyDataEntity.feesUSD.plus(swapFees.feesUSD),
+      feesUSD: totalDayFeesUSD,
+      yearlyYield: dayYearlyYield,
+      totalAccumulatedYield: pool.totalAccumulatedYield,
     };
 
     poolHourlyDataEntity = {
@@ -209,11 +234,75 @@ export class PoolSetters {
       swapVolumeUSD: poolHourlyDataEntity.swapVolumeUSD.plus(swapVolume.volumeUSD),
       feesToken0: poolHourlyDataEntity.feesToken0.plus(swapFees.feeToken0),
       feesToken1: poolHourlyDataEntity.feesToken1.plus(swapFees.feeToken1),
-      feesUSD: poolHourlyDataEntity.feesUSD.plus(swapFees.feesUSD),
+      feesUSD: totalHourFeesUSD,
+      yearlyYield: hourYearlyYield,
+      totalAccumulatedYield: pool.totalAccumulatedYield,
     };
 
     context.PoolDailyData.set(poolDailyDataEntity);
     context.PoolHourlyData.set(poolHourlyDataEntity);
+  }
+
+  async updatePoolAccumulatedYield(eventTimestamp: bigint, poolEntity: PoolEntity): Promise<PoolEntity> {
+    if (isSecondsTimestampMoreThanDaysAgo(eventTimestamp, 100)) return poolEntity;
+
+    let [currentPoolDailyData, currentPoolHourlyData]: [PoolDailyData, PoolHourlyData] = await Promise.all([
+      this.context.PoolDailyData.getOrThrow(getPoolDailyDataId(eventTimestamp, poolEntity)),
+      this.context.PoolHourlyData.getOrThrow(getPoolHourlyDataId(eventTimestamp, poolEntity)),
+    ]);
+
+    const isEventSettingNewDay = currentPoolDailyData.dayStartTimestamp == eventTimestamp;
+    const isEventSettingNewHour = currentPoolHourlyData.hourStartTimestamp == eventTimestamp;
+
+    if (isEventSettingNewHour) {
+      const data24hAgo = await getPoolHourlyDataAgo(24, eventTimestamp, this.context, poolEntity);
+
+      if (data24hAgo) {
+        poolEntity = {
+          ...poolEntity,
+          accumulated24hYield: poolEntity.totalAccumulatedYield.minus(data24hAgo?.totalAccumulatedYield ?? 0),
+          dataPointTimestamp24h: data24hAgo?.hourStartTimestamp ?? poolEntity.dataPointTimestamp24h,
+        };
+      }
+    }
+
+    if (isEventSettingNewDay) {
+      const [data7dAgo, data30dAgo, data90dAgo]: [
+        PoolDailyData | null | undefined,
+        PoolDailyData | null | undefined,
+        PoolDailyData | null | undefined
+      ] = await Promise.all([
+        getPoolDailyDataAgo(7, eventTimestamp, this.context, poolEntity),
+        getPoolDailyDataAgo(30, eventTimestamp, this.context, poolEntity),
+        getPoolDailyDataAgo(90, eventTimestamp, this.context, poolEntity),
+      ]);
+
+      if (data7dAgo) {
+        poolEntity = {
+          ...poolEntity,
+          accumulated7dYield: poolEntity.totalAccumulatedYield.minus(data7dAgo?.totalAccumulatedYield ?? 0),
+          dataPointTimestamp7d: data7dAgo?.dayStartTimestamp ?? poolEntity.dataPointTimestamp7d,
+        };
+      }
+
+      if (data30dAgo) {
+        poolEntity = {
+          ...poolEntity,
+          accumulated30dYield: poolEntity.totalAccumulatedYield.minus(data30dAgo?.totalAccumulatedYield ?? 0),
+          dataPointTimestamp30d: data30dAgo?.dayStartTimestamp ?? poolEntity.dataPointTimestamp30d,
+        };
+      }
+
+      if (data90dAgo) {
+        poolEntity = {
+          ...poolEntity,
+          accumulated90dYield: poolEntity.totalAccumulatedYield.minus(data90dAgo?.totalAccumulatedYield ?? 0),
+          dataPointTimestamp90d: data90dAgo?.dayStartTimestamp ?? poolEntity.dataPointTimestamp90d,
+        };
+      }
+    }
+
+    return poolEntity;
   }
 
   private async _maybeUpdateTokenPrice(

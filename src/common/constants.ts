@@ -21,6 +21,8 @@ export const Q96 = BigInt(2) ** BigInt(96);
 
 export const ONE_HOUR_IN_SECONDS = 3_600;
 
+export const ONE_DAY_IN_SECONDS = 86_400;
+
 export const OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD = 1000;
 
 export const OUTLIER_TOKEN_VOLUME_PERCENT_THRESHOLD = 5000;
@@ -37,6 +39,8 @@ export const defaultPoolHourlyData = (params: {
   id: params.hourlyDataId,
   pool_id: params.poolId,
   hourStartTimestamp: params.hourStartTimestamp,
+  totalAccumulatedYield: ZERO_BIG_DECIMAL,
+  yearlyYield: ZERO_BIG_DECIMAL,
   feesToken0: ZERO_BIG_DECIMAL,
   feesToken1: ZERO_BIG_DECIMAL,
   feesUSD: ZERO_BIG_DECIMAL,
@@ -68,6 +72,8 @@ export const defaultPoolDailyData = (params: {
   id: params.dayDataId,
   pool_id: params.poolId,
   dayStartTimestamp: params.dayStartTimestamp,
+  totalAccumulatedYield: ZERO_BIG_DECIMAL,
+  yearlyYield: ZERO_BIG_DECIMAL,
   feesToken0: ZERO_BIG_DECIMAL,
   feesToken1: ZERO_BIG_DECIMAL,
   feesUSD: ZERO_BIG_DECIMAL,

@@ -39,7 +39,7 @@ export class TokenService {
 
         tokenEntity = {
           id: tokenId,
-          tokenAddress: tokenAddress.toLowerCase(),
+          tokenAddress: tokenAddress,
           mostLiquidPool_id: ZERO_ADDRESS,
           decimals: nativeToken.decimals,
           symbol: nativeToken.symbol,
@@ -57,7 +57,7 @@ export class TokenService {
         return tokenEntity;
       }
 
-      let remoteTokenMetadata = await context.effect(EffectService.shared.getTokenMetadataEffect, {
+      const remoteTokenMetadata = await context.effect(EffectService.shared.getTokenMetadataEffect, {
         chainId: network,
         tokenAddress: tokenAddress,
       });
@@ -65,7 +65,7 @@ export class TokenService {
       tokenEntity = {
         id: tokenId,
         mostLiquidPool_id: ZERO_ADDRESS,
-        tokenAddress: tokenAddress.toLowerCase(),
+        tokenAddress: tokenAddress,
         decimals: remoteTokenMetadata.decimals,
         symbol: remoteTokenMetadata.symbol,
         name: remoteTokenMetadata.name,

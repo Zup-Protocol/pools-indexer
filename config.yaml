@@ -319,3 +319,4 @@ networks:
 unordered_multichain_mode: true
 preload_handlers: true
 rollback_on_reorg: true
+address_format: lowercase
