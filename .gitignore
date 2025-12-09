@@ -28,6 +28,7 @@ lib/*
 benchmarks/
 artifacts
 cache
+!.envio/cache
 build
 *.res.js
 *.res.mjs
