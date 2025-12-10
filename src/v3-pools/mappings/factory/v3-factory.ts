@@ -22,6 +22,7 @@ export async function handleV3PoolCreated(params: {
   chainId: number;
   protocol: SupportedProtocol;
   tokenService: TokenService;
+  isDynamicFee?: boolean;
 }): Promise<void> {
   let [token0Entity, token1Entity, defiPoolData]: [TokenEntity, TokenEntity, DeFiPoolDataEntity] = await Promise.all([
     params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token0Address),
@@ -83,7 +84,7 @@ export async function handleV3PoolCreated(params: {
     dataPointTimestamp7dAgo: params.eventTimestamp,
     dataPointTimestamp30dAgo: params.eventTimestamp,
     dataPointTimestamp90dAgo: params.eventTimestamp,
-    isDynamicFee: false,
+    isDynamicFee: params.isDynamicFee ?? false,
   };
 
   defiPoolData = {

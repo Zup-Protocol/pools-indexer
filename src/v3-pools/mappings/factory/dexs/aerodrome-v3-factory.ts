@@ -18,5 +18,6 @@ AerodromeV3Factory.PoolCreated.handler(async ({ event, context }) => {
     chainId: event.chainId,
     protocol: SupportedProtocol.AERODROME_V3,
     tokenService: TokenService.shared,
+    isDynamicFee: true,
   });
 });

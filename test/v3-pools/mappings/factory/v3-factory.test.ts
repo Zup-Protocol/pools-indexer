@@ -808,4 +808,24 @@ describe("V3FactoryHandler", () => {
     assert.equal(pool.accumulatedYield30d, ZERO_BIG_DECIMAL, "the 30d accumulated yield should be zero");
     assert.equal(pool.accumulatedYield90d, ZERO_BIG_DECIMAL, "the 90d accumulated yield should be zero");
   });
+
+  it("should set isDynamicFee as true in the pool if passing true to the param", async () => {
+    await handleV3PoolCreated({
+      context,
+      poolAddress,
+      token0Address,
+      token1Address,
+      feeTier,
+      tickSpacing,
+      eventTimestamp,
+      chainId,
+      protocol,
+      tokenService,
+      isDynamicFee: true,
+    });
+
+    const pool = await context.Pool.getOrThrow(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress))!;
+
+    assert.equal(pool.isDynamicFee, true);
+  });
 });

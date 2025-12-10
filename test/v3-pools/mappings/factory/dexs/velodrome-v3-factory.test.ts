@@ -57,6 +57,19 @@ describe("VelodromeV3Factory", () => {
     assert.equal(passedFeeTier, 0, "feeTier should be zero");
   });
 
+  it("should pass is dynamic fee as true when calling the pool created handler", async () => {
+    let passedDynamicFee: boolean | undefined = false;
+
+    sinon.restore();
+    sinon.stub(factoryHandler, "handleV3PoolCreated").callsFake(async (params) => {
+      passedDynamicFee = params.isDynamicFee;
+    });
+
+    await mockDb.processEvents([event]);
+
+    assert.equal(passedDynamicFee, true);
+  });
+
   it("should register the pool create in the dynamic contract registry", async () => {
     const updatedMockDB = await mockDb.processEvents([event]);
     const registeredContracts = updatedMockDB.dynamicContractRegistry.getAll();
