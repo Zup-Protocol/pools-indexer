@@ -64,6 +64,9 @@ To add a new network to the indexer, you need to do a few things:
    - The `confirmed_block_threshold` is the number of blocks that you want to consider as confirmed, usually 3 minutes (Block number may vary for different networks).
 2. Add a new entry in the `IndexerNetwork` enum at [indexer-network.ts](./src/common/enums/indexer-network.ts) for the new network. The enum value should be the exact one defined in the `id` field in the [config.yaml](./config.yaml). Which should be the chain id of the network
 3. Add a new entry for every function in `IndexerNetwork` namespace, that needs to be configured per network, at [indexer-network.ts](./src/common/enums/indexer-network.ts). Things such RPC urls, stablecoins addresses, wrapped native addresses, etc.
+
+   - You'll also need to add a new ENV variable for the new network RPC url in the `.env` file. You can see the example at [.env.example](./.env.example).
+
 4. Modify all the files that are using the `IndexerNetwork` networks to specify addresses or params per network, and if applicable add a new entry specifying the address for the new network, in case it's not applicable, should throw an error.
 
    - [V2 Position Manager Address](./src/v2-style-pools/common/v2-position-manager-address.ts)
