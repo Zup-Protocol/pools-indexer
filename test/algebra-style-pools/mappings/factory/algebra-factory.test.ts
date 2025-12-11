@@ -9,7 +9,7 @@ import { defaultDeFiPoolData } from "../../../../src/common/default-entities";
 import { IndexerNetwork } from "../../../../src/common/enums/indexer-network";
 import { SupportedProtocol } from "../../../../src/common/enums/supported-protocol";
 import { TokenService } from "../../../../src/common/services/token-service";
-import { handlerContextCustomMock, TokenMock } from "../../../mocks";
+import { AlgebraPoolDataMock, handlerContextCustomMock, TokenMock } from "../../../mocks";
 
 describe("AlgebraFactoryHandler", () => {
   let context: handlerContext;
@@ -724,5 +724,33 @@ describe("AlgebraFactoryHandler", () => {
     const savedToken1 = await context.Token.getOrThrow(expectedToken1Id);
 
     assert.equal(savedToken1.id, expectedToken1Id);
+  });
+
+  it(`should not modify the other fields in case that the algebra pool data already exists,
+    but only update the version and deployer`, async () => {
+    const algebraPoolData = new AlgebraPoolDataMock(IndexerNetwork.getEntityIdFromAddress(chainId, poolAddress));
+    context.AlgebraPoolData.set(algebraPoolData);
+
+    await handleAlgebraPoolCreated({
+      context,
+      poolAddress,
+      token0Address,
+      token1Address,
+      deployer,
+      version,
+      eventTimestamp,
+      chainId,
+      protocol,
+      tokenService,
+    });
+
+    const updatedAlgebraPoolData = await context.AlgebraPoolData.getOrThrow(algebraPoolData.id);
+    const expectedUpdatedAlgebraPoolData: AlgebraPoolDataMock = {
+      ...new AlgebraPoolDataMock(algebraPoolData.id),
+      version,
+      deployer,
+    };
+
+    assert.deepEqual(updatedAlgebraPoolData, expectedUpdatedAlgebraPoolData);
   });
 });

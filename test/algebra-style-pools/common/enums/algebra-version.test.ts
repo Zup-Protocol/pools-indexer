@@ -13,4 +13,8 @@ describe("AlgebraVersion", () => {
   it("should return 1.2.2", () => {
     assert.equal(AlgebraVersion.V1_2_2, "1.2.2");
   });
+
+  it("should return UNKNOWN", () => {
+    assert.equal(AlgebraVersion.UNKNOWN, "UNKNOWN");
+  });
 });

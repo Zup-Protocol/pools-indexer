@@ -5,8 +5,8 @@ import {
   Pool as PoolEntity,
   Token as TokenEntity,
 } from "generated";
-import { ZERO_ADDRESS, ZERO_BIG_DECIMAL, ZERO_BIG_INT } from "../../../common/constants";
-import { defaultDeFiPoolData } from "../../../common/default-entities";
+import { ZERO_BIG_DECIMAL } from "../../../common/constants";
+import { defaultAlgebraPoolData, defaultDeFiPoolData } from "../../../common/default-entities";
 import { IndexerNetwork } from "../../../common/enums/indexer-network";
 import { SupportedProtocol } from "../../../common/enums/supported-protocol";
 import { TokenService } from "../../../common/services/token-service";
@@ -24,22 +24,26 @@ export async function handleAlgebraPoolCreated(params: {
   deployer: string;
   version: AlgebraVersion;
 }): Promise<void> {
-  let [token0Entity, token1Entity, defiPoolData]: [TokenEntity, TokenEntity, DeFiPoolDataEntity] = await Promise.all([
+  const poolId = IndexerNetwork.getEntityIdFromAddress(params.chainId, params.poolAddress);
+
+  let [token0Entity, token1Entity, defiPoolData, algebraPoolData]: [
+    TokenEntity,
+    TokenEntity,
+    DeFiPoolDataEntity,
+    AlgebraPoolData
+  ] = await Promise.all([
     params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token0Address),
     params.tokenService.getOrCreateTokenEntity(params.context, params.chainId, params.token1Address),
     params.context.DeFiPoolData.getOrCreate(defaultDeFiPoolData(params.eventTimestamp)),
+    params.context.AlgebraPoolData.getOrCreate(
+      defaultAlgebraPoolData({
+        id: poolId,
+      })
+    ),
   ]);
 
-  const poolId = IndexerNetwork.getEntityIdFromAddress(params.chainId, params.poolAddress);
-
-  const algebraPoolData: AlgebraPoolData = {
-    id: poolId,
-    communityFee: 0,
-    plugin: ZERO_ADDRESS,
-    pluginConfig: 0,
-    sqrtPriceX96: ZERO_BIG_INT,
-    tick: ZERO_BIG_INT,
-    tickSpacing: 0,
+  algebraPoolData = {
+    ...algebraPoolData,
     deployer: params.deployer,
     version: params.version,
   };
