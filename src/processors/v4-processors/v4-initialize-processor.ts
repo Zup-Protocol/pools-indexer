@@ -1,11 +1,12 @@
 import type { handlerContext } from "generated";
+import { PERMIT2_ADDRESS } from "../../core/address/permit2-address";
 import { EntityId } from "../../core/entity";
+import { IndexerNetwork } from "../../core/network";
 import { SupportedProtocol } from "../../core/protocol";
 import { ConcentratedSqrtPriceMath } from "../../lib/math";
 import { processNewPool } from "../new-pool-processor";
 import { processPoolPricesUpdate } from "../pool-prices-update-processor";
-import { V4Permit2Address } from "./utils/addresses/v4-permit2-address";
-import { V4StateViewAddress } from "./utils/addresses/v4-state-view-address";
+import { V4_STATE_VIEW_ADDRESS } from "./utils/addresses/v4-state-view-address";
 import { V4PoolConstants } from "./utils/constants";
 
 export async function processV4Initialize(params: {
@@ -20,7 +21,7 @@ export async function processV4Initialize(params: {
   protocol: SupportedProtocol;
   hooks: string;
   eventTimestamp: bigint;
-  chainId: number;
+  chainId: number & IndexerNetwork;
   poolManagerAddress: string;
 }): Promise<void> {
   const poolId = EntityId.fromAddress(params.chainId, params.poolAddress);
@@ -32,14 +33,8 @@ export async function processV4Initialize(params: {
     sqrtPriceX96: params.sqrtPriceX96,
     tickSpacing: params.tickSpacing,
     tick: params.tick,
-    permit2: V4Permit2Address.forProtocol({
-      network: params.chainId,
-      protocol: params.protocol,
-    }),
-    stateView: V4StateViewAddress.forProtocol({
-      network: params.chainId,
-      protocol: params.protocol,
-    }),
+    permit2: PERMIT2_ADDRESS[params.protocol]![params.chainId]!,
+    stateView: V4_STATE_VIEW_ADDRESS[params.protocol]![params.chainId],
   });
 
   const { token0Entity, token1Entity } = await processNewPool({
