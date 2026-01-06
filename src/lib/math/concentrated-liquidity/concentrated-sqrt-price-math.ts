@@ -2,6 +2,7 @@ import { BigDecimal, type Token as TokenEntity } from "generated";
 import { ONE_BIG_DECIMAL, ONE_BIG_INT, Q96 } from "../../../core/constants";
 import type { PoolPrices } from "../../../core/types";
 import { mulDivRoundingUp } from "../math-extended";
+import { SafeMath } from "../safe-math";
 import { TokenDecimalMath } from "../token/token-decimal-math";
 
 const Q192_BIG_INT = 0x1000000000000000000000000000000000000000000000000n;
@@ -35,7 +36,7 @@ function _convertSqrtPriceX96ToPoolPrices(params: {
     tokens1PerToken0 = priceRaw.div(adjuster);
   }
 
-  const tokens0PerToken1 = ONE_BIG_DECIMAL.div(tokens1PerToken0);
+  const tokens0PerToken1 = SafeMath.div(ONE_BIG_DECIMAL, tokens1PerToken0);
 
   return { tokens0PerToken1, tokens1PerToken0 };
 }
