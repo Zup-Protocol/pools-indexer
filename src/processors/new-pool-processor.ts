@@ -67,41 +67,16 @@ export async function processNewPool(params: {
     url: protocolMetadata.url,
   });
 
-  params.context.PoolTimeframedStats.set(
-    new InitialPoolTimeframedStatsEntity({
-      id: EntityId.build24hStatsId(params.network, params.poolAddress),
-      dataPointTimestamp: BigInt(params.eventBlock.timestamp),
-      poolId: poolEntity.id,
-      timeframe: "DAY",
-    })
-  );
-
-  params.context.PoolTimeframedStats.set(
-    new InitialPoolTimeframedStatsEntity({
-      id: EntityId.build7dStatsId(params.network, params.poolAddress),
-      dataPointTimestamp: BigInt(params.eventBlock.timestamp),
-      poolId: poolEntity.id,
-      timeframe: "WEEK",
-    })
-  );
-
-  params.context.PoolTimeframedStats.set(
-    new InitialPoolTimeframedStatsEntity({
-      id: EntityId.build30dStatsId(params.network, params.poolAddress),
-      dataPointTimestamp: BigInt(params.eventBlock.timestamp),
-      poolId: poolEntity.id,
-      timeframe: "MONTH",
-    })
-  );
-
-  params.context.PoolTimeframedStats.set(
-    new InitialPoolTimeframedStatsEntity({
-      id: EntityId.build90dStatsId(params.network, params.poolAddress),
-      dataPointTimestamp: BigInt(params.eventBlock.timestamp),
-      poolId: poolEntity.id,
-      timeframe: "QUARTER",
-    })
-  );
+  EntityId.buildAllTimeframedStatsIds(params.network, params.poolAddress).forEach((id) => {
+    params.context.PoolTimeframedStats.set(
+      new InitialPoolTimeframedStatsEntity({
+        id: id.id,
+        dataPointTimestamp: BigInt(params.eventBlock.timestamp),
+        poolId: poolEntity.id,
+        timeframe: id.timeframe,
+      })
+    );
+  });
 
   return {
     poolEntity,
