@@ -35,9 +35,9 @@ function _convertTokenAmountToTrackedUsd(params: {
   const isToken1PriceDiscoveryCapitalLoverThanTVL = poolToken1.trackedPriceDiscoveryCapitalUsd.lt(tvl1Usd);
 
   if (
-    !isToken0PriceDiscoveryCapitalLowerThanTVL &&
+    isToken0PriceDiscoveryCapitalLowerThanTVL &&
     !isToken0Trusted &&
-    !isToken1PriceDiscoveryCapitalLoverThanTVL &&
+    isToken1PriceDiscoveryCapitalLoverThanTVL &&
     !isToken1Trusted
   ) {
     return params.fallbackUsdValue;
