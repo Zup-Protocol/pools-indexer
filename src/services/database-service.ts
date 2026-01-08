@@ -90,9 +90,11 @@ async function getOldestPoolHourlyDataAgo(
   context: HandlerContext,
   pool: PoolEntity
 ): Promise<PoolHistoricalDataEntity | undefined> {
+  if (pool.lastActivityTimestamp < subtractHoursFromSecondsTimestamp(eventTimestamp, hoursAgo)) return;
+
   for (let hour = hoursAgo; hour >= 0; hour--) {
     const timestamp = subtractHoursFromSecondsTimestamp(eventTimestamp, hour);
-    if (timestamp < pool.createdAtTimestamp || pool.lastActivityTimestamp < timestamp) return;
+    if (timestamp < pool.createdAtTimestamp) continue;
 
     const data = await context.PoolHistoricalData.get(
       EntityId.buildHourlyDataId(timestamp, pool.chainId, pool.poolAddress)
@@ -108,9 +110,11 @@ async function getOldestPoolDailyDataAgo(
   context: HandlerContext,
   pool: PoolEntity
 ): Promise<PoolHistoricalDataEntity | undefined> {
+  if (pool.lastActivityTimestamp < subtractDaysFromSecondsTimestamp(eventTimestamp, daysAgo)) return;
+
   for (let day = daysAgo; day >= 0; day--) {
     const timestamp = subtractDaysFromSecondsTimestamp(eventTimestamp, day);
-    if (timestamp < pool.createdAtTimestamp || pool.lastActivityTimestamp < timestamp) return;
+    if (timestamp < pool.createdAtTimestamp) continue;
 
     const data = await context.PoolHistoricalData.get(
       EntityId.buildDailyDataId(timestamp, pool.chainId, pool.poolAddress)
