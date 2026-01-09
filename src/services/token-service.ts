@@ -7,6 +7,7 @@ import { BlockchainService } from "./blockchain-service";
 export const TokenService = {
   async getMultiRemoteMetadata(addresses: string[], network: IndexerNetwork): Promise<TokenMetadata[]> {
     const client = BlockchainService.getClient(network);
+
     const contracts = addresses.flatMap((address) => [
       {
         address: address as `0x${string}`,
