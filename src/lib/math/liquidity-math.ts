@@ -144,23 +144,15 @@ export function calculateNewLockedAmountsUSD(params: {
 
   const updatedToken0TotalPooledAmount = params.token0.tokenTotalValuePooled;
   const updatedToken0TotalPooledAmountUSD = updatedToken0TotalPooledAmount.times(params.token0.usdPrice);
-  const updatedToken0TrackedTotalPooledAmountUSD = PriceConverter.convertTokenAmountToTrackedUsd({
-    amount: updatedToken0TotalPooledAmount,
-    token: params.token0,
-    poolEntity: params.poolEntity,
-    comparisonToken: params.token1,
-    fallbackUsdValue: params.token0.poolsCount === 1 ? ZERO_BIG_DECIMAL : params.token0.totalValuePooledUsd,
-  });
+  const updatedTrackedToken0TotalPooledAmountUSD = params.token0.trackedTotalValuePooledUsd
+    .minus(params.poolEntity.trackedTotalValueLockedToken0Usd)
+    .plus(updatedTrackedPoolTotalValueLockedToken0USD);
 
   const updatedToken1TotalPooledAmount = params.token1.tokenTotalValuePooled;
   const updatedToken1TotalPooledAmountUSD = updatedToken1TotalPooledAmount.times(params.token1.usdPrice);
-  const updatedTrackedToken1TotalPooledAmountUSD = PriceConverter.convertTokenAmountToTrackedUsd({
-    amount: updatedToken1TotalPooledAmount,
-    token: params.token1,
-    poolEntity: params.poolEntity,
-    comparisonToken: params.token0,
-    fallbackUsdValue: params.token1.poolsCount === 1 ? ZERO_BIG_DECIMAL : params.token1.totalValuePooledUsd,
-  });
+  const updatedTrackedToken1TotalPooledAmountUSD = params.token1.trackedTotalValuePooledUsd
+    .minus(params.poolEntity.trackedTotalValueLockedToken1Usd)
+    .plus(updatedTrackedPoolTotalValueLockedToken1USD);
 
   const isNewTrackedTvlCloseToRealTVL = isPercentageDifferenceWithinThreshold(
     updatedTrackedPoolTotalValueLockedUSD,
@@ -179,7 +171,7 @@ export function calculateNewLockedAmountsUSD(params: {
           newTrackedPoolTotalValueLockedToken0USD: updatedTrackedPoolTotalValueLockedToken0USD,
           newTrackedPoolTotalValueLockedToken1USD: updatedTrackedPoolTotalValueLockedToken1USD,
           newTrackedPoolTotalValueLockedUSD: updatedTrackedPoolTotalValueLockedUSD,
-          newTrackedToken0TotalPooledAmountUSD: updatedToken0TrackedTotalPooledAmountUSD,
+          newTrackedToken0TotalPooledAmountUSD: updatedTrackedToken0TotalPooledAmountUSD,
           newTrackedToken1TotalPooledAmountUSD: updatedTrackedToken1TotalPooledAmountUSD,
         }
       : {
