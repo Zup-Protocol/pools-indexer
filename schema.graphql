@@ -18,35 +18,49 @@ enum StatsTimeframe {
   QUARTER
 }
 
-type Token {
+type Token
+  @index(fields: ["name", "trackedTotalValuePooledUsd"])
+  @index(fields: ["symbol", "trackedTotalValuePooledUsd"])
+  @index(fields: ["chainId", "trackedTotalValuePooledUsd"]) {
   id: ID!
   tokenAddress: String! @index
+
   usdPrice: BigDecimal!
   trackedUsdPrice: BigDecimal!
   trackedPriceDiscoveryCapitalUsd: BigDecimal!
   decimals: Int!
+
   totalValuePooledUsd: BigDecimal!
-  trackedTotalValuePooledUsd: BigDecimal!
+  trackedTotalValuePooledUsd: BigDecimal! @index
+
   tokenTotalValuePooled: BigDecimal!
+
   swapVolumeUsd: BigDecimal!
-  trackedSwapVolumeUsd: BigDecimal!
+  trackedSwapVolumeUsd: BigDecimal! @index
+
   tokenSwapVolume: BigDecimal!
+
   liquidityVolumeUsd: BigDecimal!
-  trackedLiquidityVolumeUsd: BigDecimal!
+  trackedLiquidityVolumeUsd: BigDecimal! @index
+
   tokenLiquidityVolume: BigDecimal!
   tokenFees: BigDecimal!
   feesUsd: BigDecimal!
   trackedFeesUsd: BigDecimal!
-  symbol: String!
-  name: String!
+
+  symbol: String! @index
+  name: String! @index
   chainId: Int! @index
-  poolsCount: Int!
-  swapsCount: Int!
+
+  poolsCount: Int! @index
+  swapsCount: Int! @index
   swapsInCount: Int!
   swapsOutCount: Int!
 }
 
-type Pool @index(fields: ["token0", "token1", "totalValueLockedUsd"]) {
+type Pool
+  @index(fields: ["chainId", "trackedTotalValueLockedUsd"])
+  @index(fields: ["token0", "token1", "trackedTotalValueLockedUsd"]) {
   id: ID!
   poolAddress: String! @index
 
@@ -72,10 +86,11 @@ type Pool @index(fields: ["token0", "token1", "totalValueLockedUsd"]) {
 
   createdAtBlock: BigInt!
   createdAtTimestamp: BigInt! @config(precision: 12)
+
   lastActivityBlock: BigInt! @index
   lastActivityTimestamp: BigInt! @config(precision: 12)
 
-  totalValueLockedUsd: BigDecimal!
+  totalValueLockedUsd: BigDecimal! @index
   totalValueLockedToken0: BigDecimal!
   totalValueLockedToken1: BigDecimal!
   totalValueLockedToken0Usd: BigDecimal!
@@ -166,30 +181,29 @@ type PoolTimeframedStats {
   pool: Pool! @index
   timeframe: StatsTimeframe!
 
-  dataPointTimestamp: BigInt! @index @config(precision: 12)
+  dataPointTimestamp: BigInt! @config(precision: 12)
   lastRefreshTimestamp: BigInt! @config(precision: 12)
 
   liquidityNetInflowUsd: BigDecimal!
-  trackedLiquidityNetInflowUsd: BigDecimal!
+  trackedLiquidityNetInflowUsd: BigDecimal! @index
 
   swapVolumeUsd: BigDecimal!
-  trackedSwapVolumeUsd: BigDecimal!
+  trackedSwapVolumeUsd: BigDecimal! @index
 
   liquidityVolumeUsd: BigDecimal!
-  trackedLiquidityVolumeUsd: BigDecimal!
+  trackedLiquidityVolumeUsd: BigDecimal! @index
 
   feesUsd: BigDecimal!
-  trackedFeesUsd: BigDecimal!
+  trackedFeesUsd: BigDecimal! @index
 
-  yearlyYield: BigDecimal! @config(precision: 18, scale: 6)
+  yearlyYield: BigDecimal! @index @config(precision: 18, scale: 6)
   accumulatedYield: BigDecimal! @config(precision: 18, scale: 6)
 }
 
-type PoolHistoricalData {
+type PoolHistoricalData @index(fields: ["pool", "interval", "timestampAtStart"]) {
   id: ID!
-  pool: Pool!
-
-  interval: HistoricalDataInterval!
+  pool: Pool! @index
+  interval: HistoricalDataInterval! @index
 
   timestampAtStart: BigInt! @index @config(precision: 12)
   timestampAtEnd: BigInt! @config(precision: 12)
