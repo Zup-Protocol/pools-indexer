@@ -10,10 +10,17 @@ const tableRows = protocols
     const metadata = SupportedProtocol.metadata[protocol as SupportedProtocol];
     if (!metadata) {
       console.warn(`Missing metadata for protocol: ${protocol}`);
-      return `| ${protocol} | ${protocol} | - |`;
+      return null;
     }
-    return `| ${metadata.name} | ${protocol} | ${metadata.url} |`;
+    return {
+      name: metadata.name,
+      id: protocol,
+      url: metadata.url,
+    };
   })
+  .filter((item): item is NonNullable<typeof item> => item !== null)
+  .sort((a, b) => a.name.localeCompare(b.name))
+  .map((item) => `| ${item.name} | ${item.id} | ${item.url} |`)
   .join("\n");
 
 console.log(`${tableHeader}\n${tableRows}`);
