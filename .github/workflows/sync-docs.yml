@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "src/core/protocol/supported-protocol.ts"
+  workflow_dispatch:
+
 jobs:
   sync-docs:
     runs-on: ubuntu-latest
