@@ -25,7 +25,8 @@
     "nyc": "^17.1.0",
     "sinon": "^21.0.0",
     "tsx": "4.21.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "tsconfig-paths": "^4.2.0"
   },
   "dependencies": {
     "envio": "3.0.0-alpha.4",

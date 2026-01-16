@@ -1,0 +1,49 @@
+name: Sync Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/core/protocol/supported-protocol.ts"
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Checkout Docs Repo
+        uses: actions/checkout@v4
+        with:
+          repository: hydric-org/docs
+          token: ${{ secrets.SYNC_DOCS_PAT }}
+          path: docs-repo
+          persist-credentials: true
+
+      - name: Generate Protocol Docs
+        run: |
+          mkdir -p docs-repo/snippets/supported-protocols
+          npx tsx scripts/generate-protocol-docs.ts > docs-repo/snippets/supported-protocols/liquidity-pools.mdx
+
+      - name: Commit and Push
+        working-directory: docs-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add snippets/supported-protocols/liquidity-pools.mdx
+          git commit -m "chore: update supported protocols" || echo "No changes to commit"
+          git push
