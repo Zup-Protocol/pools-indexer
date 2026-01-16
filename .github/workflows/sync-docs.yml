@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "src/core/protocol/supported-protocol.ts"
+      - "scripts/generate-protocol-docs.ts"
   workflow_dispatch:
 
 jobs:
