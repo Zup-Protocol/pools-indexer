@@ -130,7 +130,6 @@ export namespace IndexerNetwork {
     [IndexerNetwork.PLASMA]: 1,
     [IndexerNetwork.MONAD]: 0.4,
   };
-  
 
   export const oneDayInBlocks: Record<IndexerNetwork, number> = {
     [IndexerNetwork.ETHEREUM]: ONE_DAY_IN_SECONDS / IndexerNetwork.meanBlockTimeSeconds[IndexerNetwork.ETHEREUM],
