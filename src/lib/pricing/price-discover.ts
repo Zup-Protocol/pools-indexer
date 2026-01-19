@@ -1,4 +1,4 @@
-import type { BigDecimal, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import { BigDecimal, type Pool as PoolEntity, type Token as TokenEntity } from "generated";
 import {
   MAX_TVL_IMBALANCE_PERCENTAGE,
   OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
@@ -177,13 +177,13 @@ function calculateValidatedMarketPrices(params: {
   const isSuggestedPrice0CloseToSwapPrice = isPercentageDifferenceWithinThreshold(
     suggestedPrice0,
     swapPrice0,
-    OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD
+    OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
   );
 
   const isSuggestedPrice1CloseToSwapPrice = isPercentageDifferenceWithinThreshold(
     suggestedPrice1,
     swapPrice1,
-    OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD
+    OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
   );
 
   return {
@@ -347,9 +347,11 @@ function _resolveTrackedPricesForNewPrices(params: {
 }
 
 function _canPoolDiscoverTokenPrice(params: { poolEntity: PoolEntity; tokenEntity: TokenEntity }): boolean {
-  if (params.tokenEntity.poolsCount === 1) return true;
+  if (params.tokenEntity.poolsCount === 1n) return true;
 
-  const averageLiquidityPerPool = params.tokenEntity.tokenTotalValuePooled.div(params.tokenEntity.poolsCount);
+  const averageLiquidityPerPool = params.tokenEntity.tokenTotalValuePooled.div(
+    BigDecimal(params.tokenEntity.poolsCount.toString()),
+  );
   const amountInPool =
     params.poolEntity.token0_id === params.tokenEntity.id
       ? params.poolEntity.totalValueLockedToken0

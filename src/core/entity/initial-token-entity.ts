@@ -11,7 +11,7 @@ export class InitialTokenEntity implements TokenEntity {
       decimals: number;
       symbol: string;
       name: string;
-    }
+    },
   ) {
     this.tokenAddress = params.tokenAddress;
     this.chainId = params.network;
@@ -45,9 +45,9 @@ export class InitialTokenEntity implements TokenEntity {
   readonly tokenSwapVolume: BigDecimal = ZERO_BIG_DECIMAL;
   readonly totalValuePooledUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly usdPrice: BigDecimal = ZERO_BIG_DECIMAL;
-  readonly poolsCount: number = 0;
+  readonly poolsCount: bigint = 0n;
   readonly tokenTotalValuePooled: BigDecimal = ZERO_BIG_DECIMAL;
-  readonly swapsCount: number = 0;
-  readonly swapsInCount: number = 0;
-  readonly swapsOutCount: number = 0;
+  readonly swapsCount: bigint = 0n;
+  readonly swapsInCount: bigint = 0n;
+  readonly swapsOutCount: bigint = 0n;
 }

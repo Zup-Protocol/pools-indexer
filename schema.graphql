@@ -52,10 +52,10 @@ type Token
   name: String! @index
   chainId: Int! @index
 
-  poolsCount: Int! @index
-  swapsCount: Int! @index
-  swapsInCount: Int!
-  swapsOutCount: Int!
+  poolsCount: @index BigInt! @config(precision: 18)
+  swapsCount: @index BigInt! @config(precision: 18)
+  swapsInCount: BigInt! @config(precision: 18)
+  swapsOutCount: BigInt! @config(precision: 18)
 }
 
 type Pool
@@ -134,7 +134,7 @@ type Pool
   totalStats30d: PoolTimeframedStats!
   totalStats90d: PoolTimeframedStats!
 
-  swapsCount: Int!
+  swapsCount: BigInt! @config(precision: 18)
 
   tokens0PerToken1: BigDecimal!
   tokens1PerToken0: BigDecimal!

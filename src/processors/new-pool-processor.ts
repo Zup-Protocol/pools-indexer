@@ -48,12 +48,12 @@ export async function processNewPool(params: {
 
   token0Entity = {
     ...token0Entity,
-    poolsCount: token0Entity.poolsCount + 1,
+    poolsCount: token0Entity.poolsCount + 1n,
   };
 
   token1Entity = {
     ...token1Entity,
-    poolsCount: token1Entity.poolsCount + 1,
+    poolsCount: token1Entity.poolsCount + 1n,
   };
 
   params.context.Pool.set(poolEntity);
@@ -74,7 +74,7 @@ export async function processNewPool(params: {
         dataPointTimestamp: BigInt(params.eventBlock.timestamp),
         poolId: poolEntity.id,
         timeframe: id.timeframe,
-      })
+      }),
     );
   });
 

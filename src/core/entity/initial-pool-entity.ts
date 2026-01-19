@@ -19,7 +19,7 @@ export class InitialPoolEntity implements PoolEntity {
       | "token0_id"
       | "token1_id"
       | "createdAtBlock"
-    >
+    >,
   ) {
     this.createdAtTimestamp = params.createdAtTimestamp;
     this.createdAtBlock = params.createdAtBlock;
@@ -93,7 +93,7 @@ export class InitialPoolEntity implements PoolEntity {
   readonly trackedLiquidityNetInflowUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly tokens0PerToken1: BigDecimal = ZERO_BIG_DECIMAL;
   readonly tokens1PerToken0: BigDecimal = ZERO_BIG_DECIMAL;
-  readonly swapsCount: number = 0;
+  readonly swapsCount: bigint = 0n;
   readonly token0SwapOutCapacity: BigDecimal = ZERO_BIG_DECIMAL;
   readonly token0SwapOutCapacityUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly token1SwapOutCapacity: BigDecimal = ZERO_BIG_DECIMAL;
