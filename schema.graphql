@@ -52,8 +52,8 @@ type Token
   name: String! @index
   chainId: Int! @index
 
-  poolsCount: @index BigInt! @config(precision: 18)
-  swapsCount: @index BigInt! @config(precision: 18)
+  poolsCount: BigInt! @index @config(precision: 18)
+  swapsCount: BigInt! @index @config(precision: 18)
   swapsInCount: BigInt! @config(precision: 18)
   swapsOutCount: BigInt! @config(precision: 18)
 }
