@@ -1,21 +1,20 @@
-import { onBlock, type HandlerContext, type Pool as PoolEntity } from "generated";
+import { indexer, onBlock, type HandlerContext, type Pool as PoolEntity } from "generated";
 import { maxUint256 } from "viem";
 import { IndexerNetwork } from "../core/network";
 import { processPoolTimeframedStatsUpdate } from "../processors/pool-timeframed-stats-update-processor";
 import { DatabaseService } from "../services/database-service";
 
-Object.values(IndexerNetwork.dailyAutoUpdateBlockHandlerParams).forEach(({ chain, startBlock, interval }) => {
+indexer.chainIds.forEach((chainId) => {
   onBlock(
     {
       name: "daily-pools-auto-update-block-handler",
-      chain,
-      startBlock,
-      interval,
+      chain: chainId,
+      interval: IndexerNetwork.oneDayInBlocks[chainId],
     },
     async ({ block, context }) => {
       const nowAsSecondsTimestamp = BigInt(Math.floor(Date.now() / 1000));
 
-      const oneDayInBlocks = interval!;
+      const oneDayInBlocks = IndexerNetwork.oneDayInBlocks[chainId];
       const sevenDaysInBlocks = oneDayInBlocks * 7;
       const thirtyDaysInBlocks = oneDayInBlocks * 30;
       const ninetyDaysInBlocks = oneDayInBlocks * 90;
@@ -42,9 +41,9 @@ Object.values(IndexerNetwork.dailyAutoUpdateBlockHandlerParams).forEach(({ chain
             eventTimestamp: nowAsSecondsTimestamp,
             poolEntity: pool,
           });
-        })
+        }),
       );
-    }
+    },
   );
 });
 
