@@ -47,8 +47,8 @@ export const TokenService = {
 
       return {
         decimals: decimals,
-        symbol: String.sanitize(symbol),
-        name: String.sanitize(name),
+        symbol: String.truncateWithEllipsis(String.sanitize(symbol), 255),
+        name: String.truncateWithEllipsis(String.sanitize(name), 255),
       };
     });
   },
