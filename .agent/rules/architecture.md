@@ -4,7 +4,7 @@ trigger: always_on
 
 # Pools Indexer Architecture
 
-This document defines the structural integrity and engineering standards for the Hydric Pools Indexer. Adherence to these boundaries ensures scalability across multiple DEX protocols and networks.
+This document defines the structural integrity and engineering standards for the Pools Indexer. Adherence to these boundaries ensures scalability across multiple DEX protocols and networks.
 
 ---
 
@@ -63,4 +63,4 @@ To prevent "spaghetti code," the following dependency rules are strictly enforce
 
 ## 5. Architectural Intent
 
-This structure ensures that adding a new DEX protocol only requires adding a new `handler` and a `specific processor`. The `Global Processors` and `Core` setup remain untouched, ensuring the indexer grows without increasing complexity.
+This structure ensures that adding a new DEX protocol that has a supported pool type requires adding a new `handler` and a `specific processor` (if needs personalization). The `Global Processors` and `Core` setup remain untouched, ensuring the indexer grows without increasing complexity.
