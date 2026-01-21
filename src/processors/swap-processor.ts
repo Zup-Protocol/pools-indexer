@@ -90,11 +90,16 @@ export async function processSwap(params: {
       pool: poolEntity,
     });
 
+  const didToken0UsdPriceUpdate = !token0MarketUsdPrice.eq(token0Entity.usdPrice);
+  const didToken1UsdPriceUpdate = !token1MarketUsdPrice.eq(token1Entity.usdPrice);
+  const didToken0TrackedUsdPriceUpdate = !trackedToken0MarketUsdPrice.eq(token0Entity.trackedUsdPrice);
+  const didToken1TrackedUsdPriceUpdate = !trackedToken1MarketUsdPrice.eq(token1Entity.trackedUsdPrice);
+
   token0Entity = {
     ...token0Entity,
     usdPrice: token0MarketUsdPrice,
     trackedUsdPrice: trackedToken0MarketUsdPrice,
-    trackedPriceDiscoveryCapitalUsd: !trackedToken0MarketUsdPrice.eq(token0Entity.trackedUsdPrice)
+    trackedPriceDiscoveryCapitalUsd: didToken0TrackedUsdPriceUpdate
       ? BigDecimal.min(
           token0Entity.trackedPriceDiscoveryCapitalUsd.plus(
             poolEntity.totalValueLockedToken1.times(trackedToken1MarketUsdPrice),
@@ -108,7 +113,7 @@ export async function processSwap(params: {
     ...token1Entity,
     usdPrice: token1MarketUsdPrice,
     trackedUsdPrice: trackedToken1MarketUsdPrice,
-    trackedPriceDiscoveryCapitalUsd: !trackedToken1MarketUsdPrice.eq(token1Entity.trackedUsdPrice)
+    trackedPriceDiscoveryCapitalUsd: didToken1TrackedUsdPriceUpdate
       ? BigDecimal.min(
           token1Entity.trackedPriceDiscoveryCapitalUsd.plus(
             poolEntity.totalValueLockedToken0.times(trackedToken0MarketUsdPrice),
@@ -177,6 +182,16 @@ export async function processSwap(params: {
 
     accumulatedYield: poolEntity.accumulatedYield.plus(swapYield),
     swapsCount: poolEntity.swapsCount + 1n,
+
+    token0UsdPrice: didToken0UsdPriceUpdate ? token0MarketUsdPrice : poolEntity.token0UsdPrice,
+    token1UsdPrice: didToken1UsdPriceUpdate ? token1MarketUsdPrice : poolEntity.token1UsdPrice,
+
+    trackedToken0UsdPrice: didToken0TrackedUsdPriceUpdate
+      ? trackedToken0MarketUsdPrice
+      : poolEntity.trackedToken0UsdPrice,
+    trackedToken1UsdPrice: didToken1TrackedUsdPriceUpdate
+      ? trackedToken1MarketUsdPrice
+      : poolEntity.trackedToken1UsdPrice,
   };
 
   token0Entity = {

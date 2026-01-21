@@ -138,6 +138,10 @@ type Pool
 
   tokens0PerToken1: BigDecimal!
   tokens1PerToken0: BigDecimal!
+  token0UsdPrice: BigDecimal!
+  token1UsdPrice: BigDecimal!
+  trackedToken0UsdPrice: BigDecimal!
+  trackedToken1UsdPrice: BigDecimal!
 }
 
 type V3PoolData {
