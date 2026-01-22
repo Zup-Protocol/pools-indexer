@@ -18,14 +18,15 @@
     "@types/node": "20.8.8",
     "@types/sinon": "^17.0.4",
     "chai": "4.3.10",
-    "vitest": "4.0.16",
     "sinon": "^21.0.0",
+    "tsconfig-paths": "^4.2.0",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "tsconfig-paths": "^4.2.0"
+    "vitest": "4.0.16"
   },
   "dependencies": {
     "envio": "3.0.0-alpha.10",
+    "transliteration": "^2.6.1",
     "viem": "^2.43.4"
   },
   "optionalDependencies": {

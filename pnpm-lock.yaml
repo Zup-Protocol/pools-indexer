@@ -11,6 +11,9 @@ importers:
       envio:
         specifier: 3.0.0-alpha.10
         version: 3.0.0-alpha.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+      transliteration:
+        specifier: ^2.6.1
+        version: 2.6.1
       viem:
         specifier: ^2.43.4
         version: 2.43.4(typescript@5.9.3)
@@ -1444,6 +1447,11 @@ packages:
   toidentifier@1.0.1:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
+
+  transliteration@2.6.1:
+    resolution: {integrity: sha512-hJ9BhrQAOnNTbpOr1MxsNjZISkn7ppvF5TKUeFmTE1mG4ZPD/XVxF0L0LUoIUCWmQyxH0gJpVtfYLAWf298U9w==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
 
   tsconfig-paths@4.2.0:
     resolution: {integrity: sha512-NoZ4roiN7LnbKn9QqE1amc9DJfzvZXxF4xDavcOWt1BPkdx+m+0gJuPM+S0vCe7zTJMYUP0R8pO2XMr+Y8oLIg==}
@@ -2948,6 +2956,8 @@ snapshots:
   tinyrainbow@3.0.3: {}
 
   toidentifier@1.0.1: {}
+
+  transliteration@2.6.1: {}
 
   tsconfig-paths@4.2.0:
     dependencies:
