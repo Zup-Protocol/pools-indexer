@@ -11,9 +11,9 @@ importers:
       envio:
         specifier: 3.0.0-alpha.10
         version: 3.0.0-alpha.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
-      transliteration:
-        specifier: ^2.6.1
-        version: 2.6.1
+      unidecode-plus:
+        specifier: ^1.0.5
+        version: 1.0.5
       viem:
         specifier: ^2.43.4
         version: 2.43.4(typescript@5.9.3)
@@ -1448,11 +1448,6 @@ packages:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
 
-  transliteration@2.6.1:
-    resolution: {integrity: sha512-hJ9BhrQAOnNTbpOr1MxsNjZISkn7ppvF5TKUeFmTE1mG4ZPD/XVxF0L0LUoIUCWmQyxH0gJpVtfYLAWf298U9w==}
-    engines: {node: '>=20.0.0'}
-    hasBin: true
-
   tsconfig-paths@4.2.0:
     resolution: {integrity: sha512-NoZ4roiN7LnbKn9QqE1amc9DJfzvZXxF4xDavcOWt1BPkdx+m+0gJuPM+S0vCe7zTJMYUP0R8pO2XMr+Y8oLIg==}
     engines: {node: '>=6'}
@@ -1485,6 +1480,10 @@ packages:
 
   undici-types@5.25.3:
     resolution: {integrity: sha512-Ga1jfYwRn7+cP9v8auvEXN1rX3sWqlayd4HP7OKk4mZWylEmu3KzXDUGrQUN6Ol7qo1gPvB2e5gX6udnyEPgdA==}
+
+  unidecode-plus@1.0.5:
+    resolution: {integrity: sha512-wOSzKIeWZjVNijNO/6RAUUBnRkZFC1IRrHcO8Qn7wTLwlC9IfO4kTaz0uaaMeSi3ZnaLPB28gvRApf2BdNU17A==}
+    engines: {node: '>= 0.10'}
 
   unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
@@ -2957,8 +2956,6 @@ snapshots:
 
   toidentifier@1.0.1: {}
 
-  transliteration@2.6.1: {}
-
   tsconfig-paths@4.2.0:
     dependencies:
       json5: 2.2.3
@@ -2986,6 +2983,8 @@ snapshots:
   typescript@5.9.3: {}
 
   undici-types@5.25.3: {}
+
+  unidecode-plus@1.0.5: {}
 
   unpipe@1.0.0: {}
 

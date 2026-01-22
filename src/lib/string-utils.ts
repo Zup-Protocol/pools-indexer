@@ -1,4 +1,4 @@
-import { transliterate as originalTransliterate } from "transliteration";
+import unidecode from "unidecode-plus";
 import { EMOJI_REGEX } from "../core/constants";
 
 export const String = {
@@ -22,7 +22,7 @@ export const String = {
       return value.split(EMOJI_REGEX).reduce((acc, part, i) => {
         const matches = value.match(EMOJI_REGEX) || [];
 
-        const transliteratedPart = originalTransliterate(part);
+        const transliteratedPart = unidecode(part);
 
         const emoji = matches[i] || "";
 
@@ -30,6 +30,6 @@ export const String = {
       }, "");
     }
 
-    return originalTransliterate(value);
+    return unidecode(value);
   },
 };

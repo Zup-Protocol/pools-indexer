@@ -19,8 +19,8 @@ export class InitialTokenEntity implements SingleChainTokenEntity {
     this.decimals = params.decimals;
     this.symbol = params.symbol;
     this.name = params.name;
-    this.latinSymbol = String.transliterate(params.symbol, { ignoreEmojis: true });
-    this.latinName = String.transliterate(params.name, { ignoreEmojis: true });
+    this.normalizedSymbol = String.transliterate(params.symbol, { ignoreEmojis: true });
+    this.normalizedName = String.transliterate(params.name, { ignoreEmojis: true });
 
     this.id = EntityId.fromAddress(params.network, params.tokenAddress);
   }
@@ -31,8 +31,8 @@ export class InitialTokenEntity implements SingleChainTokenEntity {
   readonly name: string;
   readonly symbol: string;
   readonly tokenAddress: string;
-  readonly latinName: string;
-  readonly latinSymbol: string;
+  readonly normalizedName: string;
+  readonly normalizedSymbol: string;
 
   readonly trackedPriceDiscoveryCapitalUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly trackedUsdPrice: BigDecimal = ZERO_BIG_DECIMAL;
