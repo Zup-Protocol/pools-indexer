@@ -1,5 +1,5 @@
 import type { BigDecimal, SingleChainToken as SingleChainTokenEntity } from "generated";
-import { transliterate } from "transliteration";
+import { String } from "../../lib/string-utils";
 import { ZERO_BIG_DECIMAL } from "../constants";
 import { IndexerNetwork } from "../network";
 import { EntityId } from "./entity-id";
@@ -19,8 +19,8 @@ export class InitialTokenEntity implements SingleChainTokenEntity {
     this.decimals = params.decimals;
     this.symbol = params.symbol;
     this.name = params.name;
-    this.latinSymbol = transliterate(params.symbol, { trim: true });
-    this.latinName = transliterate(params.name, { trim: true });
+    this.latinSymbol = String.transliterate(params.symbol, { ignoreEmojis: true });
+    this.latinName = String.transliterate(params.name, { ignoreEmojis: true });
 
     this.id = EntityId.fromAddress(params.network, params.tokenAddress);
   }

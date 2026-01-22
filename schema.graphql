@@ -19,8 +19,9 @@ enum StatsTimeframe {
 }
 
 type SingleChainToken
-  @index(fields: ["name", "trackedTotalValuePooledUsd"])
-  @index(fields: ["symbol", "trackedTotalValuePooledUsd"])
+  @index(fields: ["name", "latinName", "symbol", "latinSymbol"])
+  @index(fields: ["name", "latinName", "trackedTotalValuePooledUsd"])
+  @index(fields: ["symbol", "latinSymbol", "trackedTotalValuePooledUsd"])
   @index(fields: ["chainId", "trackedTotalValuePooledUsd"]) {
   id: ID!
   tokenAddress: String! @index
@@ -48,8 +49,8 @@ type SingleChainToken
   feesUsd: BigDecimal!
   trackedFeesUsd: BigDecimal!
 
-  symbol: String!
-  name: String!
+  symbol: String! @index
+  name: String! @index
   latinSymbol: String! @index
   latinName: String! @index
   chainId: Int! @index

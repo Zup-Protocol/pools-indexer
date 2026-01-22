@@ -13,6 +13,8 @@ export const FIFTY_BIG_DECIMAL = BigDecimal(50);
 
 export const MAX_IMBALANCE_PERCENTAGE_BIG_DECIMAL = BigDecimal(10_000);
 
+export const EMOJI_REGEX = /\p{Extended_Pictographic}/gu;
+
 export const SWAP_FEE_DENOMINATOR = 1_000_000;
 
 export const ZERO_BIG_INT = BigInt(0);
