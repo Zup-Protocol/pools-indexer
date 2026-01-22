@@ -8,12 +8,10 @@ export function isVariableWithStablePool(
   token1: SingleChainTokenEntity,
   network: IndexerNetwork,
 ): boolean {
-  const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses[network].map<string>((address) =>
-    address.toLowerCase(),
-  );
+  const stablecoinsSet = IndexerNetwork.stablecoinsAddressesSet[network];
 
-  const isToken0Stable = stablecoinsAddressesLowercased.includes(token0.tokenAddress.toLowerCase());
-  const isToken1Stable = stablecoinsAddressesLowercased.includes(token1.tokenAddress.toLowerCase());
+  const isToken0Stable = stablecoinsSet.has(token0.tokenAddress.toLowerCase());
+  const isToken1Stable = stablecoinsSet.has(token1.tokenAddress.toLowerCase());
 
   if ((isToken0Stable && !isToken1Stable) || (!isToken0Stable && isToken1Stable)) return true;
 
@@ -25,12 +23,10 @@ export function isStableOnlyPool(
   token1: SingleChainTokenEntity,
   network: IndexerNetwork,
 ): boolean {
-  const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses[network].map<string>((address) =>
-    address.toLowerCase(),
-  );
+  const stablecoinsSet = IndexerNetwork.stablecoinsAddressesSet[network];
 
-  const isToken0Stable = stablecoinsAddressesLowercased.includes(token0.tokenAddress.toLowerCase());
-  const isToken1Stable = stablecoinsAddressesLowercased.includes(token1.tokenAddress.toLowerCase());
+  const isToken0Stable = stablecoinsSet.has(token0.tokenAddress.toLowerCase());
+  const isToken1Stable = stablecoinsSet.has(token1.tokenAddress.toLowerCase());
 
   if (isToken0Stable && isToken1Stable) return true;
 
@@ -74,11 +70,9 @@ export function isPoolTokenTrusted(token: SingleChainTokenEntity, network: Index
 
   if (isTokenWrappedNative) return true;
 
-  const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses[network].map<string>((address) =>
-    address.toLowerCase(),
-  );
+  const stablecoinsSet = IndexerNetwork.stablecoinsAddressesSet[network];
 
-  const isTokenStablecoin = stablecoinsAddressesLowercased.includes(token.tokenAddress.toLowerCase());
+  const isTokenStablecoin = stablecoinsSet.has(token.tokenAddress.toLowerCase());
   if (isTokenStablecoin) return true;
 
   const isTokenNative = token.tokenAddress === ZERO_ADDRESS;

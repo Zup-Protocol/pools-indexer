@@ -6,7 +6,7 @@ import type {
 } from "generated";
 import type { HistoricalDataInterval_t } from "generated/src/db/Enums.gen";
 import type { HandlerContext } from "generated/src/Types";
-import { ZERO_ADDRESS } from "../core/constants";
+import { ZERO_ADDRESS, ZERO_BIG_INT } from "../core/constants";
 import { getMultiTokenMetadataEffect } from "../core/effects/token-metadata-effect";
 import { EntityId, InitialPoolHistoricalDataEntity, InitialPoolTimeframedStatsEntity } from "../core/entity";
 import { InitialTokenEntity } from "../core/entity/initial-token-entity";
@@ -185,7 +185,7 @@ async function resetAllPoolTimeframedStats(context: HandlerContext, pool: PoolEn
         id: stat.id,
         timeframe: stat.timeframe,
         poolId: pool.id,
-        dataPointTimestamp: BigInt(0),
+        dataPointTimestamp: ZERO_BIG_INT,
       }),
     ),
   );

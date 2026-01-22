@@ -1,5 +1,5 @@
 import { BigDecimal } from "generated";
-import { HUNDRED_BIG_DECIMAL, ZERO_BIG_DECIMAL } from "../../core/constants";
+import { FIFTY_BIG_DECIMAL, HUNDRED_BIG_DECIMAL, TEN_BIG_DECIMAL, ZERO_BIG_DECIMAL } from "../../core/constants";
 import { SafeMath } from "./safe-math";
 
 export function percentageDifference(a: BigDecimal, b: BigDecimal): BigDecimal {
@@ -35,7 +35,12 @@ export function isPercentageDifferenceWithinThreshold(a: BigDecimal, b: BigDecim
   }
 
   const leftSide = diff.times(HUNDRED_BIG_DECIMAL);
-  const rightSide = minVal.times(BigDecimal(threshold.toString()));
+
+  let rightSide: BigDecimal;
+
+  if (threshold === 10) rightSide = minVal.times(TEN_BIG_DECIMAL);
+  else if (threshold === 50) rightSide = minVal.times(FIFTY_BIG_DECIMAL);
+  else rightSide = minVal.times(threshold); // Fallback for custom
 
   return leftSide.lte(rightSide);
 }

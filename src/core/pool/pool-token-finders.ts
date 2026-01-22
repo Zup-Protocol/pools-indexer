@@ -8,12 +8,10 @@ export function findStableToken(
   token1: SingleChainTokenEntity,
   network: IndexerNetwork,
 ): SingleChainTokenEntity {
-  const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses[network].map<string>((address) =>
-    address.toLowerCase(),
-  );
+  const stablecoinsSet = IndexerNetwork.stablecoinsAddressesSet[network];
 
-  const isToken0Stable = stablecoinsAddressesLowercased.includes(token0.tokenAddress.toLowerCase());
-  const isToken1Stable = stablecoinsAddressesLowercased.includes(token1!.tokenAddress.toLowerCase());
+  const isToken0Stable = stablecoinsSet.has(token0.tokenAddress.toLowerCase());
+  const isToken1Stable = stablecoinsSet.has(token1.tokenAddress.toLowerCase());
 
   if (isToken0Stable) return token0;
   if (isToken1Stable) return token1;

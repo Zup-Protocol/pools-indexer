@@ -25,6 +25,7 @@ export class InitialPoolEntity implements PoolEntity {
     this.createdAtBlock = params.createdAtBlock;
     this.lastActivityBlock = params.createdAtBlock;
     this.lastActivityTimestamp = params.createdAtTimestamp;
+    this.lastStatsRefreshTimestamp = 0n;
 
     this.chainId = params.chainId;
     this.poolAddress = params.poolAddress;
@@ -58,6 +59,7 @@ export class InitialPoolEntity implements PoolEntity {
 
   readonly lastActivityBlock: bigint;
   readonly lastActivityTimestamp: bigint;
+  readonly lastStatsRefreshTimestamp: bigint;
   readonly createdAtBlock: bigint;
   readonly createdAtTimestamp: bigint;
 

@@ -109,6 +109,16 @@ export namespace IndexerNetwork {
     ],
   };
 
+  export const stablecoinsAddressesSet: Record<IndexerNetwork, Set<string>> = Object.entries(
+    stablecoinsAddresses,
+  ).reduce(
+    (acc, [network, addresses]) => {
+      acc[Number(network) as IndexerNetwork] = new Set(addresses.map((a) => a.toLowerCase()));
+      return acc;
+    },
+    {} as Record<IndexerNetwork, Set<string>>,
+  );
+
   export const wrappedNativeAddress: Record<IndexerNetwork, string> = {
     [IndexerNetwork.ETHEREUM]: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
     [IndexerNetwork.SCROLL]: "0x5300000000000000000000000000000000000004",

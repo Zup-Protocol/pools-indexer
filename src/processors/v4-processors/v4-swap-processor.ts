@@ -58,6 +58,8 @@ export async function processV4Swap(params: {
     network: params.network,
     poolAddress: params.poolAddress,
     rawSwapFee: params.swapFee,
+    token0Entity: token0Entity,
+    token1Entity: token1Entity,
     newPoolPrices: ConcentratedSqrtPriceMath.convertSqrtPriceX96ToPoolPrices({
       poolToken0: token0Entity,
       poolToken1: token1Entity,

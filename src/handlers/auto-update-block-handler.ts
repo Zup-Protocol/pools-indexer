@@ -18,20 +18,27 @@ indexer.chainIds.forEach((chainId) => {
       const sevenDaysInBlocks = oneDayInBlocks * 7;
       const thirtyDaysInBlocks = oneDayInBlocks * 30;
       const ninetyDaysInBlocks = oneDayInBlocks * 90;
+
+      const oneDayInBlocksBI = BigInt(oneDayInBlocks);
+      const sevenDaysInBlocksBI = BigInt(sevenDaysInBlocks);
+      const thirtyDaysInBlocksBI = BigInt(thirtyDaysInBlocks);
+      const ninetyDaysInBlocksBI = BigInt(ninetyDaysInBlocks);
+
       const block24hAgo = BigInt(block.number - oneDayInBlocks);
+      const currentBlockBI = BigInt(block.number);
 
       const inactivePoolsFor24h = await context.Pool.getWhere.lastActivityBlock.lt(block24hAgo);
 
       await Promise.all(
         inactivePoolsFor24h.map((pool) => {
-          const inactiveBlocks = BigInt(block.number) - pool.lastActivityBlock;
+          const inactiveBlocks = currentBlockBI - pool.lastActivityBlock;
           const activeBlocksSinceCreation = pool.lastActivityBlock - BigInt(pool.createdAtBlock);
 
           if (
-            inactiveBlocks > BigInt(ninetyDaysInBlocks) ||
-            (inactiveBlocks > BigInt(thirtyDaysInBlocks) && activeBlocksSinceCreation < BigInt(thirtyDaysInBlocks)) ||
-            (inactiveBlocks > BigInt(sevenDaysInBlocks) && activeBlocksSinceCreation < BigInt(sevenDaysInBlocks)) ||
-            (inactiveBlocks > BigInt(oneDayInBlocks) && activeBlocksSinceCreation < BigInt(oneDayInBlocks))
+            inactiveBlocks > ninetyDaysInBlocksBI ||
+            (inactiveBlocks > thirtyDaysInBlocksBI && activeBlocksSinceCreation < thirtyDaysInBlocksBI) ||
+            (inactiveBlocks > sevenDaysInBlocksBI && activeBlocksSinceCreation < sevenDaysInBlocksBI) ||
+            (inactiveBlocks > oneDayInBlocksBI && activeBlocksSinceCreation < oneDayInBlocksBI)
           ) {
             return killPoolDailyUpdate(context, pool);
           }

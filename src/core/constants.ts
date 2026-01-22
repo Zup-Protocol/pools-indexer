@@ -7,9 +7,17 @@ export const ONE_BIG_DECIMAL = BigDecimal(1);
 
 export const HUNDRED_BIG_DECIMAL = BigDecimal(100);
 
+export const TEN_BIG_DECIMAL = BigDecimal(10);
+
+export const FIFTY_BIG_DECIMAL = BigDecimal(50);
+
+export const MAX_IMBALANCE_PERCENTAGE_BIG_DECIMAL = BigDecimal(10_000);
+
 export const SWAP_FEE_DENOMINATOR = 1_000_000;
 
 export const ZERO_BIG_INT = BigInt(0);
+
+export const TEN_BIG_INT = BigInt(10);
 
 export const MAX_UINT256 = BigInt(2) ** BigInt(256) - BigInt(1);
 
@@ -20,8 +28,10 @@ export const ONE_BIG_INT = BigInt(1);
 export const Q96 = BigInt(2) ** BigInt(96);
 
 export const ONE_HOUR_IN_SECONDS = 3_600;
+export const ONE_HOUR_IN_SECONDS_BI = BigInt(ONE_HOUR_IN_SECONDS);
 
 export const ONE_DAY_IN_SECONDS = 86_400;
+export const ONE_DAY_IN_SECONDS_BI = BigInt(ONE_DAY_IN_SECONDS);
 
 export const ONE_DAY_IN_HOURS = 24;
 

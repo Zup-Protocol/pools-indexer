@@ -12,11 +12,19 @@ export async function processPoolTimeframedStatsUpdate(params: {
   poolEntity: PoolEntity;
 }) {
   if (isSecondsTimestampMoreThanDaysAgo(params.eventTimestamp, 100)) return;
+  if (!isSecondsTimestampMoreThanHoursAgo(params.poolEntity.lastStatsRefreshTimestamp, 1)) return;
 
   const statsEntities = await DatabaseService.getAllPooltimeframedStatsEntities(params.context, params.poolEntity);
   const updatedStats = await Promise.all(statsEntities.map((stat) => _updatePoolTimeframedStat(stat, params)));
 
   updatedStats.forEach((updatedStat) => params.context.PoolTimeframedStats.set(updatedStat));
+
+  if (updatedStats.length > 0) {
+    params.context.Pool.set({
+      ...params.poolEntity,
+      lastStatsRefreshTimestamp: params.eventTimestamp,
+    });
+  }
 }
 
 async function _updatePoolTimeframedStat(
@@ -25,10 +33,8 @@ async function _updatePoolTimeframedStat(
     context: HandlerContext;
     eventTimestamp: bigint;
     poolEntity: PoolEntity;
-  }
+  },
 ): Promise<PoolTimeframedStats> {
-  if (!isSecondsTimestampMoreThanHoursAgo(stat.lastRefreshTimestamp, 1)) return stat;
-
   const timeframe = stat.timeframe;
   const isRefreshingOneDayStats = timeframe === "DAY";
 
@@ -36,7 +42,7 @@ async function _updatePoolTimeframedStat(
     STATS_TIMEFRAME_IN_HOURS[timeframe],
     params.eventTimestamp,
     params.context,
-    params.poolEntity
+    params.poolEntity,
   );
 
   if (!dataAgo && !isRefreshingOneDayStats) {
@@ -44,14 +50,14 @@ async function _updatePoolTimeframedStat(
       STATS_TIMEFRAME_IN_DAYS[timeframe],
       params.eventTimestamp,
       params.context,
-      params.poolEntity
+      params.poolEntity,
     );
   } else if (!dataAgo) {
     dataAgo = await DatabaseService.getOldestPoolHourlyDataAgo(
       STATS_TIMEFRAME_IN_HOURS[timeframe],
       params.eventTimestamp,
       params.context,
-      params.poolEntity
+      params.poolEntity,
     );
   }
 
@@ -65,11 +71,11 @@ async function _updatePoolTimeframedStat(
       lastRefreshTimestamp: params.eventTimestamp,
       liquidityVolumeUsd: params.poolEntity.liquidityVolumeUsd.minus(dataAgo.liquidityVolumeUsdAtStart),
       trackedLiquidityVolumeUsd: params.poolEntity.trackedLiquidityVolumeUsd.minus(
-        dataAgo.trackedLiquidityVolumeUsdAtStart
+        dataAgo.trackedLiquidityVolumeUsdAtStart,
       ),
       liquidityNetInflowUsd: params.poolEntity.liquidityNetInflowUsd.minus(dataAgo.liquidityNetInflowUsdAtStart),
       trackedLiquidityNetInflowUsd: params.poolEntity.trackedLiquidityNetInflowUsd.minus(
-        dataAgo.trackedLiquidityNetInflowUsdAtStart
+        dataAgo.trackedLiquidityNetInflowUsdAtStart,
       ),
       feesUsd: params.poolEntity.feesUsd.minus(dataAgo.feesUsdAtStart),
       trackedFeesUsd: params.poolEntity.trackedFeesUsd.minus(dataAgo.trackedFeesUsdAtStart),

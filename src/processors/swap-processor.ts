@@ -31,6 +31,8 @@ export async function processSwap(params: {
   eventBlock: Block_t;
   newPoolPrices: PoolPrices;
   rawSwapFee: number;
+  token0Entity?: SingleChainTokenEntity;
+  token1Entity?: SingleChainTokenEntity;
 }) {
   let poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
 
@@ -40,8 +42,12 @@ export async function processSwap(params: {
     PoolTimeframedStatsEntity[],
     PoolHistoricalDataEntity[],
   ] = await Promise.all([
-    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
-    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
+    params.token0Entity
+      ? Promise.resolve(params.token0Entity)
+      : params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.token1Entity
+      ? Promise.resolve(params.token1Entity)
+      : params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
     DatabaseService.getAllPooltimeframedStatsEntities(params.context, poolEntity),
     DatabaseService.getOrCreateHistoricalPoolDataEntities({
       context: params.context,

@@ -51,5 +51,7 @@ export async function processV2Swap(params: {
     newPoolPrices: poolPrice,
     poolAddress: params.poolAddress,
     rawSwapFee: poolEntity.rawCurrentFeeTier,
+    token0Entity: token0Entity,
+    token1Entity: token1Entity,
   });
 }

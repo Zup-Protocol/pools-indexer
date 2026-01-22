@@ -1,22 +1,22 @@
 import type { StatsTimeframe_t } from "generated/src/db/Enums.gen";
-import { ONE_DAY_IN_SECONDS, ONE_HOUR_IN_SECONDS } from "../constants";
+import { ONE_DAY_IN_SECONDS_BI, ONE_HOUR_IN_SECONDS_BI } from "../constants";
 import { IndexerNetwork } from "../network/indexer-network";
 
 export const EntityId = {
   fromAddress(network: IndexerNetwork, address: string): string {
-    return `${network}-${address}`.toLowerCase();
+    return network.toString() + "-" + address.toLowerCase();
   },
 
   buildHourlyDataId(secondsTimestamp: bigint, network: IndexerNetwork, address: string): string {
-    const hourtimestampAtStart = secondsTimestamp - (secondsTimestamp % BigInt(ONE_HOUR_IN_SECONDS));
-    const hourId = hourtimestampAtStart / BigInt(ONE_HOUR_IN_SECONDS);
+    const hourtimestampAtStart = secondsTimestamp - (secondsTimestamp % ONE_HOUR_IN_SECONDS_BI);
+    const hourId = hourtimestampAtStart / ONE_HOUR_IN_SECONDS_BI;
 
     return EntityId.fromAddress(network, `${address}:hour:${hourId}`);
   },
 
   buildDailyDataId(secondsTimestamp: bigint, network: IndexerNetwork, address: string): string {
-    const daytimestampAtStart = secondsTimestamp - (secondsTimestamp % BigInt(ONE_DAY_IN_SECONDS));
-    const dayId = daytimestampAtStart / BigInt(ONE_DAY_IN_SECONDS);
+    const daytimestampAtStart = secondsTimestamp - (secondsTimestamp % ONE_DAY_IN_SECONDS_BI);
+    const dayId = daytimestampAtStart / ONE_DAY_IN_SECONDS_BI;
 
     return EntityId.fromAddress(network, `${address}:day:${dayId}`);
   },
@@ -39,7 +39,7 @@ export const EntityId = {
 
   buildAllTimeframedStatsIds(
     network: IndexerNetwork,
-    address: string
+    address: string,
   ): {
     id: string;
     timeframe: StatsTimeframe_t;
