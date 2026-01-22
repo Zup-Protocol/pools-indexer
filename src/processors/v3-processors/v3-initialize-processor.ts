@@ -1,7 +1,7 @@
 import type {
   handlerContext,
   Pool as PoolEntity,
-  Token as TokenEntity,
+  SingleChainToken as SingleChainTokenEntity,
   V3PoolData as V3PoolDataEntity,
 } from "generated";
 import { EntityId } from "../../core/entity";
@@ -23,9 +23,9 @@ export async function processV3Initialize(params: {
     params.context.V3PoolData.getOrThrow(poolId),
   ]);
 
-  const [token0, token1]: [TokenEntity, TokenEntity] = await Promise.all([
-    params.context.Token.getOrThrow(poolEntity.token0_id),
-    params.context.Token.getOrThrow(poolEntity.token1_id),
+  const [token0, token1]: [SingleChainTokenEntity, SingleChainTokenEntity] = await Promise.all([
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
   ]);
 
   const poolPrices = ConcentratedSqrtPriceMath.convertSqrtPriceX96ToPoolPrices({

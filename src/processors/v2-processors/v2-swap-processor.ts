@@ -1,4 +1,4 @@
-import type { Block_t, handlerContext, Token as TokenEntity } from "generated";
+import type { Block_t, handlerContext, SingleChainToken as SingleChainTokenEntity } from "generated";
 import { EntityId } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConstantProductPriceMath } from "../../lib/math/constant-product/constant-product-price-math";
@@ -17,9 +17,9 @@ export async function processV2Swap(params: {
 }): Promise<void> {
   const poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
 
-  const [token0Entity, token1Entity]: [TokenEntity, TokenEntity] = await Promise.all([
-    params.context.Token.getOrThrow(poolEntity.token0_id),
-    params.context.Token.getOrThrow(poolEntity.token1_id),
+  const [token0Entity, token1Entity]: [SingleChainTokenEntity, SingleChainTokenEntity] = await Promise.all([
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
   ]);
 
   const rawAmount0 = params.amount0In - params.amount0Out;
@@ -39,7 +39,7 @@ export async function processV2Swap(params: {
 
   const poolPrice = ConstantProductPriceMath.poolReservesToPrice(
     updatedPoolTotalValueLockedToken0,
-    updatedPoolTotalValueLockedToken1
+    updatedPoolTotalValueLockedToken1,
   );
 
   await processSwap({

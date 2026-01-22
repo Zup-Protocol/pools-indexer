@@ -1,11 +1,15 @@
-import type { Token as TokenEntity } from "generated";
+import type { SingleChainToken as SingleChainTokenEntity } from "generated";
 import { String } from "../../lib/string-utils";
 import { ZERO_ADDRESS } from "../constants";
 import { IndexerNetwork } from "../network";
 
-export function isVariableWithStablePool(token0: TokenEntity, token1: TokenEntity, network: IndexerNetwork): boolean {
+export function isVariableWithStablePool(
+  token0: SingleChainTokenEntity,
+  token1: SingleChainTokenEntity,
+  network: IndexerNetwork,
+): boolean {
   const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses[network].map<string>((address) =>
-    address.toLowerCase()
+    address.toLowerCase(),
   );
 
   const isToken0Stable = stablecoinsAddressesLowercased.includes(token0.tokenAddress.toLowerCase());
@@ -16,9 +20,13 @@ export function isVariableWithStablePool(token0: TokenEntity, token1: TokenEntit
   return false;
 }
 
-export function isStableOnlyPool(token0: TokenEntity, token1: TokenEntity, network: IndexerNetwork): boolean {
+export function isStableOnlyPool(
+  token0: SingleChainTokenEntity,
+  token1: SingleChainTokenEntity,
+  network: IndexerNetwork,
+): boolean {
   const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses[network].map<string>((address) =>
-    address.toLowerCase()
+    address.toLowerCase(),
   );
 
   const isToken0Stable = stablecoinsAddressesLowercased.includes(token0.tokenAddress.toLowerCase());
@@ -29,15 +37,19 @@ export function isStableOnlyPool(token0: TokenEntity, token1: TokenEntity, netwo
   return false;
 }
 
-export function isWrappedNativePool(token0: TokenEntity, token1: TokenEntity, network: IndexerNetwork): boolean {
+export function isWrappedNativePool(
+  token0: SingleChainTokenEntity,
+  token1: SingleChainTokenEntity,
+  network: IndexerNetwork,
+): boolean {
   const isToken0WrappedNative = String.lowercasedEquals(
     token0.tokenAddress,
-    IndexerNetwork.wrappedNativeAddress[network]
+    IndexerNetwork.wrappedNativeAddress[network],
   );
 
   const isToken1WrappedNative = String.lowercasedEquals(
     token1.tokenAddress,
-    IndexerNetwork.wrappedNativeAddress[network]
+    IndexerNetwork.wrappedNativeAddress[network],
   );
 
   if (isToken0WrappedNative || isToken1WrappedNative) return true;
@@ -45,7 +57,7 @@ export function isWrappedNativePool(token0: TokenEntity, token1: TokenEntity, ne
   return false;
 }
 
-export function isNativePool(token0: TokenEntity, token1: TokenEntity): boolean {
+export function isNativePool(token0: SingleChainTokenEntity, token1: SingleChainTokenEntity): boolean {
   const isToken0Native = String.lowercasedEquals(token0.tokenAddress, ZERO_ADDRESS);
   const isToken1Native = String.lowercasedEquals(token1.tokenAddress, ZERO_ADDRESS);
 
@@ -54,16 +66,16 @@ export function isNativePool(token0: TokenEntity, token1: TokenEntity): boolean 
   return false;
 }
 
-export function isPoolTokenTrusted(token: TokenEntity, network: IndexerNetwork): boolean {
+export function isPoolTokenTrusted(token: SingleChainTokenEntity, network: IndexerNetwork): boolean {
   const isTokenWrappedNative = String.lowercasedEquals(
     token.tokenAddress,
-    IndexerNetwork.wrappedNativeAddress[network]
+    IndexerNetwork.wrappedNativeAddress[network],
   );
 
   if (isTokenWrappedNative) return true;
 
   const stablecoinsAddressesLowercased = IndexerNetwork.stablecoinsAddresses[network].map<string>((address) =>
-    address.toLowerCase()
+    address.toLowerCase(),
   );
 
   const isTokenStablecoin = stablecoinsAddressesLowercased.includes(token.tokenAddress.toLowerCase());

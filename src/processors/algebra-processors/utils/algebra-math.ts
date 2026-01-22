@@ -1,4 +1,4 @@
-import type { BigDecimal, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import type { BigDecimal, Pool as PoolEntity, SingleChainToken as SingleChainTokenEntity } from "generated";
 import { ZERO_BIG_DECIMAL } from "../../../core/constants";
 import { FeeMath } from "../../../lib/math/fee-math";
 import { TokenDecimalMath } from "../../../lib/math/token/token-decimal-math";
@@ -14,8 +14,8 @@ function calculateAlgebraNonLPFeesAmount(params: {
   rawCommunityFee: number;
   swapAmount0: bigint;
   swapAmount1: bigint;
-  token0: TokenEntity;
-  token1: TokenEntity;
+  token0: SingleChainTokenEntity;
+  token1: SingleChainTokenEntity;
   rawSwapFee: number;
 }): { token0FeeAmount: BigDecimal; token1FeeAmount: BigDecimal } {
   if (params.swapAmount0 > 0n) {

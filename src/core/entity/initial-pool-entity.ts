@@ -118,4 +118,9 @@ export class InitialPoolEntity implements PoolEntity {
   readonly totalValueLockedToken1: BigDecimal = ZERO_BIG_DECIMAL;
   readonly totalValueLockedToken1Usd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly totalValueLockedUsd: BigDecimal = ZERO_BIG_DECIMAL;
+
+  readonly token0UsdPrice: BigDecimal = ZERO_BIG_DECIMAL;
+  readonly token1UsdPrice: BigDecimal = ZERO_BIG_DECIMAL;
+  readonly trackedToken0UsdPrice: BigDecimal = ZERO_BIG_DECIMAL;
+  readonly trackedToken1UsdPrice: BigDecimal = ZERO_BIG_DECIMAL;
 }

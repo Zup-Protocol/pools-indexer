@@ -18,7 +18,7 @@ enum StatsTimeframe {
   QUARTER
 }
 
-type Token
+type SingleChainToken
   @index(fields: ["name", "trackedTotalValuePooledUsd"])
   @index(fields: ["symbol", "trackedTotalValuePooledUsd"])
   @index(fields: ["chainId", "trackedTotalValuePooledUsd"]) {
@@ -64,8 +64,8 @@ type Pool
   id: ID!
   poolAddress: String! @index
 
-  token0: Token! @index
-  token1: Token! @index
+  token0: SingleChainToken! @index
+  token1: SingleChainToken! @index
 
   rawCurrentFeeTier: Int!
   rawInitialFeeTier: Int!

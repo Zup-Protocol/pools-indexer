@@ -1,4 +1,4 @@
-import type { Block_t, handlerContext, Token as TokenEntity } from "generated";
+import type { Block_t, handlerContext, SingleChainToken as SingleChainTokenEntity } from "generated";
 
 import { EntityId } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
@@ -15,9 +15,9 @@ export async function processV2Sync(params: {
 }): Promise<void> {
   let poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
 
-  let [token0Entity, token1Entity]: [TokenEntity, TokenEntity] = await Promise.all([
-    params.context.Token.getOrThrow(poolEntity.token0_id),
-    params.context.Token.getOrThrow(poolEntity.token1_id),
+  let [token0Entity, token1Entity]: [SingleChainTokenEntity, SingleChainTokenEntity] = await Promise.all([
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
   ]);
 
   const rawOldToken0LockedValue = TokenDecimalMath.decimalToRaw(poolEntity.totalValueLockedToken0, token0Entity);

@@ -1,4 +1,8 @@
-import type { Block_t, PoolHistoricalData as PoolHistoricalDataEntity, Token as TokenEntity } from "generated";
+import type {
+  Block_t,
+  PoolHistoricalData as PoolHistoricalDataEntity,
+  SingleChainToken as SingleChainTokenEntity,
+} from "generated";
 import type { HandlerContext } from "generated/src/Types";
 import { EntityId } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
@@ -18,16 +22,19 @@ export async function processLiquidityChange(params: {
 }) {
   let poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
 
-  let [token0Entity, token1Entity, poolHistoricalDataEntities]: [TokenEntity, TokenEntity, PoolHistoricalDataEntity[]] =
-    await Promise.all([
-      params.context.Token.getOrThrow(poolEntity.token0_id),
-      params.context.Token.getOrThrow(poolEntity.token1_id),
-      DatabaseService.getOrCreateHistoricalPoolDataEntities({
-        context: params.context,
-        eventTimestamp: BigInt(params.eventBlock.timestamp),
-        pool: poolEntity,
-      }),
-    ]);
+  let [token0Entity, token1Entity, poolHistoricalDataEntities]: [
+    SingleChainTokenEntity,
+    SingleChainTokenEntity,
+    PoolHistoricalDataEntity[],
+  ] = await Promise.all([
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
+    DatabaseService.getOrCreateHistoricalPoolDataEntities({
+      context: params.context,
+      eventTimestamp: BigInt(params.eventBlock.timestamp),
+      pool: poolEntity,
+    }),
+  ]);
 
   const amount0Formatted = TokenDecimalMath.rawToDecimal(params.amount0AddedOrRemoved, token0Entity);
   const amount1Formatted = TokenDecimalMath.rawToDecimal(params.amount1AddedOrRemoved, token1Entity);
@@ -93,8 +100,8 @@ export async function processLiquidityChange(params: {
   }));
 
   params.context.Pool.set(poolEntity);
-  params.context.Token.set(token0Entity);
-  params.context.Token.set(token1Entity);
+  params.context.SingleChainToken.set(token0Entity);
+  params.context.SingleChainToken.set(token1Entity);
   poolHistoricalDataEntities.forEach((entity) => params.context.PoolHistoricalData.set(entity));
 
   if (params.updateMetrics) {

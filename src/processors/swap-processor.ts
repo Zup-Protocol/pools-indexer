@@ -3,7 +3,7 @@ import {
   type Block_t,
   type PoolHistoricalData as PoolHistoricalDataEntity,
   type PoolTimeframedStats as PoolTimeframedStatsEntity,
-  type Token as TokenEntity,
+  type SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import type { HandlerContext } from "generated/src/Types";
 import { MAX_PRICE_DISCOVERY_CAPITAL_USD, STATS_TIMEFRAME_IN_DAYS } from "../core/constants";
@@ -35,13 +35,13 @@ export async function processSwap(params: {
   let poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
 
   let [token0Entity, token1Entity, statsEntities, poolHistoricalDataEntities]: [
-    TokenEntity,
-    TokenEntity,
+    SingleChainTokenEntity,
+    SingleChainTokenEntity,
     PoolTimeframedStatsEntity[],
     PoolHistoricalDataEntity[],
   ] = await Promise.all([
-    params.context.Token.getOrThrow(poolEntity.token0_id),
-    params.context.Token.getOrThrow(poolEntity.token1_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
     DatabaseService.getAllPooltimeframedStatsEntities(params.context, poolEntity),
     DatabaseService.getOrCreateHistoricalPoolDataEntities({
       context: params.context,
@@ -270,8 +270,8 @@ export async function processSwap(params: {
   });
 
   params.context.Pool.set(poolEntity);
-  params.context.Token.set(token0Entity);
-  params.context.Token.set(token1Entity);
+  params.context.SingleChainToken.set(token0Entity);
+  params.context.SingleChainToken.set(token1Entity);
   statsEntities.forEach((entity) => params.context.PoolTimeframedStats.set(entity));
   poolHistoricalDataEntities.forEach((entity) => params.context.PoolHistoricalData.set(entity));
 

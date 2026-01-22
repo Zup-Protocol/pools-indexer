@@ -1,9 +1,9 @@
-import type { BigDecimal, Token as TokenEntity } from "generated";
+import type { BigDecimal, SingleChainToken as SingleChainTokenEntity } from "generated";
 import { ZERO_BIG_DECIMAL } from "../constants";
 import { IndexerNetwork } from "../network";
 import { EntityId } from "./entity-id";
 
-export class InitialTokenEntity implements TokenEntity {
+export class InitialTokenEntity implements SingleChainTokenEntity {
   constructor(
     readonly params: {
       tokenAddress: string;

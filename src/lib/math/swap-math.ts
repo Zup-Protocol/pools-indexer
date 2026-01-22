@@ -1,4 +1,4 @@
-import type { BigDecimal, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import type { BigDecimal, Pool as PoolEntity, SingleChainToken as SingleChainTokenEntity } from "generated";
 import { HUNDRED_BIG_DECIMAL, ZERO_BIG_DECIMAL } from "../../core/constants";
 import { IndexerNetwork } from "../../core/network";
 import { PriceConverter } from "../pricing/price-converter";
@@ -9,8 +9,8 @@ import { TokenDecimalMath } from "./token/token-decimal-math";
 export function calculateSwapVolume(params: {
   swapAmount0: BigDecimal;
   swapAmount1: BigDecimal;
-  token0: TokenEntity;
-  token1: TokenEntity;
+  token0: SingleChainTokenEntity;
+  token1: SingleChainTokenEntity;
   poolEntity: PoolEntity;
 }): {
   readonly volumeToken0: BigDecimal;
@@ -71,8 +71,8 @@ export function calculateSwapFees(params: {
   rawSwapAmount0: bigint;
   rawSwapAmount1: bigint;
   rawSwapFee: number;
-  token0: TokenEntity;
-  token1: TokenEntity;
+  token0: SingleChainTokenEntity;
+  token1: SingleChainTokenEntity;
   poolEntity: PoolEntity;
 }): {
   readonly feesToken0: BigDecimal;

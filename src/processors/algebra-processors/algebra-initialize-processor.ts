@@ -1,4 +1,9 @@
-import type { AlgebraPoolData, handlerContext, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import type {
+  AlgebraPoolData,
+  handlerContext,
+  Pool as PoolEntity,
+  SingleChainToken as SingleChainTokenEntity,
+} from "generated";
 import { EntityId } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedSqrtPriceMath } from "../../lib/math";
@@ -18,9 +23,9 @@ export async function processAlgebraInitialize(params: {
     params.context.AlgebraPoolData.getOrThrow(poolId),
   ]);
 
-  const [token0, token1]: [TokenEntity, TokenEntity] = await Promise.all([
-    params.context.Token.getOrThrow(poolEntity.token0_id),
-    params.context.Token.getOrThrow(poolEntity.token1_id),
+  const [token0, token1]: [SingleChainTokenEntity, SingleChainTokenEntity] = await Promise.all([
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
   ]);
 
   const poolPrices = ConcentratedSqrtPriceMath.convertSqrtPriceX96ToPoolPrices({

@@ -1,4 +1,4 @@
-import type { Block_t, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import type { Block_t, Pool as PoolEntity, SingleChainToken as SingleChainTokenEntity } from "generated";
 import type { PoolType_t } from "generated/src/db/Enums.gen";
 import type { HandlerContext } from "generated/src/Types";
 import { POSITION_MANAGER_ADDRESS } from "../core/address/position-manager-address";
@@ -20,8 +20,8 @@ export async function processNewPool(params: {
   poolType: PoolType_t;
 }): Promise<{
   poolEntity: PoolEntity;
-  token0Entity: TokenEntity;
-  token1Entity: TokenEntity;
+  token0Entity: SingleChainTokenEntity;
+  token1Entity: SingleChainTokenEntity;
 }> {
   const protocolMetadata = SupportedProtocol.metadata[params.protocol];
 
@@ -57,8 +57,8 @@ export async function processNewPool(params: {
   };
 
   params.context.Pool.set(poolEntity);
-  params.context.Token.set(token0Entity);
-  params.context.Token.set(token1Entity);
+  params.context.SingleChainToken.set(token0Entity);
+  params.context.SingleChainToken.set(token1Entity);
 
   params.context.Protocol.set({
     id: params.protocol,

@@ -2,7 +2,7 @@ import type {
   handlerContext,
   PoolHistoricalData as PoolHistoricalDataEntity,
   PoolTimeframedStats as PoolTimeframedStatsEntity,
-  Token as TokenEntity,
+  SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import { ZERO_BIG_DECIMAL } from "../core/constants";
 import { EntityId } from "../core/entity";
@@ -24,13 +24,13 @@ export async function processLiquidityMetrics(params: {
   let poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
 
   let [token0Entity, token1Entity, statsEntities, poolHistoricalDataEntities]: [
-    TokenEntity,
-    TokenEntity,
+    SingleChainTokenEntity,
+    SingleChainTokenEntity,
     PoolTimeframedStatsEntity[],
-    PoolHistoricalDataEntity[]
+    PoolHistoricalDataEntity[],
   ] = await Promise.all([
-    params.context.Token.getOrThrow(poolEntity.token0_id),
-    params.context.Token.getOrThrow(poolEntity.token1_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
     DatabaseService.getAllPooltimeframedStatsEntities(params.context, poolEntity),
     DatabaseService.getOrCreateHistoricalPoolDataEntities({
       context: params.context,
@@ -130,17 +130,17 @@ export async function processLiquidityMetrics(params: {
     intervalLiquidityNetInflowUsd: historicalDataEntity.intervalLiquidityNetInflowUsd.plus(liquidityFlow.netInflowUSD),
     intervalLiquidityOutflowUsd: historicalDataEntity.intervalLiquidityOutflowUsd.plus(liquidityFlow.outflowUSD),
     intervalLiquidityNetInflowToken0: historicalDataEntity.intervalLiquidityNetInflowToken0.plus(
-      liquidityFlow.netInflowToken0
+      liquidityFlow.netInflowToken0,
     ),
     intervalLiquidityNetInflowToken1: historicalDataEntity.intervalLiquidityNetInflowToken1.plus(
-      liquidityFlow.netInflowToken1
+      liquidityFlow.netInflowToken1,
     ),
 
     intervalLiquidityOutflowToken0: historicalDataEntity.intervalLiquidityOutflowToken0.plus(
-      liquidityFlow.outflowToken0
+      liquidityFlow.outflowToken0,
     ),
     intervalLiquidityOutflowToken1: historicalDataEntity.intervalLiquidityOutflowToken1.plus(
-      liquidityFlow.outflowToken1
+      liquidityFlow.outflowToken1,
     ),
   }));
 
@@ -155,8 +155,8 @@ export async function processLiquidityMetrics(params: {
   }));
 
   params.context.Pool.set(poolEntity);
-  params.context.Token.set(token0Entity);
-  params.context.Token.set(token1Entity);
+  params.context.SingleChainToken.set(token0Entity);
+  params.context.SingleChainToken.set(token1Entity);
   statsEntities.forEach((entity) => params.context.PoolTimeframedStats.set(entity));
   poolHistoricalDataEntities.forEach((entity) => params.context.PoolHistoricalData.set(entity));
 }

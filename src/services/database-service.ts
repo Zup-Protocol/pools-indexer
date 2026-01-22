@@ -2,7 +2,7 @@ import type {
   Pool as PoolEntity,
   PoolHistoricalData as PoolHistoricalDataEntity,
   PoolTimeframedStats as PoolTimeframedStatsEntity,
-  Token as TokenEntity,
+  SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import type { HistoricalDataInterval_t } from "generated/src/db/Enums.gen";
 import type { HandlerContext } from "generated/src/Types";
@@ -29,15 +29,15 @@ async function getOrCreatePoolTokenEntities(params: {
   network: IndexerNetwork;
   token0Address: string;
   token1Address: string;
-}): Promise<[TokenEntity, TokenEntity]> {
+}): Promise<[SingleChainTokenEntity, SingleChainTokenEntity]> {
   const dbEntities = await Promise.all([
-    params.context.Token.get(EntityId.fromAddress(params.network, params.token0Address)),
-    params.context.Token.get(EntityId.fromAddress(params.network, params.token1Address)),
+    params.context.SingleChainToken.get(EntityId.fromAddress(params.network, params.token0Address)),
+    params.context.SingleChainToken.get(EntityId.fromAddress(params.network, params.token1Address)),
   ]);
 
-  if (dbEntities[0] && dbEntities[1]) return dbEntities as [TokenEntity, TokenEntity];
+  if (dbEntities[0] && dbEntities[1]) return dbEntities as [SingleChainTokenEntity, SingleChainTokenEntity];
 
-  const entitiesMap = new Map<string, TokenEntity>();
+  const entitiesMap = new Map<string, SingleChainTokenEntity>();
   const missingAddresses: string[] = [];
 
   [params.token0Address, params.token1Address].forEach((address, index) => {
@@ -51,7 +51,7 @@ async function getOrCreatePoolTokenEntities(params: {
           ...IndexerNetwork.nativeToken[params.network],
           network: params.network,
           tokenAddress: ZERO_ADDRESS,
-        })
+        }),
       );
     } else missingAddresses.push(address);
   });
@@ -74,7 +74,7 @@ async function getOrCreatePoolTokenEntities(params: {
         network: params.network,
         symbol: metadata.symbol,
         tokenAddress: missingAddresses[index]!,
-      })
+      }),
     );
   });
 
@@ -88,7 +88,7 @@ async function getOldestPoolHourlyDataAgo(
   hoursAgo: number,
   eventTimestamp: bigint,
   context: HandlerContext,
-  pool: PoolEntity
+  pool: PoolEntity,
 ): Promise<PoolHistoricalDataEntity | undefined> {
   if (pool.lastActivityTimestamp < subtractHoursFromSecondsTimestamp(eventTimestamp, hoursAgo)) return;
 
@@ -97,7 +97,7 @@ async function getOldestPoolHourlyDataAgo(
     if (timestamp < pool.createdAtTimestamp) continue;
 
     const data = await context.PoolHistoricalData.get(
-      EntityId.buildHourlyDataId(timestamp, pool.chainId, pool.poolAddress)
+      EntityId.buildHourlyDataId(timestamp, pool.chainId, pool.poolAddress),
     );
 
     if (data) return data;
@@ -108,7 +108,7 @@ async function getOldestPoolDailyDataAgo(
   daysAgo: number,
   eventTimestamp: bigint,
   context: HandlerContext,
-  pool: PoolEntity
+  pool: PoolEntity,
 ): Promise<PoolHistoricalDataEntity | undefined> {
   if (pool.lastActivityTimestamp < subtractDaysFromSecondsTimestamp(eventTimestamp, daysAgo)) return;
 
@@ -117,7 +117,7 @@ async function getOldestPoolDailyDataAgo(
     if (timestamp < pool.createdAtTimestamp) continue;
 
     const data = await context.PoolHistoricalData.get(
-      EntityId.buildDailyDataId(timestamp, pool.chainId, pool.poolAddress)
+      EntityId.buildDailyDataId(timestamp, pool.chainId, pool.poolAddress),
     );
 
     if (data) return data;
@@ -128,7 +128,7 @@ async function getPoolHourlyDataAgo(
   hoursAgo: number,
   eventTimestamp: bigint,
   context: HandlerContext,
-  pool: PoolEntity
+  pool: PoolEntity,
 ): Promise<PoolHistoricalDataEntity | undefined> {
   const timestampAgo = subtractHoursFromSecondsTimestamp(eventTimestamp, hoursAgo);
   if (timestampAgo < pool.createdAtTimestamp || pool.lastActivityTimestamp < timestampAgo) return;
@@ -140,7 +140,7 @@ async function getPoolDailyDataAgo(
   daysAgo: number,
   eventTimestamp: bigint,
   context: HandlerContext,
-  pool: PoolEntity
+  pool: PoolEntity,
 ): Promise<PoolHistoricalDataEntity | undefined> {
   const timestampAgo = subtractDaysFromSecondsTimestamp(eventTimestamp, daysAgo);
   if (timestampAgo < pool.createdAtTimestamp || pool.lastActivityTimestamp < timestampAgo) return;
@@ -162,15 +162,15 @@ async function getOrCreateHistoricalPoolDataEntities(params: {
           poolEntity: params.pool,
           eventTimestamp: params.eventTimestamp,
           interval: interval,
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
 }
 
 async function getAllPooltimeframedStatsEntities(
   context: HandlerContext,
-  pool: PoolEntity
+  pool: PoolEntity,
 ): Promise<PoolTimeframedStatsEntity[]> {
   const statsToFetch = EntityId.buildAllTimeframedStatsIds(pool.chainId, pool.poolAddress);
   return Promise.all(statsToFetch.map((stat) => context.PoolTimeframedStats.getOrThrow(stat.id)));
@@ -186,7 +186,7 @@ async function resetAllPoolTimeframedStats(context: HandlerContext, pool: PoolEn
         timeframe: stat.timeframe,
         poolId: pool.id,
         dataPointTimestamp: BigInt(0),
-      })
-    )
+      }),
+    ),
   );
 }

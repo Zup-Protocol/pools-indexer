@@ -2,7 +2,7 @@ import type {
   Block_t,
   HandlerContext,
   Pool as PoolEntity,
-  Token as TokenEntity,
+  SingleChainToken as SingleChainTokenEntity,
   V3PoolData as V3PoolDataEntity,
 } from "generated";
 import { EntityId } from "../../core/entity";
@@ -27,9 +27,9 @@ export async function processV3Swap(params: {
     params.context.V3PoolData.getOrThrow(poolId),
   ]);
 
-  const [token0Entity, token1Entity]: [TokenEntity, TokenEntity] = await Promise.all([
-    params.context.Token.getOrThrow(poolEntity.token0_id),
-    params.context.Token.getOrThrow(poolEntity.token1_id),
+  const [token0Entity, token1Entity]: [SingleChainTokenEntity, SingleChainTokenEntity] = await Promise.all([
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
   ]);
 
   params.context.V3PoolData.set({

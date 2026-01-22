@@ -1,4 +1,4 @@
-import { BigDecimal, type Pool as PoolEntity, type Token as TokenEntity } from "generated";
+import { BigDecimal, type Pool as PoolEntity, type SingleChainToken as SingleChainTokenEntity } from "generated";
 import { MAX_TVL_IMBALANCE_PERCENTAGE } from "../../core/constants";
 import { isPoolTokenTrusted } from "../../core/pool";
 import { isPercentageDifferenceWithinThreshold } from "../math";
@@ -9,8 +9,8 @@ export const PriceConverter = {
 
 function _convertTokenAmountToTrackedUsd(params: {
   amount: BigDecimal;
-  token: TokenEntity;
-  comparisonToken: TokenEntity;
+  token: SingleChainTokenEntity;
+  comparisonToken: SingleChainTokenEntity;
   poolEntity: PoolEntity;
   fallbackUsdValue: BigDecimal;
 }): BigDecimal {

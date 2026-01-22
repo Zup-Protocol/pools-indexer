@@ -1,4 +1,4 @@
-import { BigDecimal, type Pool as PoolEntity, type Token as TokenEntity } from "generated";
+import { BigDecimal, type Pool as PoolEntity, type SingleChainToken as SingleChainTokenEntity } from "generated";
 import {
   MAX_TVL_IMBALANCE_PERCENTAGE,
   OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
@@ -26,8 +26,8 @@ export const PriceDiscover = {
 };
 
 export function discoverTokenUsdMarketPrices(params: {
-  poolToken0Entity: TokenEntity;
-  poolToken1Entity: TokenEntity;
+  poolToken0Entity: SingleChainTokenEntity;
+  poolToken1Entity: SingleChainTokenEntity;
   newPoolPrices: PoolPrices;
   rawSwapAmount0: bigint;
   rawSwapAmount1: bigint;
@@ -104,8 +104,8 @@ export function discoverTokenUsdMarketPrices(params: {
 }
 
 function discoverTrackedTokenUsdPrices(params: {
-  poolToken0Entity: TokenEntity;
-  poolToken1Entity: TokenEntity;
+  poolToken0Entity: SingleChainTokenEntity;
+  poolToken1Entity: SingleChainTokenEntity;
   newPoolPrices: PoolPrices;
   swapAmount0: BigDecimal;
   swapAmount1: BigDecimal;
@@ -154,8 +154,8 @@ function calculateValidatedMarketPrices(params: {
   network: IndexerNetwork;
   swapAmount0: BigDecimal;
   swapAmount1: BigDecimal;
-  token0: TokenEntity;
-  token1: TokenEntity;
+  token0: SingleChainTokenEntity;
+  token1: SingleChainTokenEntity;
   suggestedPrice0: BigDecimal;
   suggestedPrice1: BigDecimal;
   currentPrice0: BigDecimal;
@@ -193,8 +193,8 @@ function calculateValidatedMarketPrices(params: {
 }
 
 export function discoverUsdPricesFromPoolPrices(params: {
-  poolToken0Entity: TokenEntity;
-  poolToken1Entity: TokenEntity;
+  poolToken0Entity: SingleChainTokenEntity;
+  poolToken1Entity: SingleChainTokenEntity;
   poolPrices: PoolPrices;
   network: IndexerNetwork;
   useTrackedPrices?: boolean;
@@ -285,8 +285,8 @@ export function discoverUsdPricesFromPoolPrices(params: {
 
 function _resolveTrackedPricesForNewPrices(params: {
   pool: PoolEntity;
-  token0: TokenEntity;
-  token1: TokenEntity;
+  token0: SingleChainTokenEntity;
+  token1: SingleChainTokenEntity;
   suggestedPrice0: BigDecimal;
   suggestedPrice1: BigDecimal;
   poolPrices: PoolPrices;
@@ -346,7 +346,7 @@ function _resolveTrackedPricesForNewPrices(params: {
   };
 }
 
-function _canPoolDiscoverTokenPrice(params: { poolEntity: PoolEntity; tokenEntity: TokenEntity }): boolean {
+function _canPoolDiscoverTokenPrice(params: { poolEntity: PoolEntity; tokenEntity: SingleChainTokenEntity }): boolean {
   if (params.tokenEntity.poolsCount === 1n) return true;
 
   const averageLiquidityPerPool = params.tokenEntity.tokenTotalValuePooled.div(

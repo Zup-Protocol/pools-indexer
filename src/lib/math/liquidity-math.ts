@@ -1,4 +1,4 @@
-import type { BigDecimal, Pool as PoolEntity, Token as TokenEntity } from "generated";
+import type { BigDecimal, Pool as PoolEntity, SingleChainToken as SingleChainTokenEntity } from "generated";
 import { ZERO_BIG_DECIMAL } from "../../core/constants";
 import { PriceConverter } from "../pricing/price-converter";
 import { isPercentageDifferenceWithinThreshold } from "./percentage-math";
@@ -7,8 +7,8 @@ import { TokenDecimalMath } from "./token/token-decimal-math";
 export function calculateLiquidityFlow(params: {
   amount0AddedOrRemoved: bigint;
   amount1AddedOrRemoved: bigint;
-  token0: TokenEntity;
-  token1: TokenEntity;
+  token0: SingleChainTokenEntity;
+  token1: SingleChainTokenEntity;
   pool: PoolEntity;
 }): {
   inflowToken0: BigDecimal;
@@ -99,8 +99,8 @@ export function calculateLiquidityFlow(params: {
 
 export function calculateNewLockedAmountsUSD(params: {
   poolEntity: PoolEntity;
-  token0: TokenEntity;
-  token1: TokenEntity;
+  token0: SingleChainTokenEntity;
+  token1: SingleChainTokenEntity;
 }): {
   newPoolTotalValueLockedToken0USD: BigDecimal;
   newPoolTotalValueLockedToken1USD: BigDecimal;
@@ -135,11 +135,11 @@ export function calculateNewLockedAmountsUSD(params: {
   });
 
   const updatedPoolTotalValueLockedUSD = updatedPoolTotalValueLockedToken0USD.plus(
-    updatedPoolTotalValueLockedToken1USD
+    updatedPoolTotalValueLockedToken1USD,
   );
 
   const updatedTrackedPoolTotalValueLockedUSD = updatedTrackedPoolTotalValueLockedToken0USD.plus(
-    updatedTrackedPoolTotalValueLockedToken1USD
+    updatedTrackedPoolTotalValueLockedToken1USD,
   );
 
   const updatedToken0TotalPooledAmount = params.token0.tokenTotalValuePooled;
@@ -157,7 +157,7 @@ export function calculateNewLockedAmountsUSD(params: {
   const isNewTrackedTvlCloseToRealTVL = isPercentageDifferenceWithinThreshold(
     updatedTrackedPoolTotalValueLockedUSD,
     updatedPoolTotalValueLockedUSD,
-    50
+    50,
   );
 
   return {
@@ -179,10 +179,10 @@ export function calculateNewLockedAmountsUSD(params: {
           newTrackedPoolTotalValueLockedToken1USD: ZERO_BIG_DECIMAL,
           newTrackedPoolTotalValueLockedUSD: ZERO_BIG_DECIMAL,
           newTrackedToken0TotalPooledAmountUSD: params.token0.trackedTotalValuePooledUsd.minus(
-            params.poolEntity.trackedTotalValueLockedToken0Usd
+            params.poolEntity.trackedTotalValueLockedToken0Usd,
           ),
           newTrackedToken1TotalPooledAmountUSD: params.token1.trackedTotalValuePooledUsd.minus(
-            params.poolEntity.trackedTotalValueLockedToken1Usd
+            params.poolEntity.trackedTotalValueLockedToken1Usd,
           ),
         }),
   };

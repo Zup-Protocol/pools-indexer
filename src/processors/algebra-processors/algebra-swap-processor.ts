@@ -3,7 +3,7 @@ import type {
   Block_t,
   handlerContext,
   Pool as PoolEntity,
-  Token as TokenEntity,
+  SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import { EntityId } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
@@ -32,9 +32,9 @@ export async function processAlgebraSwap(params: {
     params.context.AlgebraPoolData.getOrThrow(poolId),
   ]);
 
-  const [token0Entity, token1Entity]: [TokenEntity, TokenEntity] = await Promise.all([
-    params.context.Token.getOrThrow(poolEntity.token0_id),
-    params.context.Token.getOrThrow(poolEntity.token1_id),
+  const [token0Entity, token1Entity]: [SingleChainTokenEntity, SingleChainTokenEntity] = await Promise.all([
+    params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),
+    params.context.SingleChainToken.getOrThrow(poolEntity.token1_id),
   ]);
 
   const nonLPFeesTokenAmount = AlgebraMath.calculateAlgebraNonLPFeesAmount({
@@ -49,7 +49,7 @@ export async function processAlgebraSwap(params: {
   });
 
   const newRawFeeTier = poolEntity.isDynamicFee
-    ? params.overrideSwapFee ?? poolEntity.rawCurrentFeeTier
+    ? (params.overrideSwapFee ?? poolEntity.rawCurrentFeeTier)
     : poolEntity.rawCurrentFeeTier;
 
   params.context.Pool.set({
@@ -60,12 +60,12 @@ export async function processAlgebraSwap(params: {
     currentFeeTierPercentage: FeeMath.convertRawSwapFeeToPercentage(newRawFeeTier),
   });
 
-  params.context.Token.set({
+  params.context.SingleChainToken.set({
     ...token0Entity,
     tokenTotalValuePooled: token0Entity.tokenTotalValuePooled.minus(nonLPFeesTokenAmount.token0FeeAmount),
   });
 
-  params.context.Token.set({
+  params.context.SingleChainToken.set({
     ...token1Entity,
     tokenTotalValuePooled: token1Entity.tokenTotalValuePooled.minus(nonLPFeesTokenAmount.token1FeeAmount),
   });

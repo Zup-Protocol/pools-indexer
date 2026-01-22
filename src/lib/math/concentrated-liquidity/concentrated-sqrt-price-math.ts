@@ -1,4 +1,4 @@
-import { BigDecimal, type Token as TokenEntity } from "generated";
+import { BigDecimal, type SingleChainToken as SingleChainTokenEntity } from "generated";
 import { ONE_BIG_DECIMAL, ONE_BIG_INT, Q96 } from "../../../core/constants";
 import type { PoolPrices } from "../../../core/types";
 import { mulDivRoundingUp } from "../math-extended";
@@ -16,8 +16,8 @@ export const ConcentratedSqrtPriceMath = {
 
 function _convertSqrtPriceX96ToPoolPrices(params: {
   sqrtPriceX96: bigint;
-  poolToken0: TokenEntity;
-  poolToken1: TokenEntity;
+  poolToken0: SingleChainTokenEntity;
+  poolToken1: SingleChainTokenEntity;
 }): PoolPrices {
   const priceX96Sq = new BigDecimal((params.sqrtPriceX96 * params.sqrtPriceX96).toString());
   const priceRaw = priceX96Sq.div(Q192_BIG_DECIMAL);

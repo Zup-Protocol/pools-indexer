@@ -1,4 +1,4 @@
-import { BigDecimal, type Token as TokenEntity } from "generated";
+import { BigDecimal, type SingleChainToken as SingleChainTokenEntity } from "generated";
 
 const POWERS_OF_10_BIG_DECIMAL = new Map<number, BigDecimal>();
 const POWERS_OF_10_BIG_INT = new Map<number, bigint>();
@@ -16,18 +16,18 @@ export const TokenDecimalMath = {
   getDivisorBigInt,
 };
 
-function rawToDecimal(amount: bigint, token: TokenEntity): BigDecimal {
+function rawToDecimal(amount: bigint, token: SingleChainTokenEntity): BigDecimal {
   const tokenAmountInBigDecimal = new BigDecimal(amount.toString());
   const tokensDivisionFactor = getDivisorBigDecimal(token.decimals);
 
   return tokenAmountInBigDecimal.div(tokensDivisionFactor);
 }
 
-function tokenBaseAmount(token: TokenEntity): bigint {
+function tokenBaseAmount(token: SingleChainTokenEntity): bigint {
   return getDivisorBigInt(token.decimals);
 }
 
-function decimalToRaw(amount: BigDecimal, token: TokenEntity): bigint {
+function decimalToRaw(amount: BigDecimal, token: SingleChainTokenEntity): bigint {
   const tokensMultiplicationFactor = getDivisorBigDecimal(token.decimals);
 
   const rawBigDecimal = amount.times(tokensMultiplicationFactor);
