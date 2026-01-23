@@ -19,9 +19,10 @@ enum StatsTimeframe {
 }
 
 type SingleChainToken
-  @index(fields: ["name", "normalizedName", "symbol", "normalizedSymbol"])
-  @index(fields: ["name", "normalizedName", "trackedTotalValuePooledUsd"])
-  @index(fields: ["symbol", "normalizedSymbol", "trackedTotalValuePooledUsd"])
+  @index(fields: ["name", "trackedTotalValuePooledUsd"])
+  @index(fields: ["normalizedName", "trackedTotalValuePooledUsd"])
+  @index(fields: ["symbol", "trackedTotalValuePooledUsd"])
+  @index(fields: ["normalizedSymbol", "trackedTotalValuePooledUsd"])
   @index(fields: ["chainId", "trackedTotalValuePooledUsd"]) {
   id: ID!
   tokenAddress: String! @index
@@ -49,11 +50,11 @@ type SingleChainToken
   feesUsd: BigDecimal!
   trackedFeesUsd: BigDecimal!
 
-  symbol: String! @index
-  name: String! @index
-  normalizedSymbol: String! @index
-  normalizedName: String! @index
-  chainId: Int! @index
+  symbol: String!
+  name: String!
+  normalizedSymbol: String!
+  normalizedName: String!
+  chainId: Int!
 
   poolsCount: BigInt! @index @config(precision: 18)
   swapsCount: BigInt! @index @config(precision: 18)
@@ -67,7 +68,7 @@ type Pool
   id: ID!
   poolAddress: String! @index
 
-  token0: SingleChainToken! @index
+  token0: SingleChainToken!
   token1: SingleChainToken! @index
 
   rawCurrentFeeTier: Int!
@@ -84,7 +85,7 @@ type Pool
   algebraPoolData: AlgebraPoolData
   slipstreamPoolData: SlipstreamPoolData
 
-  chainId: Int! @index
+  chainId: Int!
   isDynamicFee: Boolean!
 
   historicalData: [PoolHistoricalData!]! @derivedFrom(field: "pool")
@@ -213,10 +214,10 @@ type PoolTimeframedStats {
 
 type PoolHistoricalData @index(fields: ["pool", "interval", "timestampAtStart"]) {
   id: ID!
-  pool: Pool! @index
-  interval: HistoricalDataInterval! @index
+  pool: Pool!
+  interval: HistoricalDataInterval!
 
-  timestampAtStart: BigInt! @index @config(precision: 12)
+  timestampAtStart: BigInt! @config(precision: 12)
   timestampAtEnd: BigInt! @config(precision: 12)
 
   accumulatedYieldAtStart: BigDecimal! @config(precision: 18, scale: 6)
