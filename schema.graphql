@@ -29,7 +29,7 @@ type SingleChainToken
 
   usdPrice: BigDecimal!
   trackedUsdPrice: BigDecimal!
-  trackedPriceDiscoveryCapitalUsd: BigDecimal!
+  trackedPriceDiscoveryCapitalUsd: BigDecimal! @index
   decimals: Int!
 
   totalValuePooledUsd: BigDecimal!
