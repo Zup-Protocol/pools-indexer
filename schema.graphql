@@ -29,32 +29,32 @@ type SingleChainToken
 
   usdPrice: BigDecimal!
   trackedUsdPrice: BigDecimal!
-  trackedPriceDiscoveryCapitalUsd: BigDecimal! @index
+  trackedPriceDiscoveryCapitalUsd: BigDecimal! @index @config(precision: 80, scale: 18)
   decimals: Int!
 
   totalValuePooledUsd: BigDecimal!
-  trackedTotalValuePooledUsd: BigDecimal! @index
+  trackedTotalValuePooledUsd: BigDecimal! @index @config(precision: 80, scale: 18)
 
   tokenTotalValuePooled: BigDecimal!
 
   swapVolumeUsd: BigDecimal!
-  trackedSwapVolumeUsd: BigDecimal! @index
+  trackedSwapVolumeUsd: BigDecimal! @index @config(precision: 80, scale: 18)
 
   tokenSwapVolume: BigDecimal!
 
   liquidityVolumeUsd: BigDecimal!
-  trackedLiquidityVolumeUsd: BigDecimal! @index
+  trackedLiquidityVolumeUsd: BigDecimal! @index @config(precision: 80, scale: 18)
 
   tokenLiquidityVolume: BigDecimal!
   tokenFees: BigDecimal!
   feesUsd: BigDecimal!
   trackedFeesUsd: BigDecimal!
 
-  symbol: String!
-  name: String!
-  normalizedSymbol: String!
-  normalizedName: String!
-  chainId: Int!
+  symbol: String! @index
+  name: String! @index
+  normalizedSymbol: String! @index
+  normalizedName: String! @index
+  chainId: Int! @index
 
   poolsCount: BigInt! @index @config(precision: 18)
   swapsCount: BigInt! @index @config(precision: 18)
@@ -97,12 +97,12 @@ type Pool
   lastActivityTimestamp: BigInt! @config(precision: 12)
   lastStatsRefreshTimestamp: BigInt! @config(precision: 12)
 
-  totalValueLockedUsd: BigDecimal! @index
+  totalValueLockedUsd: BigDecimal!
   totalValueLockedToken0: BigDecimal!
   totalValueLockedToken1: BigDecimal!
   totalValueLockedToken0Usd: BigDecimal!
   totalValueLockedToken1Usd: BigDecimal!
-  trackedTotalValueLockedUsd: BigDecimal! @index
+  trackedTotalValueLockedUsd: BigDecimal! @index @config(precision: 80, scale: 18)
   trackedTotalValueLockedToken0Usd: BigDecimal!
   trackedTotalValueLockedToken1Usd: BigDecimal!
 
@@ -197,16 +197,16 @@ type PoolTimeframedStats {
   lastRefreshTimestamp: BigInt! @config(precision: 12)
 
   liquidityNetInflowUsd: BigDecimal!
-  trackedLiquidityNetInflowUsd: BigDecimal! @index
+  trackedLiquidityNetInflowUsd: BigDecimal! @index @config(precision: 80, scale: 18)
 
   swapVolumeUsd: BigDecimal!
-  trackedSwapVolumeUsd: BigDecimal! @index
+  trackedSwapVolumeUsd: BigDecimal! @index @config(precision: 80, scale: 18)
 
   liquidityVolumeUsd: BigDecimal!
-  trackedLiquidityVolumeUsd: BigDecimal! @index
+  trackedLiquidityVolumeUsd: BigDecimal! @index @config(precision: 80, scale: 18)
 
   feesUsd: BigDecimal!
-  trackedFeesUsd: BigDecimal! @index
+  trackedFeesUsd: BigDecimal! @index @config(precision: 80, scale: 18)
 
   yearlyYield: BigDecimal! @index @config(precision: 18, scale: 6)
   accumulatedYield: BigDecimal! @config(precision: 18, scale: 6)
