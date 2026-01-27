@@ -50,11 +50,11 @@ type SingleChainToken
   feesUsd: BigDecimal!
   trackedFeesUsd: BigDecimal!
 
-  symbol: String! @index
-  name: String! @index
-  normalizedSymbol: String! @index
-  normalizedName: String! @index
-  chainId: Int! @index
+  symbol: String!
+  name: String!
+  normalizedSymbol: String!
+  normalizedName: String!
+  chainId: Int!
 
   poolsCount: BigInt! @index @config(precision: 18)
   swapsCount: BigInt! @index @config(precision: 18)
