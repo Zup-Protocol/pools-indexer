@@ -1,5 +1,6 @@
 {
   "name": "pools-indexer",
+  "description": "An Indexer to index multiple liquidity pools",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
