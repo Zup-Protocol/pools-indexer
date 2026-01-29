@@ -9,14 +9,12 @@ export const POSITION_MANAGER_ADDRESS: Record<SupportedProtocol, Partial<Record<
     [IndexerNetwork.BASE]: "0x7c5f5a4bbd8fd63184577525326123b519429bdc",
     [IndexerNetwork.ETHEREUM]: "0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e",
     [IndexerNetwork.UNICHAIN]: "0x4529A01c7A0410167c5740C487A8DE60232617bf",
-    [IndexerNetwork.SEPOLIA]: "0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4",
     [IndexerNetwork.MONAD]: "0x5b7eC4a94fF9beDb700fb82aB09d5846972F4016",
   },
   [SupportedProtocol.UNISWAP_V2]: {
     [IndexerNetwork.BASE]: "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24",
     [IndexerNetwork.ETHEREUM]: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
     [IndexerNetwork.UNICHAIN]: "0x284f11109359a7e1306c3e447ef14d38400063ff",
-    [IndexerNetwork.SEPOLIA]: "0xeE567Fe1712Faf6149d80dA1E6934E354124CfE3",
     [IndexerNetwork.MONAD]: "0x4b2ab38dbf28d31d467aa8993f6c2585981d6804",
   },
   [SupportedProtocol.AERODROME_V3]: {
@@ -26,14 +24,12 @@ export const POSITION_MANAGER_ADDRESS: Record<SupportedProtocol, Partial<Record<
     [IndexerNetwork.BASE]: "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1",
     [IndexerNetwork.ETHEREUM]: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
     [IndexerNetwork.UNICHAIN]: "0x943e6e07a7e8e791dafc44083e54041d743c46e9",
-    [IndexerNetwork.SEPOLIA]: "0x1238536071E1c677A632429e3655c799b22cDA52",
     [IndexerNetwork.MONAD]: "0x7197e214c0b767cfb76fb734ab638e2c192f4e53",
   },
   [SupportedProtocol.PANCAKE_SWAP_V3]: {
     [IndexerNetwork.BASE]: "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
     [IndexerNetwork.ETHEREUM]: "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
     [IndexerNetwork.SCROLL]: "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
-    [IndexerNetwork.SEPOLIA]: "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
     [IndexerNetwork.MONAD]: "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
   },
   [SupportedProtocol.SUSHI_SWAP_V3]: {

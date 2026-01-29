@@ -7,7 +7,6 @@ export enum IndexerNetwork {
   SCROLL = 534352,
   UNICHAIN = 130,
   BASE = 8453,
-  SEPOLIA = 11155111,
   HYPER_EVM = 999,
   PLASMA = 9745,
   MONAD = 143,
@@ -19,7 +18,6 @@ export namespace IndexerNetwork {
     [IndexerNetwork.BASE]: "https://mainnet.base.org",
     [IndexerNetwork.SCROLL]: "https://rpc.scroll.io",
     [IndexerNetwork.UNICHAIN]: "https://mainnet.unichain.org",
-    [IndexerNetwork.SEPOLIA]: "https://sepolia.gateway.tenderly.co",
     [IndexerNetwork.HYPER_EVM]: "https://hyperliquid.drpc.org",
     [IndexerNetwork.PLASMA]: "https://rpc.plasma.to",
     [IndexerNetwork.MONAD]: "https://rpc-mainnet.monadinfra.com",
@@ -30,7 +28,6 @@ export namespace IndexerNetwork {
     [IndexerNetwork.BASE]: process.env.ENVIO_PAID_BASE_RPC_URL!,
     [IndexerNetwork.SCROLL]: process.env.ENVIO_PAID_SCROLL_RPC_URL!,
     [IndexerNetwork.UNICHAIN]: process.env.ENVIO_PAID_UNICHAIN_RPC_URL!,
-    [IndexerNetwork.SEPOLIA]: process.env.ENVIO_PAID_SEPOLIA_RPC_URL!,
     [IndexerNetwork.HYPER_EVM]: process.env.ENVIO_PAID_HYPER_EVM_RPC_URL!,
     [IndexerNetwork.PLASMA]: process.env.ENVIO_PAID_PLASMA_RPC_URL!,
     [IndexerNetwork.MONAD]: process.env.ENVIO_PAID_MONAD_RPC_URL!,
@@ -41,7 +38,6 @@ export namespace IndexerNetwork {
     [IndexerNetwork.ETHEREUM]: NetworkToken.metadata[NetworkToken.ETH],
     [IndexerNetwork.UNICHAIN]: NetworkToken.metadata[NetworkToken.ETH],
     [IndexerNetwork.SCROLL]: NetworkToken.metadata[NetworkToken.ETH],
-    [IndexerNetwork.SEPOLIA]: NetworkToken.metadata[NetworkToken.ETH],
     [IndexerNetwork.HYPER_EVM]: NetworkToken.metadata[NetworkToken.HYPE],
     [IndexerNetwork.PLASMA]: NetworkToken.metadata[NetworkToken.XPL],
     [IndexerNetwork.MONAD]: NetworkToken.metadata[NetworkToken.MON],
@@ -83,9 +79,6 @@ export namespace IndexerNetwork {
       "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA", // USDbC
       "0x368181499736d0c0CC614DBB145E2EC1AC86b8c6", // LUSD
     ],
-    [IndexerNetwork.SEPOLIA]: [
-      "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // USDC
-    ],
     [IndexerNetwork.HYPER_EVM]: [
       "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb", // USDT0
       "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34", // USDe
@@ -124,7 +117,6 @@ export namespace IndexerNetwork {
     [IndexerNetwork.SCROLL]: "0x5300000000000000000000000000000000000004",
     [IndexerNetwork.UNICHAIN]: "0x4200000000000000000000000000000000000006",
     [IndexerNetwork.BASE]: "0x4200000000000000000000000000000000000006",
-    [IndexerNetwork.SEPOLIA]: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14",
     [IndexerNetwork.HYPER_EVM]: "0x5555555555555555555555555555555555555555",
     [IndexerNetwork.PLASMA]: "0x6100e367285b01f48d07953803a2d8dca5d19873",
     [IndexerNetwork.MONAD]: "0x3bd359c1119da7da1d913d1c4d2b7c461115433a",
@@ -135,7 +127,6 @@ export namespace IndexerNetwork {
     [IndexerNetwork.SCROLL]: 1,
     [IndexerNetwork.UNICHAIN]: 1,
     [IndexerNetwork.BASE]: 2,
-    [IndexerNetwork.SEPOLIA]: 12,
     [IndexerNetwork.HYPER_EVM]: 1,
     [IndexerNetwork.PLASMA]: 1,
     [IndexerNetwork.MONAD]: 0.4,
@@ -146,7 +137,6 @@ export namespace IndexerNetwork {
     [IndexerNetwork.SCROLL]: ONE_DAY_IN_SECONDS / IndexerNetwork.meanBlockTimeSeconds[IndexerNetwork.SCROLL],
     [IndexerNetwork.UNICHAIN]: ONE_DAY_IN_SECONDS / IndexerNetwork.meanBlockTimeSeconds[IndexerNetwork.UNICHAIN],
     [IndexerNetwork.BASE]: ONE_DAY_IN_SECONDS / IndexerNetwork.meanBlockTimeSeconds[IndexerNetwork.BASE],
-    [IndexerNetwork.SEPOLIA]: ONE_DAY_IN_SECONDS / IndexerNetwork.meanBlockTimeSeconds[IndexerNetwork.SEPOLIA],
     [IndexerNetwork.HYPER_EVM]: ONE_DAY_IN_SECONDS / IndexerNetwork.meanBlockTimeSeconds[IndexerNetwork.HYPER_EVM],
     [IndexerNetwork.PLASMA]: ONE_DAY_IN_SECONDS / IndexerNetwork.meanBlockTimeSeconds[IndexerNetwork.PLASMA],
     [IndexerNetwork.MONAD]: ONE_DAY_IN_SECONDS / IndexerNetwork.meanBlockTimeSeconds[IndexerNetwork.MONAD],
