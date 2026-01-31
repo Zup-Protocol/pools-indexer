@@ -1,12 +1,11 @@
 import {
-  BigDecimal,
   type Block_t,
   type PoolHistoricalData as PoolHistoricalDataEntity,
   type PoolTimeframedStats as PoolTimeframedStatsEntity,
   type SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import type { HandlerContext } from "generated/src/Types";
-import { MAX_PRICE_DISCOVERY_CAPITAL_USD, STATS_TIMEFRAME_IN_DAYS } from "../core/constants";
+import { STATS_TIMEFRAME_IN_DAYS } from "../core/constants";
 import { EntityId } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import type { PoolPrices } from "../core/types";
@@ -115,15 +114,6 @@ export async function processSwap(params: {
           poolEntity.totalValueLockedToken1.times(poolEntity.tokens1PerToken0),
         )
       : token0Entity.priceDiscoveryTokenAmount,
-
-    trackedPriceDiscoveryCapitalUsd: didToken0TrackedUsdPriceUpdate
-      ? BigDecimal.min(
-          token0Entity.trackedPriceDiscoveryCapitalUsd.plus(
-            poolEntity.totalValueLockedToken1.times(trackedToken1MarketUsdPrice),
-          ),
-          MAX_PRICE_DISCOVERY_CAPITAL_USD,
-        )
-      : token0Entity.trackedPriceDiscoveryCapitalUsd,
   };
 
   token1Entity = {
@@ -136,15 +126,6 @@ export async function processSwap(params: {
           poolEntity.totalValueLockedToken0.times(poolEntity.tokens0PerToken1),
         )
       : token1Entity.priceDiscoveryTokenAmount,
-
-    trackedPriceDiscoveryCapitalUsd: didToken1TrackedUsdPriceUpdate
-      ? BigDecimal.min(
-          token1Entity.trackedPriceDiscoveryCapitalUsd.plus(
-            poolEntity.totalValueLockedToken0.times(trackedToken0MarketUsdPrice),
-          ),
-          MAX_PRICE_DISCOVERY_CAPITAL_USD,
-        )
-      : token1Entity.trackedPriceDiscoveryCapitalUsd,
   };
 
   const newLockedAmounts = calculateNewLockedAmountsUSD({
