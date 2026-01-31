@@ -56,6 +56,7 @@ export namespace IndexerNetwork {
       "0xc83e27f270cce0A3A3A29521173a83F402c1768b", // USDQ
       "0x7B43E3875440B44613DC3bC08E7763e6Da63C8f8", // USDR
       "0x8E870D67F660D95d5be530380D0eC0bd388289E1", // USDP
+      "0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186", // Mezo USD
     ],
     [IndexerNetwork.SCROLL]: [
       "0xf55BEC9cafDbE8730f096Aa55dad6D22d44099Df", // USDT

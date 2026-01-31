@@ -27,7 +27,9 @@ indexer.chainIds.forEach((chainId) => {
       const block24hAgo = BigInt(block.number - oneDayInBlocks);
       const currentBlockBI = BigInt(block.number);
 
-      const inactivePoolsFor24h = await context.Pool.getWhere.lastActivityBlock.lt(block24hAgo);
+      const inactivePoolsFor24h = (await context.Pool.getWhere.lastActivityBlock.lt(block24hAgo)).filter(
+        (pool) => pool.chainId === chainId,
+      );
 
       await Promise.all(
         inactivePoolsFor24h.map((pool) => {
