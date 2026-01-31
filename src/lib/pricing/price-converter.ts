@@ -1,6 +1,6 @@
 import { BigDecimal, type Pool as PoolEntity, type SingleChainToken as SingleChainTokenEntity } from "generated";
 import { MAX_TVL_IMBALANCE_PERCENTAGE } from "../../core/constants";
-import { isPoolTokenTrusted } from "../../core/pool";
+import { isPoolTokenWhitelisted } from "../../core/pool";
 import { isPercentageDifferenceWithinThreshold } from "../math";
 
 export const PriceConverter = {
@@ -24,21 +24,26 @@ function _convertTokenAmountToTrackedUsd(params: {
   const isToken0Dominant = tvl0Usd.gt(tvl1Usd);
   const isToken1Dominant = tvl1Usd.gt(tvl0Usd);
 
-  const isToken0Trusted = isPoolTokenTrusted(poolToken0, params.poolEntity.chainId);
-  const isToken1Trusted = isPoolTokenTrusted(poolToken1, params.poolEntity.chainId);
+  const isToken0Whitelisted = isPoolTokenWhitelisted(poolToken0, params.poolEntity.chainId);
+  const isToken1Witelisted = isPoolTokenWhitelisted(poolToken1, params.poolEntity.chainId);
 
-  if (!isPoolTvlBalanced && ((isToken0Dominant && !isToken0Trusted) || (isToken1Dominant && !isToken1Trusted))) {
+  if (!isPoolTvlBalanced && ((isToken0Dominant && !isToken0Whitelisted) || (isToken1Dominant && !isToken1Witelisted))) {
     return params.fallbackUsdValue;
   }
 
-  const isToken0PriceDiscoveryCapitalLowerThanTVL = poolToken0.trackedPriceDiscoveryCapitalUsd.lt(tvl0Usd);
-  const isToken1PriceDiscoveryCapitalLoverThanTVL = poolToken1.trackedPriceDiscoveryCapitalUsd.lt(tvl1Usd);
+  const isToken0PriceDiscoveryCapitalLowerThanTVL = poolToken0.priceDiscoveryTokenAmount.lt(
+    params.poolEntity.totalValueLockedToken0,
+  );
+
+  const isToken1PriceDiscoveryCapitalLoverThanTVL = poolToken1.priceDiscoveryTokenAmount.lt(
+    params.poolEntity.totalValueLockedToken1,
+  );
 
   if (
     isToken0PriceDiscoveryCapitalLowerThanTVL &&
-    !isToken0Trusted &&
+    !isToken0Whitelisted &&
     isToken1PriceDiscoveryCapitalLoverThanTVL &&
-    !isToken1Trusted
+    !isToken1Witelisted
   ) {
     return params.fallbackUsdValue;
   }

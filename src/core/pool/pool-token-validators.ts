@@ -62,7 +62,7 @@ export function isNativePool(token0: SingleChainTokenEntity, token1: SingleChain
   return false;
 }
 
-export function isPoolTokenTrusted(token: SingleChainTokenEntity, network: IndexerNetwork): boolean {
+export function isPoolTokenWhitelisted(token: SingleChainTokenEntity, network: IndexerNetwork): boolean {
   const isTokenWrappedNative = String.lowercasedEquals(
     token.tokenAddress,
     IndexerNetwork.wrappedNativeAddress[network],

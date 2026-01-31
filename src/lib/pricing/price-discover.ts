@@ -10,7 +10,7 @@ import {
   findStableToken,
   findWrappedNative,
   isNativePool,
-  isPoolTokenTrusted,
+  isPoolTokenWhitelisted,
   isStableOnlyPool,
   isVariableWithStablePool,
   isWrappedNativePool,
@@ -21,11 +21,11 @@ import { calculateSwapTokenPrices } from "../math/swap-math";
 import { TokenDecimalMath } from "../math/token/token-decimal-math";
 
 export const PriceDiscover = {
-  discoverTokenUsdMarketPrices,
+  discoverTokenUsdPrices,
   discoverUsdPricesFromPoolPrices,
 };
 
-export function discoverTokenUsdMarketPrices(params: {
+export function discoverTokenUsdPrices(params: {
   poolToken0Entity: SingleChainTokenEntity;
   poolToken1Entity: SingleChainTokenEntity;
   newPoolPrices: PoolPrices;
@@ -34,72 +34,36 @@ export function discoverTokenUsdMarketPrices(params: {
   network: IndexerNetwork;
   pool: PoolEntity;
 }): {
-  token0MarketUsdPrice: BigDecimal;
-  token1MarketUsdPrice: BigDecimal;
-  trackedToken0MarketUsdPrice: BigDecimal;
-  trackedToken1MarketUsdPrice: BigDecimal;
+  token0UsdPrice: BigDecimal;
+  token1UsdPrice: BigDecimal;
+  trackedToken0UsdPrice: BigDecimal;
+  trackedToken1UsdPrice: BigDecimal;
 } {
-  const canPoolSetToken0Price = _canPoolDiscoverTokenPrice({
-    poolEntity: params.pool,
-    tokenEntity: params.poolToken0Entity,
-  });
-
-  const canPoolSetToken1Price = _canPoolDiscoverTokenPrice({
-    poolEntity: params.pool,
-    tokenEntity: params.poolToken1Entity,
-  });
-
-  if (!canPoolSetToken0Price && !canPoolSetToken1Price) {
-    return {
-      token0MarketUsdPrice: params.poolToken0Entity.usdPrice,
-      token1MarketUsdPrice: params.poolToken1Entity.usdPrice,
-      trackedToken0MarketUsdPrice: params.poolToken0Entity.trackedUsdPrice,
-      trackedToken1MarketUsdPrice: params.poolToken1Entity.trackedUsdPrice,
-    };
-  }
-
   const amount0 = TokenDecimalMath.rawToDecimal(params.rawSwapAmount0, params.poolToken0Entity);
   const amount1 = TokenDecimalMath.rawToDecimal(params.rawSwapAmount1, params.poolToken1Entity);
 
-  const [suggestedPrice0, suggestedPrice1] = discoverUsdPricesFromPoolPrices({
+  const [usdPrice0FromPoolPrices, usdPrice1FromPoolPrices] = discoverUsdPricesFromPoolPrices({
     network: params.network,
     poolPrices: params.newPoolPrices,
     poolToken0Entity: params.poolToken0Entity,
     poolToken1Entity: params.poolToken1Entity,
   });
 
-  const { price0: token0MarketUsdPrice, price1: token1MarketUsdPrice } = calculateValidatedMarketPrices({
-    network: params.network,
-    swapAmount0: amount0,
-    swapAmount1: amount1,
-    token0: params.poolToken0Entity,
-    token1: params.poolToken1Entity,
-    suggestedPrice0,
-    suggestedPrice1,
-    currentPrice0: params.poolToken0Entity.usdPrice,
-    currentPrice1: params.poolToken1Entity.usdPrice,
-  });
-
-  const trackedPrices = discoverTrackedTokenUsdPrices({
+  const [trackedUsdPrice0, trackedUsdPrice1] = discoverTrackedTokenUsdPrices({
     network: params.network,
     newPoolPrices: params.newPoolPrices,
+    pool: params.pool,
     poolToken0Entity: params.poolToken0Entity,
     poolToken1Entity: params.poolToken1Entity,
-    pool: params.pool,
     swapAmount0: amount0,
     swapAmount1: amount1,
   });
 
   return {
-    token0MarketUsdPrice: canPoolSetToken0Price ? token0MarketUsdPrice : params.poolToken0Entity.usdPrice,
-    token1MarketUsdPrice: canPoolSetToken1Price ? token1MarketUsdPrice : params.poolToken1Entity.usdPrice,
-
-    trackedToken0MarketUsdPrice: canPoolSetToken0Price
-      ? trackedPrices.trackedToken0MarketUsdPrice
-      : params.poolToken0Entity.trackedUsdPrice,
-    trackedToken1MarketUsdPrice: canPoolSetToken1Price
-      ? trackedPrices.trackedToken1MarketUsdPrice
-      : params.poolToken1Entity.trackedUsdPrice,
+    token0UsdPrice: usdPrice0FromPoolPrices,
+    token1UsdPrice: usdPrice1FromPoolPrices,
+    trackedToken0UsdPrice: trackedUsdPrice0,
+    trackedToken1UsdPrice: trackedUsdPrice1,
   };
 }
 
@@ -111,11 +75,8 @@ function discoverTrackedTokenUsdPrices(params: {
   swapAmount1: BigDecimal;
   network: IndexerNetwork;
   pool: PoolEntity;
-}): {
-  trackedToken0MarketUsdPrice: BigDecimal;
-  trackedToken1MarketUsdPrice: BigDecimal;
-} {
-  const [suggestedPrice0, suggestedPrice1] = discoverUsdPricesFromPoolPrices({
+}): [trackedUsdPrice0: BigDecimal, trackedUsdPrice1: BigDecimal] {
+  const [trackedPoolUsdPrice0, trackedPoolUsdPrice1] = discoverUsdPricesFromPoolPrices({
     network: params.network,
     poolPrices: params.newPoolPrices,
     poolToken0Entity: params.poolToken0Entity,
@@ -123,73 +84,60 @@ function discoverTrackedTokenUsdPrices(params: {
     useTrackedPrices: true,
   });
 
-  const { price0, price1 } = calculateValidatedMarketPrices({
+  const [untrackedPoolUsdPrice0, untrackedPoolUsdPrice1] = discoverUsdPricesFromPoolPrices({
+    network: params.network,
+    poolPrices: params.newPoolPrices,
+    poolToken0Entity: params.poolToken0Entity,
+    poolToken1Entity: params.poolToken1Entity,
+    useTrackedPrices: false,
+  });
+
+  const usdPrice0FromPoolPrices = trackedPoolUsdPrice0.eq(ZERO_BIG_DECIMAL)
+    ? untrackedPoolUsdPrice0
+    : trackedPoolUsdPrice0;
+
+  const usdPrice1FromPoolPrices = trackedPoolUsdPrice1.eq(ZERO_BIG_DECIMAL)
+    ? untrackedPoolUsdPrice1
+    : trackedPoolUsdPrice1;
+
+  const currentToken0Price: BigDecimal = (params.poolToken0Entity.trackedUsdPrice as BigDecimal).eq(ZERO_BIG_DECIMAL)
+    ? usdPrice0FromPoolPrices
+    : params.poolToken0Entity.trackedUsdPrice;
+
+  const currentToken1Price: BigDecimal = (params.poolToken1Entity.trackedUsdPrice as BigDecimal).eq(ZERO_BIG_DECIMAL)
+    ? usdPrice1FromPoolPrices
+    : params.poolToken1Entity.trackedUsdPrice;
+
+  const [swapPrice0, swapPrice1] = calculateSwapTokenPrices({
     network: params.network,
     swapAmount0: params.swapAmount0,
     swapAmount1: params.swapAmount1,
-    token0: params.poolToken0Entity,
-    token1: params.poolToken1Entity,
-    suggestedPrice0,
-    suggestedPrice1,
-    currentPrice0: params.poolToken0Entity.trackedUsdPrice,
-    currentPrice1: params.poolToken1Entity.trackedUsdPrice,
+    currentToken0Price: currentToken0Price,
+    currentToken1Price: currentToken1Price,
   });
+
+  const isPoolUsdPrice0CloseToSwapPrice = isPercentageDifferenceWithinThreshold(
+    usdPrice0FromPoolPrices,
+    swapPrice0,
+    OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
+  );
+
+  const isPoolUsdPrice1CloseToSwapPrice = isPercentageDifferenceWithinThreshold(
+    usdPrice1FromPoolPrices,
+    swapPrice1,
+    OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
+  );
 
   const safeTrackedPrices = _resolveTrackedPricesForNewPrices({
     pool: params.pool,
     token0: params.poolToken0Entity,
     token1: params.poolToken1Entity,
     poolPrices: params.newPoolPrices,
-    suggestedPrice0: price0,
-    suggestedPrice1: price1,
+    suggestedPrice0: isPoolUsdPrice0CloseToSwapPrice ? usdPrice0FromPoolPrices : currentToken0Price,
+    suggestedPrice1: isPoolUsdPrice1CloseToSwapPrice ? usdPrice1FromPoolPrices : currentToken1Price,
   });
 
-  return {
-    trackedToken0MarketUsdPrice: safeTrackedPrices.trackedToken0Price,
-    trackedToken1MarketUsdPrice: safeTrackedPrices.trackedToken1Price,
-  };
-}
-
-function calculateValidatedMarketPrices(params: {
-  network: IndexerNetwork;
-  swapAmount0: BigDecimal;
-  swapAmount1: BigDecimal;
-  token0: SingleChainTokenEntity;
-  token1: SingleChainTokenEntity;
-  suggestedPrice0: BigDecimal;
-  suggestedPrice1: BigDecimal;
-  currentPrice0: BigDecimal;
-  currentPrice1: BigDecimal;
-}): { price0: BigDecimal; price1: BigDecimal } {
-  const { network, swapAmount0, swapAmount1, suggestedPrice0, suggestedPrice1, currentPrice0, currentPrice1 } = params;
-
-  const anchorPrice0 = currentPrice0.eq(ZERO_BIG_DECIMAL) ? suggestedPrice0 : currentPrice0;
-  const anchorPrice1 = currentPrice1.eq(ZERO_BIG_DECIMAL) ? suggestedPrice1 : currentPrice1;
-
-  const [swapPrice0, swapPrice1] = calculateSwapTokenPrices({
-    network,
-    swapAmount0,
-    swapAmount1,
-    currentToken0Price: anchorPrice0,
-    currentToken1Price: anchorPrice1,
-  });
-
-  const isSuggestedPrice0CloseToSwapPrice = isPercentageDifferenceWithinThreshold(
-    suggestedPrice0,
-    swapPrice0,
-    OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
-  );
-
-  const isSuggestedPrice1CloseToSwapPrice = isPercentageDifferenceWithinThreshold(
-    suggestedPrice1,
-    swapPrice1,
-    OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD,
-  );
-
-  return {
-    price0: isSuggestedPrice0CloseToSwapPrice ? suggestedPrice0.decimalPlaces(params.token0.decimals) : currentPrice0,
-    price1: isSuggestedPrice1CloseToSwapPrice ? suggestedPrice1.decimalPlaces(params.token1.decimals) : currentPrice1,
-  };
+  return [safeTrackedPrices.trackedToken0Price, safeTrackedPrices.trackedToken1Price];
 }
 
 export function discoverUsdPricesFromPoolPrices(params: {
@@ -294,55 +242,57 @@ function _resolveTrackedPricesForNewPrices(params: {
   trackedToken0Price: BigDecimal;
   trackedToken1Price: BigDecimal;
 } {
-  const { pool, token0, token1, suggestedPrice0, suggestedPrice1 } = params;
+  const canPoolDiscoverToken0Price = _canPoolDiscoverTokenPrice({
+    poolEntity: params.pool,
+    tokenEntity: params.token0,
+  });
+  const canPoolDiscoverToken1Price = _canPoolDiscoverTokenPrice({
+    poolEntity: params.pool,
+    tokenEntity: params.token1,
+  });
 
-  if (suggestedPrice0.isZero() && suggestedPrice1.isZero()) {
+  if (!canPoolDiscoverToken0Price && !canPoolDiscoverToken1Price) {
+    return {
+      trackedToken0Price: params.token0.trackedUsdPrice,
+      trackedToken1Price: params.token1.trackedUsdPrice,
+    };
+  }
+
+  if (params.suggestedPrice0.isZero() && params.suggestedPrice1.isZero()) {
     return {
       trackedToken0Price: ZERO_BIG_DECIMAL,
       trackedToken1Price: ZERO_BIG_DECIMAL,
     };
   }
 
-  const tvl0Usd = pool.totalValueLockedToken0.times(suggestedPrice0);
-  const tvl1Usd = pool.totalValueLockedToken1.times(suggestedPrice1);
+  const suggestedPoolTvl0Usd = params.pool.totalValueLockedToken0.times(params.suggestedPrice0);
+  const suggestedPoolTvl1Usd = params.pool.totalValueLockedToken1.times(params.suggestedPrice1);
 
-  const isToken0Trusted = isPoolTokenTrusted(token0, pool.chainId);
-  const isToken1Trusted = isPoolTokenTrusted(token1, pool.chainId);
+  const isToken0Whitelisted = isPoolTokenWhitelisted(params.token0, params.pool.chainId);
+  const isToken1Whitelisted = isPoolTokenWhitelisted(params.token1, params.pool.chainId);
 
-  const isToken0Trustable = token0.trackedPriceDiscoveryCapitalUsd.gt(tvl0Usd) || isToken1Trusted;
-  const isToken1Trustable = token1.trackedPriceDiscoveryCapitalUsd.gt(tvl1Usd) || isToken0Trusted;
+  const isToken0Trustable =
+    params.token0.priceDiscoveryTokenAmount.gt(params.pool.totalValueLockedToken0) || isToken1Whitelisted;
 
-  const isPoolBalanced = isPercentageDifferenceWithinThreshold(tvl0Usd, tvl1Usd, MAX_TVL_IMBALANCE_PERCENTAGE);
+  const isToken1Trustable =
+    params.token1.priceDiscoveryTokenAmount.gt(params.pool.totalValueLockedToken1) || isToken0Whitelisted;
+
+  const isPoolBalanced = isPercentageDifferenceWithinThreshold(
+    suggestedPoolTvl0Usd,
+    suggestedPoolTvl1Usd,
+    MAX_TVL_IMBALANCE_PERCENTAGE,
+  );
 
   if (isPoolBalanced && (isToken0Trustable || isToken1Trustable)) {
-    return { trackedToken0Price: suggestedPrice0, trackedToken1Price: suggestedPrice1 };
-  }
-
-  if (!isToken0Trustable && !isToken1Trustable) {
     return {
-      trackedToken0Price: token0.trackedUsdPrice,
-      trackedToken1Price: token1.trackedUsdPrice,
-    };
-  }
-
-  const isToken0Dominant = tvl0Usd.gt(tvl1Usd);
-  const isToken0Corrupted = isToken0Dominant && !isToken0Trusted;
-  const isToken1Corrupted = !isToken0Dominant && !isToken1Trusted;
-
-  if (isToken0Corrupted || isToken1Corrupted) {
-    /** * ENGINEERING DECISION: State Reset.
-     * If a token is detected as corrupted, we force it to ZERO to allow
-     * the price discovery to re-derive from the Trusted Asset.
-     */
-    return {
-      trackedToken0Price: isToken0Corrupted ? ZERO_BIG_DECIMAL : suggestedPrice0,
-      trackedToken1Price: isToken1Corrupted ? ZERO_BIG_DECIMAL : suggestedPrice1,
+      trackedToken0Price: canPoolDiscoverToken0Price ? params.suggestedPrice0 : params.token0.trackedUsdPrice,
+      trackedToken1Price: canPoolDiscoverToken1Price ? params.suggestedPrice1 : params.token1.trackedUsdPrice,
     };
   }
 
   return {
-    trackedToken0Price: suggestedPrice0,
-    trackedToken1Price: suggestedPrice1,
+    trackedToken0Price: params.token0.trackedUsdPrice,
+    trackedToken1Price: params.token1.trackedUsdPrice,
   };
 }
 

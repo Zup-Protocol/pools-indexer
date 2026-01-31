@@ -66,13 +66,24 @@ export const TokenService = {
       ];
     });
 
-    const results = await client.multicall({
-      contracts,
-      allowFailure: true,
-      multicallAddress: "0xcA11bde05977b3631167028862bE2a173976CA11",
-    });
+    let results: any[];
+    try {
+      results = await client.multicall({
+        contracts,
+        allowFailure: true,
+        multicallAddress: "0xcA11bde05977b3631167028862bE2a173976CA11",
+      });
+    } catch (error) {
+      console.error(`TokenService: Multicall failed for network ${network}`, error);
+      // If multicall fails entirely, return empty metadata for all addresses
+      return addresses.map(() => ({
+        decimals: 18,
+        symbol: "",
+        name: "",
+      }));
+    }
 
-    return addresses.map((_, index) => {
+    return addresses.map((_address, index) => {
       const offset = index * 7;
 
       const nameResult = results[offset];
@@ -83,28 +94,60 @@ export const TokenService = {
       const symbolCapsResult = results[offset + 5];
       const decimalsResult = results[offset + 6];
 
-      let name = nameResult?.status === "success" ? (nameResult.result as string) : "";
+      const safeHexToString = (hex: any): string => {
+        if (!hex || typeof hex !== "string" || !hex.startsWith("0x")) return "";
+        try {
+          return hexToString(hex as `0x${string}`, { size: 32 })
+            .replace(/\u0000/g, "")
+            .trim();
+        } catch {
+          return "";
+        }
+      };
 
-      if (!name) {
+      let name = "";
+      if (nameResult?.status === "success" && typeof nameResult.result === "string" && nameResult.result.length > 0) {
+        name = nameResult.result;
+      }
+
+      if (!name || name.length === 0) {
         if (nameBytes32Result?.status === "success") {
-          name = hexToString(nameBytes32Result.result as `0x${string}`, { size: 32 }).replace(/\0/g, "");
+          name = safeHexToString(nameBytes32Result.result);
         } else if (nameCapsResult?.status === "success") {
-          name = hexToString(nameCapsResult.result as `0x${string}`, { size: 32 }).replace(/\0/g, "");
+          name = safeHexToString(nameCapsResult.result);
         }
       }
 
-      let symbol = symbolResult?.status === "success" ? (symbolResult.result as string) : "";
-      if (!symbol) {
+      let symbol = "";
+      if (
+        symbolResult?.status === "success" &&
+        typeof symbolResult.result === "string" &&
+        symbolResult.result.length > 0
+      ) {
+        symbol = symbolResult.result;
+      }
+
+      if (!symbol || symbol.length === 0) {
         if (symbolBytes32Result?.status === "success") {
-          symbol = hexToString(symbolBytes32Result.result as `0x${string}`, { size: 32 }).replace(/\0/g, "");
+          symbol = safeHexToString(symbolBytes32Result.result);
         } else if (symbolCapsResult?.status === "success") {
-          symbol = hexToString(symbolCapsResult.result as `0x${string}`, { size: 32 }).replace(/\0/g, "");
+          symbol = safeHexToString(symbolCapsResult.result);
         }
       }
 
-      let decimals = decimalsResult?.status === "success" ? (decimalsResult.result as number) : 18;
+      let decimals = 18;
 
-      if (decimals > 255) decimals = 18;
+      if (decimalsResult?.status === "success") {
+        try {
+          decimals = Number(decimalsResult.result);
+        } catch {
+          decimals = 18;
+        }
+      }
+
+      if (isNaN(decimals) || decimals > 255 || decimals < 0) {
+        decimals = 18;
+      }
 
       return {
         decimals: decimals,

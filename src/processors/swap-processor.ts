@@ -85,16 +85,20 @@ export async function processSwap(params: {
     tokenTotalValuePooled: token1Entity.tokenTotalValuePooled.plus(amount1Formatted),
   };
 
-  const { token0MarketUsdPrice, token1MarketUsdPrice, trackedToken0MarketUsdPrice, trackedToken1MarketUsdPrice } =
-    PriceDiscover.discoverTokenUsdMarketPrices({
-      network: params.network,
-      poolToken0Entity: token0Entity,
-      poolToken1Entity: token1Entity,
-      newPoolPrices: params.newPoolPrices,
-      rawSwapAmount0: params.amount0,
-      rawSwapAmount1: params.amount1,
-      pool: poolEntity,
-    });
+  const {
+    token0UsdPrice: token0MarketUsdPrice,
+    token1UsdPrice: token1MarketUsdPrice,
+    trackedToken0UsdPrice: trackedToken0MarketUsdPrice,
+    trackedToken1UsdPrice: trackedToken1MarketUsdPrice,
+  } = PriceDiscover.discoverTokenUsdPrices({
+    network: params.network,
+    poolToken0Entity: token0Entity,
+    poolToken1Entity: token1Entity,
+    newPoolPrices: params.newPoolPrices,
+    rawSwapAmount0: params.amount0,
+    rawSwapAmount1: params.amount1,
+    pool: poolEntity,
+  });
 
   const didToken0UsdPriceUpdate = !token0MarketUsdPrice.eq(token0Entity.usdPrice);
   const didToken1UsdPriceUpdate = !token1MarketUsdPrice.eq(token1Entity.usdPrice);
@@ -105,6 +109,13 @@ export async function processSwap(params: {
     ...token0Entity,
     usdPrice: token0MarketUsdPrice,
     trackedUsdPrice: trackedToken0MarketUsdPrice,
+
+    priceDiscoveryTokenAmount: didToken0TrackedUsdPriceUpdate
+      ? token0Entity.priceDiscoveryTokenAmount.plus(
+          poolEntity.totalValueLockedToken1.times(poolEntity.tokens1PerToken0),
+        )
+      : token0Entity.priceDiscoveryTokenAmount,
+
     trackedPriceDiscoveryCapitalUsd: didToken0TrackedUsdPriceUpdate
       ? BigDecimal.min(
           token0Entity.trackedPriceDiscoveryCapitalUsd.plus(
@@ -119,6 +130,13 @@ export async function processSwap(params: {
     ...token1Entity,
     usdPrice: token1MarketUsdPrice,
     trackedUsdPrice: trackedToken1MarketUsdPrice,
+
+    priceDiscoveryTokenAmount: didToken1TrackedUsdPriceUpdate
+      ? token1Entity.priceDiscoveryTokenAmount.plus(
+          poolEntity.totalValueLockedToken0.times(poolEntity.tokens0PerToken1),
+        )
+      : token1Entity.priceDiscoveryTokenAmount,
+
     trackedPriceDiscoveryCapitalUsd: didToken1TrackedUsdPriceUpdate
       ? BigDecimal.min(
           token1Entity.trackedPriceDiscoveryCapitalUsd.plus(

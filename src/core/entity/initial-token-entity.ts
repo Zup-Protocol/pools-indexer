@@ -25,6 +25,8 @@ export class InitialTokenEntity implements SingleChainTokenEntity {
     this.id = EntityId.fromAddress(params.network, params.tokenAddress);
   }
 
+  readonly priceDiscoveryTokenAmount: BigDecimal = ZERO_BIG_DECIMAL;
+
   readonly id: string;
   readonly chainId: number;
   readonly decimals: number;

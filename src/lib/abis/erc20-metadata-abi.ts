@@ -30,7 +30,7 @@ export const ERC20_METADATA_ABI = [
   {
     inputs: [],
     name: "decimals",
-    outputs: [{ type: "uint8" }],
+    outputs: [{ type: "uint256" }],
     stateMutability: "view",
     type: "function",
   },

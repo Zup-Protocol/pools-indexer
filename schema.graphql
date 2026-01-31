@@ -29,6 +29,7 @@ type SingleChainToken
 
   usdPrice: BigDecimal!
   trackedUsdPrice: BigDecimal!
+  priceDiscoveryTokenAmount: BigDecimal!
   trackedPriceDiscoveryCapitalUsd: BigDecimal! @index @config(precision: 80, scale: 18)
   decimals: Int!
 
