@@ -1,7 +1,7 @@
 import type { HandlerContext } from "generated";
 import { AlgebraVersion } from "../../core/algebra/algebra-version";
 import { ZERO_ADDRESS } from "../../core/constants";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 
 export async function processAlgebraPlugin(params: {
@@ -12,7 +12,7 @@ export async function processAlgebraPlugin(params: {
 }): Promise<void> {
   // we use get or created because this handler can be called before the factory
   let algebraPoolData = await params.context.AlgebraPoolData.getOrCreate({
-    id: EntityId.fromAddress(params.network, params.poolAddress),
+    id: Id.fromAddress(params.network, params.poolAddress),
     rawCommunityFee: 0,
     communityFeePercentage: 0,
     deployer: ZERO_ADDRESS,

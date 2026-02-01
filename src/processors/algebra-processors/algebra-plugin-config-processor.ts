@@ -1,5 +1,5 @@
 import type { HandlerContext } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ALGEBRA_POOL_DYNAMIC_FEE_FLAG } from "./utils/constants";
 
@@ -9,7 +9,7 @@ export async function processAlgebraPluginConfig(params: {
   network: IndexerNetwork;
   newPluginConfig: number;
 }): Promise<void> {
-  const poolId = EntityId.fromAddress(params.network, params.poolAddress);
+  const poolId = Id.fromAddress(params.network, params.poolAddress);
 
   let [algebraPoolData, poolEntity] = await Promise.all([
     params.context.AlgebraPoolData.getOrThrow(poolId),

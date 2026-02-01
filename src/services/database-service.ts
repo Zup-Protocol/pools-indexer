@@ -8,7 +8,7 @@ import type { HistoricalDataInterval_t } from "generated/src/db/Enums.gen";
 import type { HandlerContext } from "generated/src/Types";
 import { ZERO_ADDRESS, ZERO_BIG_INT } from "../core/constants";
 import { getMultiTokenMetadataEffect } from "../core/effects/token-metadata-effect";
-import { EntityId, InitialPoolHistoricalDataEntity, InitialPoolTimeframedStatsEntity } from "../core/entity";
+import { Id, InitialPoolHistoricalDataEntity, InitialPoolTimeframedStatsEntity } from "../core/entity";
 import { InitialTokenEntity } from "../core/entity/initial-token-entity";
 import { IndexerNetwork } from "../core/network";
 import { subtractDaysFromSecondsTimestamp, subtractHoursFromSecondsTimestamp } from "../lib/timestamp";
@@ -31,8 +31,8 @@ async function getOrCreatePoolTokenEntities(params: {
   token1Address: string;
 }): Promise<[SingleChainTokenEntity, SingleChainTokenEntity]> {
   const dbEntities = await Promise.all([
-    params.context.SingleChainToken.get(EntityId.fromAddress(params.network, params.token0Address)),
-    params.context.SingleChainToken.get(EntityId.fromAddress(params.network, params.token1Address)),
+    params.context.SingleChainToken.get(Id.fromAddress(params.network, params.token0Address)),
+    params.context.SingleChainToken.get(Id.fromAddress(params.network, params.token1Address)),
   ]);
 
   if (dbEntities[0] && dbEntities[1]) return dbEntities as [SingleChainTokenEntity, SingleChainTokenEntity];
@@ -96,9 +96,7 @@ async function getOldestPoolHourlyDataAgo(
     const timestamp = subtractHoursFromSecondsTimestamp(eventTimestamp, hour);
     if (timestamp < pool.createdAtTimestamp) continue;
 
-    const data = await context.PoolHistoricalData.get(
-      EntityId.buildHourlyDataId(timestamp, pool.chainId, pool.poolAddress),
-    );
+    const data = await context.PoolHistoricalData.get(Id.buildHourlyDataId(timestamp, pool.chainId, pool.poolAddress));
 
     if (data) return data;
   }
@@ -116,9 +114,7 @@ async function getOldestPoolDailyDataAgo(
     const timestamp = subtractDaysFromSecondsTimestamp(eventTimestamp, day);
     if (timestamp < pool.createdAtTimestamp) continue;
 
-    const data = await context.PoolHistoricalData.get(
-      EntityId.buildDailyDataId(timestamp, pool.chainId, pool.poolAddress),
-    );
+    const data = await context.PoolHistoricalData.get(Id.buildDailyDataId(timestamp, pool.chainId, pool.poolAddress));
 
     if (data) return data;
   }
@@ -133,7 +129,7 @@ async function getPoolHourlyDataAgo(
   const timestampAgo = subtractHoursFromSecondsTimestamp(eventTimestamp, hoursAgo);
   if (timestampAgo < pool.createdAtTimestamp || pool.lastActivityTimestamp < timestampAgo) return;
 
-  return await context.PoolHistoricalData.get(EntityId.buildHourlyDataId(timestampAgo, pool.chainId, pool.poolAddress));
+  return await context.PoolHistoricalData.get(Id.buildHourlyDataId(timestampAgo, pool.chainId, pool.poolAddress));
 }
 
 async function getPoolDailyDataAgo(
@@ -145,7 +141,7 @@ async function getPoolDailyDataAgo(
   const timestampAgo = subtractDaysFromSecondsTimestamp(eventTimestamp, daysAgo);
   if (timestampAgo < pool.createdAtTimestamp || pool.lastActivityTimestamp < timestampAgo) return;
 
-  return await context.PoolHistoricalData.get(EntityId.buildDailyDataId(timestampAgo, pool.chainId, pool.poolAddress));
+  return await context.PoolHistoricalData.get(Id.buildDailyDataId(timestampAgo, pool.chainId, pool.poolAddress));
 }
 
 async function getOrCreateHistoricalPoolDataEntities(params: {
@@ -172,12 +168,12 @@ async function getAllPooltimeframedStatsEntities(
   context: HandlerContext,
   pool: PoolEntity,
 ): Promise<PoolTimeframedStatsEntity[]> {
-  const statsToFetch = EntityId.buildAllTimeframedStatsIds(pool.chainId, pool.poolAddress);
+  const statsToFetch = Id.buildAllTimeframedStatsIds(pool.chainId, pool.poolAddress);
   return Promise.all(statsToFetch.map((stat) => context.PoolTimeframedStats.getOrThrow(stat.id)));
 }
 
 async function resetAllPoolTimeframedStats(context: HandlerContext, pool: PoolEntity) {
-  const statsToReset = EntityId.buildAllTimeframedStatsIds(pool.chainId, pool.poolAddress);
+  const statsToReset = Id.buildAllTimeframedStatsIds(pool.chainId, pool.poolAddress);
 
   statsToReset.forEach((stat) =>
     context.PoolTimeframedStats.set(

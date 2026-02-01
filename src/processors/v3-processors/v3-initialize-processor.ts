@@ -4,7 +4,7 @@ import type {
   SingleChainToken as SingleChainTokenEntity,
   V3PoolData as V3PoolDataEntity,
 } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedSqrtPriceMath } from "../../lib/math";
 import { processPoolPricesUpdate } from "../pool-prices-update-processor";
@@ -16,7 +16,7 @@ export async function processV3Initialize(params: {
   sqrtPriceX96: bigint;
   tick: bigint;
 }): Promise<void> {
-  const poolId = EntityId.fromAddress(params.network, params.poolAddress);
+  const poolId = Id.fromAddress(params.network, params.poolAddress);
 
   const [poolEntity, v3PoolDataEntity]: [PoolEntity, V3PoolDataEntity] = await Promise.all([
     params.context.Pool.getOrThrow(poolId),

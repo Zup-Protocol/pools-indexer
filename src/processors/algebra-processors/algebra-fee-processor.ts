@@ -1,5 +1,5 @@
 import type { HandlerContext } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { FeeMath } from "../../lib/math/fee-math";
 
@@ -9,7 +9,7 @@ export async function processAlgebraFee(params: {
   network: IndexerNetwork;
   newFeeTier: number;
 }): Promise<void> {
-  const poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
+  const poolEntity = await params.context.Pool.getOrThrow(Id.fromAddress(params.network, params.poolAddress));
 
   params.context.Pool.set({
     ...poolEntity,

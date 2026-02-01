@@ -5,7 +5,7 @@ import type {
   SingleChainToken as SingleChainTokenEntity,
   SlipstreamPoolData,
 } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedSqrtPriceMath } from "../../lib/math/concentrated-liquidity/concentrated-sqrt-price-math";
 import { FeeMath } from "../../lib/math/fee-math";
@@ -23,7 +23,7 @@ export async function processSlipstreamSwap(params: {
   amount0: bigint;
   amount1: bigint;
 }) {
-  const poolId = EntityId.fromAddress(params.network, params.poolAddress);
+  const poolId = Id.fromAddress(params.network, params.poolAddress);
 
   let [poolEntity, slipstreamPoolData]: [PoolEntity, SlipstreamPoolData] = await Promise.all([
     params.context.Pool.getOrThrow(poolId),

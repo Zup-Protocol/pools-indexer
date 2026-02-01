@@ -1,5 +1,5 @@
 import type { Block_t, handlerContext, SingleChainToken as SingleChainTokenEntity } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConstantProductPriceMath } from "../../lib/math/constant-product/constant-product-price-math";
 import { TokenDecimalMath } from "../../lib/math/token/token-decimal-math";
@@ -15,7 +15,7 @@ export async function processV2Swap(params: {
   amount0Out: bigint;
   amount1Out: bigint;
 }): Promise<void> {
-  const poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
+  const poolEntity = await params.context.Pool.getOrThrow(Id.fromAddress(params.network, params.poolAddress));
 
   const [token0Entity, token1Entity]: [SingleChainTokenEntity, SingleChainTokenEntity] = await Promise.all([
     params.context.SingleChainToken.getOrThrow(poolEntity.token0_id),

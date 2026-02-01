@@ -1,4 +1,5 @@
 import { PancakeSwapV4CLPoolManager } from "generated";
+import { Id } from "../../../core/entity";
 import { processV4ModifyLiquidity } from "../../../processors/v4-processors/v4-modify-liquidity-processor";
 
 PancakeSwapV4CLPoolManager.ModifyLiquidity.handler(async ({ event, context }) => {

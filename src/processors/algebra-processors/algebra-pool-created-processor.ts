@@ -1,7 +1,7 @@
 import type { Block_t, handlerContext } from "generated";
 import { AlgebraVersion } from "../../core/algebra/algebra-version";
 import { ZERO_ADDRESS } from "../../core/constants";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { SupportedProtocol } from "../../core/protocol";
 import { processNewPool } from "../new-pool-processor";
 
@@ -16,7 +16,7 @@ export async function processAlgebraPoolCreated(params: {
   deployer: string;
   version: AlgebraVersion;
 }): Promise<void> {
-  const poolId = EntityId.fromAddress(params.chainId, params.poolAddress);
+  const poolId = Id.fromAddress(params.chainId, params.poolAddress);
 
   // we use get or create because it can be created before the factory at algebra-plugin-handler
   let algebraPoolData = await params.context.AlgebraPoolData.getOrCreate({

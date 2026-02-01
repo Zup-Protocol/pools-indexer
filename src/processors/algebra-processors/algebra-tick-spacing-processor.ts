@@ -1,5 +1,5 @@
 import type { HandlerContext } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 
 export async function processAlgebraTickSpacing(params: {
@@ -9,7 +9,7 @@ export async function processAlgebraTickSpacing(params: {
   newTickSpacing: number;
 }): Promise<void> {
   const algebraPoolData = await params.context.AlgebraPoolData.getOrThrow(
-    EntityId.fromAddress(params.network, params.poolAddress)
+    Id.fromAddress(params.network, params.poolAddress),
   );
 
   params.context.AlgebraPoolData.set({

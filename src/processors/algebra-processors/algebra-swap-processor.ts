@@ -5,7 +5,7 @@ import type {
   Pool as PoolEntity,
   SingleChainToken as SingleChainTokenEntity,
 } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedSqrtPriceMath } from "../../lib/math/concentrated-liquidity/concentrated-sqrt-price-math";
 import { FeeMath } from "../../lib/math/fee-math";
@@ -25,7 +25,7 @@ export async function processAlgebraSwap(params: {
   tick: bigint;
 }): Promise<void> {
   if (params.overrideSwapFee === 0) params.overrideSwapFee = undefined;
-  const poolId = EntityId.fromAddress(params.network, params.poolAddress);
+  const poolId = Id.fromAddress(params.network, params.poolAddress);
 
   const [poolEntity, algebraPoolData]: [PoolEntity, AlgebraPoolDataEntity] = await Promise.all([
     params.context.Pool.getOrThrow(poolId),

@@ -1,5 +1,6 @@
 import { indexer, onBlock, type HandlerContext, type Pool as PoolEntity } from "generated";
 import { maxUint256 } from "viem";
+import { Id } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import { processPoolTimeframedStatsUpdate } from "../processors/pool-timeframed-stats-update-processor";
 import { DatabaseService } from "../services/database-service";
@@ -24,34 +25,50 @@ indexer.chainIds.forEach((chainId) => {
       const thirtyDaysInBlocksBI = BigInt(thirtyDaysInBlocks);
       const ninetyDaysInBlocksBI = BigInt(ninetyDaysInBlocks);
 
-      const block24hAgo = BigInt(block.number - oneDayInBlocks);
       const currentBlockBI = BigInt(block.number);
 
-      const inactivePoolsFor24h = (await context.Pool.getWhere.lastActivityBlock.lt(block24hAgo)).filter(
-        (pool) => pool.chainId === chainId,
-      );
+      const chainConfig = indexer.chains[chainId as keyof typeof indexer.chains];
+      const startBlock = BigInt(chainConfig.startBlock);
+      const startDayId = Math.floor(Number(startBlock) / oneDayInBlocks);
 
-      await Promise.all(
-        inactivePoolsFor24h.map((pool) => {
-          const inactiveBlocks = currentBlockBI - pool.lastActivityBlock;
-          const activeBlocksSinceCreation = pool.lastActivityBlock - BigInt(pool.createdAtBlock);
+      let daysAgo = 1;
 
-          if (
-            inactiveBlocks > ninetyDaysInBlocksBI ||
-            (inactiveBlocks > thirtyDaysInBlocksBI && activeBlocksSinceCreation < thirtyDaysInBlocksBI) ||
-            (inactiveBlocks > sevenDaysInBlocksBI && activeBlocksSinceCreation < sevenDaysInBlocksBI) ||
-            (inactiveBlocks > oneDayInBlocksBI && activeBlocksSinceCreation < oneDayInBlocksBI)
-          ) {
-            return killPoolDailyUpdate(context, pool);
-          }
+      while (true) {
+        const targetBlock = currentBlockBI - oneDayInBlocksBI * BigInt(daysAgo);
 
-          return processPoolTimeframedStatsUpdate({
-            context,
-            eventTimestamp: nowAsSecondsTimestamp,
-            poolEntity: pool,
-          });
-        }),
-      );
+        const targetDayId = Math.floor(Number(targetBlock) / oneDayInBlocks);
+        if (targetDayId < startDayId || targetBlock < 0n) break;
+
+        const poolsInDay = await context.Pool.getWhere.lastActivityDayId.eq(
+          Id.buildLastActivityDayId(targetBlock, chainId),
+        );
+
+        if (poolsInDay.length > 0) {
+          await Promise.all(
+            poolsInDay.map((pool) => {
+              const inactiveBlocks = currentBlockBI - pool.lastActivityBlock;
+              const activeBlocksSinceCreation = pool.lastActivityBlock - pool.createdAtBlock;
+
+              if (
+                inactiveBlocks > ninetyDaysInBlocksBI ||
+                (inactiveBlocks > thirtyDaysInBlocksBI && activeBlocksSinceCreation < thirtyDaysInBlocksBI) ||
+                (inactiveBlocks > sevenDaysInBlocksBI && activeBlocksSinceCreation < sevenDaysInBlocksBI) ||
+                (inactiveBlocks > oneDayInBlocksBI && activeBlocksSinceCreation < oneDayInBlocksBI)
+              ) {
+                return killPoolDailyUpdate(context, pool);
+              }
+
+              return processPoolTimeframedStatsUpdate({
+                context,
+                eventTimestamp: nowAsSecondsTimestamp,
+                poolEntity: pool,
+              });
+            }),
+          );
+        }
+
+        daysAgo++;
+      }
     },
   );
 });
@@ -62,5 +79,6 @@ function killPoolDailyUpdate(context: HandlerContext, pool: PoolEntity) {
   context.Pool.set({
     ...pool,
     lastActivityBlock: maxUint256,
+    lastActivityDayId: Id.buildLastActivityDayId(maxUint256, pool.chainId),
   });
 }

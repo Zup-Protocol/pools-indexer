@@ -1,6 +1,6 @@
 import type { Block_t, handlerContext } from "generated";
 import { PERMIT2_ADDRESS } from "../../core/address/permit2-address";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { SupportedProtocol } from "../../core/protocol";
 import { ConcentratedSqrtPriceMath } from "../../lib/math";
@@ -24,7 +24,7 @@ export async function processV4Initialize(params: {
   chainId: number & IndexerNetwork;
   poolManagerAddress: string;
 }): Promise<void> {
-  const poolId = EntityId.fromAddress(params.chainId, params.poolAddress);
+  const poolId = Id.fromAddress(params.chainId, params.poolAddress);
 
   params.context.V4PoolData.set({
     id: poolId,

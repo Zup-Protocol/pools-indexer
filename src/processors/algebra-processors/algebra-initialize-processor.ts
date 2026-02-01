@@ -4,7 +4,7 @@ import type {
   Pool as PoolEntity,
   SingleChainToken as SingleChainTokenEntity,
 } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedSqrtPriceMath } from "../../lib/math";
 import { processPoolPricesUpdate } from "../pool-prices-update-processor";
@@ -16,7 +16,7 @@ export async function processAlgebraInitialize(params: {
   poolAddress: string;
   network: IndexerNetwork;
 }): Promise<void> {
-  const poolId = EntityId.fromAddress(params.network, params.poolAddress);
+  const poolId = Id.fromAddress(params.network, params.poolAddress);
 
   const [poolEntity, algebraPoolDataEntity]: [PoolEntity, AlgebraPoolData] = await Promise.all([
     params.context.Pool.getOrThrow(poolId),

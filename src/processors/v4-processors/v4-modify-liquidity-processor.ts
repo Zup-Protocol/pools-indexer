@@ -1,5 +1,5 @@
 import type { Block_t, handlerContext } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedLiquidityMath } from "../../lib/math";
 import { processLiquidityChange } from "../liquidity-change-processor";
@@ -13,16 +13,14 @@ export async function processV4ModifyLiquidity(params: {
   tickLower: number;
   tickUpper: number;
 }): Promise<void> {
-  const v4PoolEntity = await params.context.V4PoolData.getOrThrow(
-    EntityId.fromAddress(params.network, params.poolAddress)
-  );
+  const v4PoolEntity = await params.context.V4PoolData.getOrThrow(Id.fromAddress(params.network, params.poolAddress));
 
   const amount0 = ConcentratedLiquidityMath.calculateAmount0ForDelta(
     params.tickLower,
     params.tickUpper,
     v4PoolEntity.tick,
     params.liqudityDelta,
-    v4PoolEntity.sqrtPriceX96
+    v4PoolEntity.sqrtPriceX96,
   );
 
   const amount1 = ConcentratedLiquidityMath.calculateAmount1ForDelta(
@@ -30,7 +28,7 @@ export async function processV4ModifyLiquidity(params: {
     params.tickUpper,
     v4PoolEntity.tick,
     params.liqudityDelta,
-    v4PoolEntity.sqrtPriceX96
+    v4PoolEntity.sqrtPriceX96,
   );
 
   await processLiquidityChange({

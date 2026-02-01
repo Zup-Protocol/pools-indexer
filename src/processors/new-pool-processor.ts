@@ -2,7 +2,7 @@ import type { Block_t, Pool as PoolEntity, SingleChainToken as SingleChainTokenE
 import type { PoolType_t } from "generated/src/db/Enums.gen";
 import type { HandlerContext } from "generated/src/Types";
 import { POSITION_MANAGER_ADDRESS } from "../core/address/position-manager-address";
-import { EntityId, InitialPoolEntity, InitialPoolTimeframedStatsEntity } from "../core/entity";
+import { Id, InitialPoolEntity, InitialPoolTimeframedStatsEntity } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import { SupportedProtocol } from "../core/protocol";
 import { DatabaseService } from "../services/database-service";
@@ -67,7 +67,7 @@ export async function processNewPool(params: {
     url: protocolMetadata.url,
   });
 
-  EntityId.buildAllTimeframedStatsIds(params.network, params.poolAddress).forEach((id) => {
+  Id.buildAllTimeframedStatsIds(params.network, params.poolAddress).forEach((id) => {
     params.context.PoolTimeframedStats.set(
       new InitialPoolTimeframedStatsEntity({
         id: id.id,

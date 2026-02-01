@@ -1,5 +1,5 @@
 import type { HandlerContext } from "generated/src/Types";
-import { EntityId } from "../core/entity";
+import { Id } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import type { PoolPrices } from "../core/types";
 
@@ -9,7 +9,7 @@ export async function processPoolPricesUpdate(params: {
   poolPrices: PoolPrices;
   network: IndexerNetwork;
 }) {
-  const poolId = EntityId.fromAddress(params.network, params.poolAddress);
+  const poolId = Id.fromAddress(params.network, params.poolAddress);
 
   const poolEntity = await params.context.Pool.getOrThrow(poolId);
 

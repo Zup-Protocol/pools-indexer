@@ -4,7 +4,7 @@ import type {
   SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import type { HandlerContext } from "generated/src/Types";
-import { EntityId } from "../core/entity";
+import { Id } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import { calculateNewLockedAmountsUSD, TokenDecimalMath } from "../lib/math";
 import { DatabaseService } from "../services/database-service";
@@ -20,7 +20,7 @@ export async function processLiquidityChange(params: {
   eventBlock: Block_t;
   updateMetrics: boolean;
 }) {
-  let poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
+  let poolEntity = await params.context.Pool.getOrThrow(Id.fromAddress(params.network, params.poolAddress));
 
   let [token0Entity, token1Entity, poolHistoricalDataEntities]: [
     SingleChainTokenEntity,
@@ -72,6 +72,7 @@ export async function processLiquidityChange(params: {
     totalValueLockedUsd: newUsdLockedAmounts.newPoolTotalValueLockedUSD,
     trackedTotalValueLockedUsd: newUsdLockedAmounts.newTrackedPoolTotalValueLockedUSD,
 
+    lastActivityDayId: Id.buildLastActivityDayId(BigInt(params.eventBlock.number), params.network),
     lastActivityBlock: BigInt(params.eventBlock.number),
     lastActivityTimestamp: BigInt(params.eventBlock.timestamp),
   };

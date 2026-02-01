@@ -1,19 +1,21 @@
 import type { BigDecimal, Pool } from "generated";
 import type { PoolType_t } from "generated/src/db/Enums.gen";
 import { ZERO_BIG_DECIMAL, ZERO_BIG_INT } from "../../src/core/constants";
-import { EntityId } from "../../src/core/entity/entity-id";
+import { Id } from "../../src/core/id";
 
 export class PoolMock implements Pool {
   constructor(params: Partial<Pool> = {}) {
     this.chainId = params.chainId ?? 1;
     this.poolAddress = params.poolAddress ?? "0x0";
-    this.id = params.id ?? EntityId.fromAddress(this.chainId, this.poolAddress);
+    this.id = params.id ?? Id.fromAddress(this.chainId, this.poolAddress);
 
     this.lastActivityBlock = params.lastActivityBlock ?? 0n;
     this.createdAtBlock = params.createdAtBlock ?? 0n;
     this.createdAtTimestamp = params.createdAtTimestamp ?? 0n;
     this.lastActivityTimestamp = params.lastActivityTimestamp ?? 0n;
     this.lastStatsRefreshTimestamp = params.lastStatsRefreshTimestamp ?? 0n;
+    this.lastActivityDayId =
+      params.lastActivityDayId ?? Id.buildLastActivityDayId(this.lastActivityBlock, this.chainId);
 
     this.token0_id = params.token0_id ?? "";
     this.token1_id = params.token1_id ?? "";
@@ -31,10 +33,10 @@ export class PoolMock implements Pool {
     this.algebraPoolData_id = params.algebraPoolData_id ?? this.id;
     this.slipstreamPoolData_id = params.slipstreamPoolData_id ?? this.id;
 
-    this.totalStats24h_id = params.totalStats24h_id ?? EntityId.build24hStatsId(this.chainId, this.poolAddress);
-    this.totalStats7d_id = params.totalStats7d_id ?? EntityId.build7dStatsId(this.chainId, this.poolAddress);
-    this.totalStats30d_id = params.totalStats30d_id ?? EntityId.build30dStatsId(this.chainId, this.poolAddress);
-    this.totalStats90d_id = params.totalStats90d_id ?? EntityId.build90dStatsId(this.chainId, this.poolAddress);
+    this.totalStats24h_id = params.totalStats24h_id ?? Id.build24hStatsId(this.chainId, this.poolAddress);
+    this.totalStats7d_id = params.totalStats7d_id ?? Id.build7dStatsId(this.chainId, this.poolAddress);
+    this.totalStats30d_id = params.totalStats30d_id ?? Id.build30dStatsId(this.chainId, this.poolAddress);
+    this.totalStats90d_id = params.totalStats90d_id ?? Id.build90dStatsId(this.chainId, this.poolAddress);
 
     this.totalValueLockedUsd = params.totalValueLockedUsd ?? ZERO_BIG_DECIMAL;
     this.totalValueLockedToken0 = params.totalValueLockedToken0 ?? ZERO_BIG_DECIMAL;
@@ -97,6 +99,7 @@ export class PoolMock implements Pool {
   readonly createdAtTimestamp: bigint;
   readonly lastActivityBlock: bigint;
   readonly lastActivityTimestamp: bigint;
+  readonly lastActivityDayId: string;
   readonly lastStatsRefreshTimestamp: bigint;
   readonly totalValueLockedUsd: BigDecimal;
   readonly totalValueLockedToken0: BigDecimal;

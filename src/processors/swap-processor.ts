@@ -6,7 +6,7 @@ import {
 } from "generated";
 import type { HandlerContext } from "generated/src/Types";
 import { STATS_TIMEFRAME_IN_DAYS } from "../core/constants";
-import { EntityId } from "../core/entity";
+import { Id } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import type { PoolPrices } from "../core/types";
 import {
@@ -33,7 +33,7 @@ export async function processSwap(params: {
   token0Entity?: SingleChainTokenEntity;
   token1Entity?: SingleChainTokenEntity;
 }) {
-  let poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
+  let poolEntity = await params.context.Pool.getOrThrow(Id.fromAddress(params.network, params.poolAddress));
 
   let [token0Entity, token1Entity, statsEntities, poolHistoricalDataEntities]: [
     SingleChainTokenEntity,
@@ -64,6 +64,7 @@ export async function processSwap(params: {
     tokens1PerToken0: params.newPoolPrices.tokens1PerToken0,
     totalValueLockedToken0: poolEntity.totalValueLockedToken0.plus(amount0Formatted),
     totalValueLockedToken1: poolEntity.totalValueLockedToken1.plus(amount1Formatted),
+    lastActivityDayId: Id.buildLastActivityDayId(BigInt(params.eventBlock.number), params.network),
     lastActivityBlock: BigInt(params.eventBlock.number),
     lastActivityTimestamp: BigInt(params.eventBlock.timestamp),
   };

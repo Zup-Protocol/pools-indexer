@@ -5,7 +5,7 @@ import type {
   SingleChainToken as SingleChainTokenEntity,
   V4PoolData as V4PoolDataEntity,
 } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedSqrtPriceMath } from "../../lib/math";
 import { FeeMath } from "../../lib/math/fee-math";
@@ -22,7 +22,7 @@ export async function processV4Swap(params: {
   swapFee: number;
   eventBlock: Block_t;
 }): Promise<void> {
-  const poolId = EntityId.fromAddress(params.network, params.poolAddress);
+  const poolId = Id.fromAddress(params.network, params.poolAddress);
 
   const [poolEntity, v4PoolDataEntity]: [PoolEntity, V4PoolDataEntity] = await Promise.all([
     params.context.Pool.getOrThrow(poolId),

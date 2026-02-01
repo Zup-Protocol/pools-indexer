@@ -1,5 +1,5 @@
 import type { Block_t, handlerContext, SlipstreamPoolData } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { SupportedProtocol } from "../../core/protocol";
 import { ConcentratedSqrtPriceMath } from "../../lib/math";
 import { processNewPool } from "../new-pool-processor";
@@ -16,7 +16,7 @@ export async function processSlipstreamPoolCreated(params: {
   protocol: SupportedProtocol;
 }): Promise<void> {
   const slipstreamPoolData: SlipstreamPoolData = await params.context.SlipstreamPoolData.getOrThrow(
-    EntityId.fromAddress(params.chainId, params.poolAddress)
+    Id.fromAddress(params.chainId, params.poolAddress),
   );
 
   params.context.SlipstreamPoolData.set({

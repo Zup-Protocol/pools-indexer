@@ -95,6 +95,7 @@ type Pool
 
   lastActivityBlock: BigInt! @index
   lastActivityTimestamp: BigInt! @config(precision: 12)
+  lastActivityDayId: String! @index
   lastStatsRefreshTimestamp: BigInt! @config(precision: 12)
 
   totalValueLockedUsd: BigDecimal!

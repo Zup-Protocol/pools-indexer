@@ -5,7 +5,7 @@ import type {
   SingleChainToken as SingleChainTokenEntity,
   V3PoolData as V3PoolDataEntity,
 } from "generated";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedSqrtPriceMath } from "../../lib/math/concentrated-liquidity/concentrated-sqrt-price-math";
 import { processSwap } from "../swap-processor";
@@ -20,7 +20,7 @@ export async function processV3Swap(params: {
   amount1: bigint;
   eventBlock: Block_t;
 }): Promise<void> {
-  const poolId = EntityId.fromAddress(params.network, params.poolAddress);
+  const poolId = Id.fromAddress(params.network, params.poolAddress);
 
   let [poolEntity, v3PoolEntity]: [PoolEntity, V3PoolDataEntity] = await Promise.all([
     params.context.Pool.getOrThrow(poolId),

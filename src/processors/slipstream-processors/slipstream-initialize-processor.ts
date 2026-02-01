@@ -1,6 +1,6 @@
 import type { handlerContext } from "generated";
 import { ZERO_BIG_INT } from "../../core/constants";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 
 export async function processSlipstreamInitialize(params: {
@@ -12,7 +12,7 @@ export async function processSlipstreamInitialize(params: {
 }): Promise<void> {
   // we don't update pool prices here because initialize event is emitted before the pool is created
   params.context.SlipstreamPoolData.set({
-    id: EntityId.fromAddress(params.network, params.poolAddress),
+    id: Id.fromAddress(params.network, params.poolAddress),
     lastFeeAdjustmentTimestamp: ZERO_BIG_INT,
     tickSpacing: 0,
     sqrtPriceX96: params.sqrtPriceX96,

@@ -1,6 +1,6 @@
 import type { Block_t, handlerContext } from "generated";
 import { ZERO_BIG_INT } from "../../core/constants";
-import { EntityId } from "../../core/entity";
+import { Id } from "../../core/entity";
 import { SupportedProtocol } from "../../core/protocol";
 import { processNewPool } from "../new-pool-processor";
 
@@ -16,7 +16,7 @@ export async function processV3PoolCreated(params: {
   protocol: SupportedProtocol;
 }): Promise<void> {
   params.context.V3PoolData.set({
-    id: EntityId.fromAddress(params.chainId, params.poolAddress),
+    id: Id.fromAddress(params.chainId, params.poolAddress),
     sqrtPriceX96: ZERO_BIG_INT,
     tick: ZERO_BIG_INT,
     tickSpacing: params.tickSpacing,

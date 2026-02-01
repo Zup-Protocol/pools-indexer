@@ -1,4 +1,5 @@
 import { UniswapV4PoolManager } from "generated";
+import { Id } from "../../../core/entity";
 import { processV4ModifyLiquidity } from "../../../processors/v4-processors/v4-modify-liquidity-processor";
 
 UniswapV4PoolManager.ModifyLiquidity.handler(async ({ event, context }) => {

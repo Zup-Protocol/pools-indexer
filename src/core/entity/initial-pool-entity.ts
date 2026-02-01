@@ -2,7 +2,7 @@ import { BigDecimal, type Pool as PoolEntity } from "generated";
 import type { PoolType_t } from "generated/src/db/Enums.gen";
 import { FeeMath } from "../../lib/math/fee-math";
 import { ZERO_BIG_DECIMAL } from "../constants";
-import { EntityId } from "./entity-id";
+import { Id } from "../id";
 
 export class InitialPoolEntity implements PoolEntity {
   constructor(
@@ -25,10 +25,10 @@ export class InitialPoolEntity implements PoolEntity {
     this.createdAtBlock = params.createdAtBlock;
     this.lastActivityBlock = params.createdAtBlock;
     this.lastActivityTimestamp = params.createdAtTimestamp;
-    this.lastStatsRefreshTimestamp = 0n;
-
     this.chainId = params.chainId;
     this.poolAddress = params.poolAddress;
+    this.lastActivityDayId = Id.buildLastActivityDayId(this.lastActivityBlock, this.chainId);
+    this.lastStatsRefreshTimestamp = 0n;
     this.rawInitialFeeTier = params.rawInitialFeeTier;
     this.rawCurrentFeeTier = this.rawInitialFeeTier;
     this.currentFeeTierPercentage = FeeMath.convertRawSwapFeeToPercentage(this.rawCurrentFeeTier);
@@ -40,11 +40,11 @@ export class InitialPoolEntity implements PoolEntity {
     this.token0_id = params.token0_id;
     this.token1_id = params.token1_id;
 
-    this.id = EntityId.fromAddress(this.chainId, this.poolAddress);
-    this.totalStats24h_id = EntityId.build24hStatsId(this.chainId, this.poolAddress);
-    this.totalStats7d_id = EntityId.build7dStatsId(this.chainId, this.poolAddress);
-    this.totalStats30d_id = EntityId.build30dStatsId(this.chainId, this.poolAddress);
-    this.totalStats90d_id = EntityId.build90dStatsId(this.chainId, this.poolAddress);
+    this.id = Id.fromAddress(this.chainId, this.poolAddress);
+    this.totalStats24h_id = Id.build24hStatsId(this.chainId, this.poolAddress);
+    this.totalStats7d_id = Id.build7dStatsId(this.chainId, this.poolAddress);
+    this.totalStats30d_id = Id.build30dStatsId(this.chainId, this.poolAddress);
+    this.totalStats90d_id = Id.build90dStatsId(this.chainId, this.poolAddress);
 
     this.v3PoolData_id = this.id;
     this.v4PoolData_id = this.id;
@@ -59,6 +59,7 @@ export class InitialPoolEntity implements PoolEntity {
 
   readonly lastActivityBlock: bigint;
   readonly lastActivityTimestamp: bigint;
+  readonly lastActivityDayId: string;
   readonly lastStatsRefreshTimestamp: bigint;
   readonly createdAtBlock: bigint;
   readonly createdAtTimestamp: bigint;

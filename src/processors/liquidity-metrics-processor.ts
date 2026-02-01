@@ -5,7 +5,7 @@ import type {
   SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import { ZERO_BIG_DECIMAL } from "../core/constants";
-import { EntityId } from "../core/entity";
+import { Id } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import { calculateLiquidityFlow, PriceConverter } from "../lib/math";
 import { TokenDecimalMath } from "../lib/math/token/token-decimal-math";
@@ -21,7 +21,7 @@ export async function processLiquidityMetrics(params: {
   amount0AddedOrRemoved: bigint;
   amount1AddedOrRemoved: bigint;
 }) {
-  let poolEntity = await params.context.Pool.getOrThrow(EntityId.fromAddress(params.network, params.poolAddress));
+  let poolEntity = await params.context.Pool.getOrThrow(Id.fromAddress(params.network, params.poolAddress));
 
   let [token0Entity, token1Entity, statsEntities, poolHistoricalDataEntities]: [
     SingleChainTokenEntity,

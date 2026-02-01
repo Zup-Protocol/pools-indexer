@@ -1,7 +1,7 @@
 import type { BigDecimal, Pool as PoolEntity, PoolHistoricalData as PoolHistoricalDataEntity } from "generated";
 import type { HistoricalDataInterval_t } from "generated/src/db/Enums.gen";
 import { ZERO_BIG_DECIMAL } from "../constants";
-import { EntityId } from "./entity-id";
+import { Id } from "../id";
 
 export class InitialPoolHistoricalDataEntity implements PoolHistoricalDataEntity {
   constructor(
@@ -9,23 +9,15 @@ export class InitialPoolHistoricalDataEntity implements PoolHistoricalDataEntity
       poolEntity: PoolEntity;
       interval: HistoricalDataInterval_t;
       eventTimestamp: bigint;
-    }
+    },
   ) {
     switch (params.interval) {
       case "DAILY":
-        this.id = EntityId.buildDailyDataId(
-          params.eventTimestamp,
-          params.poolEntity.chainId,
-          params.poolEntity.poolAddress
-        );
+        this.id = Id.buildDailyDataId(params.eventTimestamp, params.poolEntity.chainId, params.poolEntity.poolAddress);
         break;
 
       case "HOURLY":
-        this.id = EntityId.buildHourlyDataId(
-          params.eventTimestamp,
-          params.poolEntity.chainId,
-          params.poolEntity.poolAddress
-        );
+        this.id = Id.buildHourlyDataId(params.eventTimestamp, params.poolEntity.chainId, params.poolEntity.poolAddress);
         break;
     }
 
