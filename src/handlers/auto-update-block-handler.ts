@@ -27,7 +27,7 @@ indexer.chainIds.forEach((chainId) => {
 
       const currentBlockBI = BigInt(block.number);
 
-      const chainConfig = indexer.chains[chainId as keyof typeof indexer.chains];
+      const chainConfig = indexer.chains[chainId];
       const startBlock = BigInt(chainConfig.startBlock);
       const startDayId = Math.floor(Number(startBlock) / oneDayInBlocks);
 
@@ -58,11 +58,14 @@ indexer.chainIds.forEach((chainId) => {
                 return killPoolDailyUpdate(context, pool);
               }
 
-              return processPoolTimeframedStatsUpdate({
-                context,
-                eventTimestamp: nowAsSecondsTimestamp,
-                poolEntity: pool,
-              });
+              if (indexer.chains[chainId].isLive) {
+                return processPoolTimeframedStatsUpdate({
+                  context,
+                  eventTimestamp: nowAsSecondsTimestamp,
+                  poolEntity: pool,
+                  isAutoUpdate: true,
+                });
+              }
             }),
           );
         }

@@ -1,10 +1,10 @@
 import type { BigDecimal, PoolTimeframedStats as PoolTimeframedStatsEntity } from "generated";
 import type { StatsTimeframe_t } from "generated/src/db/Enums.gen";
-import { ZERO_BIG_DECIMAL, ZERO_BIG_INT } from "../constants";
+import { ZERO_BIG_DECIMAL } from "../constants";
 
 export class InitialPoolTimeframedStatsEntity implements PoolTimeframedStatsEntity {
   constructor(
-    readonly params: { id: string; dataPointTimestamp: bigint; poolId: string; timeframe: StatsTimeframe_t }
+    readonly params: { id: string; dataPointTimestamp: bigint; poolId: string; timeframe: StatsTimeframe_t },
   ) {
     this.id = this.params.id;
     this.timeframe = this.params.timeframe;
@@ -17,7 +17,6 @@ export class InitialPoolTimeframedStatsEntity implements PoolTimeframedStatsEnti
   readonly pool_id: string;
   readonly dataPointTimestamp: bigint;
   readonly accumulatedYield: BigDecimal = ZERO_BIG_DECIMAL;
-  readonly lastRefreshTimestamp: bigint = ZERO_BIG_INT;
   readonly feesUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly liquidityNetInflowUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly swapVolumeUsd: BigDecimal = ZERO_BIG_DECIMAL;

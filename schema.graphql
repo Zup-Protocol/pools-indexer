@@ -195,7 +195,6 @@ type PoolTimeframedStats {
   timeframe: StatsTimeframe!
 
   dataPointTimestamp: BigInt! @config(precision: 12)
-  lastRefreshTimestamp: BigInt! @config(precision: 12)
 
   liquidityNetInflowUsd: BigDecimal!
   trackedLiquidityNetInflowUsd: BigDecimal! @index @config(precision: 80, scale: 18)

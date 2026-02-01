@@ -10,6 +10,7 @@ export async function processPoolTimeframedStatsUpdate(params: {
   context: HandlerContext;
   eventTimestamp: bigint;
   poolEntity: PoolEntity;
+  isAutoUpdate?: boolean;
 }) {
   if (isSecondsTimestampMoreThanDaysAgo(params.eventTimestamp, 100)) return;
   if (!isSecondsTimestampMoreThanHoursAgo(params.poolEntity.lastStatsRefreshTimestamp, 1)) return;
@@ -19,7 +20,7 @@ export async function processPoolTimeframedStatsUpdate(params: {
 
   updatedStats.forEach((updatedStat) => params.context.PoolTimeframedStats.set(updatedStat));
 
-  if (updatedStats.length > 0) {
+  if (updatedStats.length > 0 && !params.isAutoUpdate) {
     params.context.Pool.set({
       ...params.poolEntity,
       lastStatsRefreshTimestamp: params.eventTimestamp,
@@ -68,7 +69,6 @@ async function _updatePoolTimeframedStat(
     return {
       ...stat,
       dataPointTimestamp: dataAgo.timestampAtStart,
-      lastRefreshTimestamp: params.eventTimestamp,
       liquidityVolumeUsd: params.poolEntity.liquidityVolumeUsd.minus(dataAgo.liquidityVolumeUsdAtStart),
       trackedLiquidityVolumeUsd: params.poolEntity.trackedLiquidityVolumeUsd.minus(
         dataAgo.trackedLiquidityVolumeUsdAtStart,
