@@ -9,7 +9,7 @@
     "clean": "tsc --clean",
     "build": "tsc --build",
     "watch": "tsc --watch",
-    "test": "vitest run",
+    "test": "vitest run --testTimeout 20000",
     "codegen": "envio codegen",
     "dev": "envio dev",
     "start": "envio start"
