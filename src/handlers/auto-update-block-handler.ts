@@ -58,12 +58,14 @@ indexer.chainIds.forEach((chainId) => {
                 return killPoolDailyUpdate(context, pool);
               }
 
-              return processPoolTimeframedStatsUpdate({
-                context,
-                eventTimestamp: nowAsSecondsTimestamp,
-                poolEntity: pool,
-                isAutoUpdate: true,
-              });
+              if (context.chain.isLive) {
+                return processPoolTimeframedStatsUpdate({
+                  context,
+                  eventTimestamp: nowAsSecondsTimestamp,
+                  poolEntity: pool,
+                  isAutoUpdate: true,
+                });
+              }
             }),
           );
         }
