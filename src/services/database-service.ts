@@ -30,39 +30,81 @@ async function getOrCreatePoolTokenEntities(params: {
   token0Address: string;
   token1Address: string;
 }): Promise<[SingleChainTokenEntity, SingleChainTokenEntity]> {
-  const [token0, token1]: [SingleChainTokenEntity | undefined, SingleChainTokenEntity | undefined] = await Promise.all([
+  const [token0DB, token1DB] = await Promise.all([
     params.context.SingleChainToken.get(Id.fromAddress(params.network, params.token0Address)),
     params.context.SingleChainToken.get(Id.fromAddress(params.network, params.token1Address)),
   ]);
 
-  if (token0 && token1) return [token0, token1];
+  if (token0DB && token1DB) return [token0DB, token1DB];
 
-  if (token0 && !token1) {
-    const createdToken1 = await _createTokenEntity({
-      context: params.context,
-      network: params.network,
-      tokenAddress: params.token1Address,
+  const token0PromiseKey = _getMetadataPromisesCacheKey(params.network, params.token0Address);
+  const token1PromiseKey = _getMetadataPromisesCacheKey(params.network, params.token1Address);
+
+  let token0Promise: Promise<SingleChainTokenEntity> | undefined = token0DB
+    ? Promise.resolve(token0DB)
+    : _tokenMetadataPromises.get(token0PromiseKey);
+
+  let token1Promise: Promise<SingleChainTokenEntity> | undefined = token1DB
+    ? Promise.resolve(token1DB)
+    : _tokenMetadataPromises.get(token1PromiseKey);
+
+  const addressesNeedingMetadata: string[] = [];
+
+  if (params.token0Address !== ZERO_ADDRESS && !token0Promise) addressesNeedingMetadata.push(params.token0Address);
+  if (params.token1Address !== ZERO_ADDRESS && !token1Promise) addressesNeedingMetadata.push(params.token1Address);
+
+  if (addressesNeedingMetadata.length > 0) {
+    const fetchMetadataPromise = params.context
+      .effect(getMultiTokenMetadataEffect, {
+        chainId: params.network,
+        tokenAddresses: addressesNeedingMetadata,
+      })
+      .then((metadatas) => {
+        return metadatas.map((metadata, index) => {
+          return new InitialTokenEntity({
+            decimals: metadata.decimals,
+            name: metadata.name,
+            symbol: metadata.symbol,
+            network: params.network,
+            tokenAddress: addressesNeedingMetadata[index]!,
+          });
+        });
+      });
+
+    addressesNeedingMetadata.forEach((address, index) => {
+      const tokenMetadataPromise = fetchMetadataPromise.then((entities) => entities[index] as SingleChainTokenEntity);
+      _tokenMetadataPromises.set(_getMetadataPromisesCacheKey(params.network, address), tokenMetadataPromise);
+
+      if (address === params.token0Address) token0Promise = tokenMetadataPromise;
+      if (address === params.token1Address) token1Promise = tokenMetadataPromise;
     });
-
-    return [token0, createdToken1];
   }
 
-  if (!token0 && token1) {
-    const createdToken0 = await _createTokenEntity({
-      context: params.context,
-      network: params.network,
-      tokenAddress: params.token0Address,
-    });
+  if (!token0Promise && params.token0Address === ZERO_ADDRESS) {
+    token0Promise = Promise.resolve(
+      new InitialTokenEntity({
+        ...IndexerNetwork.nativeToken[params.network],
+        network: params.network,
+        tokenAddress: ZERO_ADDRESS,
+      }),
+    );
 
-    return [createdToken0, token1];
+    _tokenMetadataPromises.set(token0PromiseKey, token0Promise);
   }
 
-  return _createPoolTokenEntities({
-    context: params.context,
-    network: params.network,
-    token0Address: params.token0Address,
-    token1Address: params.token1Address,
-  });
+  if (!token1Promise && params.token1Address === ZERO_ADDRESS) {
+    token1Promise = Promise.resolve(
+      new InitialTokenEntity({
+        ...IndexerNetwork.nativeToken[params.network],
+        network: params.network,
+        tokenAddress: ZERO_ADDRESS,
+      }),
+    );
+
+    _tokenMetadataPromises.set(token1PromiseKey, token1Promise);
+  }
+
+  return Promise.all([token0Promise!, token1Promise!]);
 }
 
 async function getOldestPoolHourlyDataAgo(
@@ -168,79 +210,8 @@ async function resetAllPoolTimeframedStats(context: HandlerContext, pool: PoolEn
   );
 }
 
-async function _createPoolTokenEntities(params: {
-  context: HandlerContext;
-  network: IndexerNetwork;
-  token0Address: string;
-  token1Address: string;
-}): Promise<[SingleChainTokenEntity, SingleChainTokenEntity]> {
-  const isToken0ZeroAddress = params.token0Address === ZERO_ADDRESS;
-  const isToken1ZeroAddress = params.token1Address === ZERO_ADDRESS;
+const _tokenMetadataPromises = new Map<string, Promise<SingleChainTokenEntity>>();
 
-  // this means that only one fetch will be performed, so it's ok to call it separated
-  if (isToken0ZeroAddress || isToken1ZeroAddress) {
-    return [
-      await _createTokenEntity({
-        context: params.context,
-        network: params.network,
-        tokenAddress: params.token0Address,
-      }),
-
-      await _createTokenEntity({
-        context: params.context,
-        network: params.network,
-        tokenAddress: params.token1Address,
-      }),
-    ];
-  }
-
-  const [token0Metadata, token1Metadata] = await params.context.effect(getMultiTokenMetadataEffect, {
-    chainId: params.network,
-    tokenAddresses: [params.token0Address, params.token1Address],
-  });
-
-  return [
-    new InitialTokenEntity({
-      decimals: token0Metadata!.decimals,
-      name: token0Metadata!.name,
-      symbol: token0Metadata!.symbol,
-      network: params.network,
-      tokenAddress: params.token0Address,
-    }),
-
-    new InitialTokenEntity({
-      decimals: token1Metadata!.decimals,
-      name: token1Metadata!.name,
-      symbol: token1Metadata!.symbol,
-      network: params.network,
-      tokenAddress: params.token1Address,
-    }),
-  ];
-}
-
-async function _createTokenEntity(params: {
-  context: HandlerContext;
-  network: IndexerNetwork;
-  tokenAddress: string;
-}): Promise<SingleChainTokenEntity> {
-  if (params.tokenAddress === ZERO_ADDRESS) {
-    return new InitialTokenEntity({
-      ...IndexerNetwork.nativeToken[params.network],
-      network: params.network,
-      tokenAddress: ZERO_ADDRESS,
-    });
-  }
-
-  const tokenMetadata = await params.context.effect(getMultiTokenMetadataEffect, {
-    chainId: params.network,
-    tokenAddresses: [params.tokenAddress],
-  });
-
-  return new InitialTokenEntity({
-    decimals: tokenMetadata[0]!.decimals,
-    name: tokenMetadata[0]!.name,
-    network: params.network,
-    symbol: tokenMetadata[0]!.symbol,
-    tokenAddress: params.tokenAddress,
-  });
+function _getMetadataPromisesCacheKey(network: IndexerNetwork, address: string): string {
+  return `${network}:${address}`;
 }
