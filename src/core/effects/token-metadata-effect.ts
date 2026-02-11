@@ -13,12 +13,14 @@ export const getMultiTokenMetadataEffect = createEffect(
         decimals: S.number,
         name: S.string,
         symbol: S.string,
-      })
+      }),
     ),
     rateLimit: false,
     cache: true,
   },
   async ({ context, input }) => {
-    return await TokenService.getMultiRemoteMetadata(input.tokenAddresses, input.chainId);
-  }
+    const metadata = await TokenService.getMultiRemoteMetadata(input.tokenAddresses, input.chainId);
+
+    return metadata;
+  },
 );
