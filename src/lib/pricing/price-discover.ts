@@ -212,7 +212,7 @@ export function discoverUsdPricesFromPoolPrices(params: {
     ? !params.poolToken1Entity.trackedUsdPrice.eq(ZERO_BIG_DECIMAL)
     : !params.poolToken1Entity.usdPrice.eq(ZERO_BIG_DECIMAL);
 
-  if (!isToken0Priced) {
+  if (isToken1Priced) {
     const token1Price = params.useTrackedPrices
       ? params.poolToken1Entity.trackedUsdPrice
       : params.poolToken1Entity.usdPrice;
@@ -220,7 +220,7 @@ export function discoverUsdPricesFromPoolPrices(params: {
     p0 = params.poolPrices.tokens1PerToken0.times(token1Price);
   }
 
-  if (!isToken1Priced) {
+  if (isToken0Priced) {
     const token0Price = params.useTrackedPrices
       ? params.poolToken0Entity.trackedUsdPrice
       : params.poolToken0Entity.usdPrice;
