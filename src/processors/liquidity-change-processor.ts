@@ -4,9 +4,11 @@ import type {
   SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import type { HandlerContext } from "generated/src/Types";
+import { ZERO_BIG_DECIMAL } from "../core/constants";
 import { Id } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import { calculateNewLockedAmountsUSD, TokenDecimalMath } from "../lib/math";
+import { PriceDiscover } from "../lib/pricing/price-discover";
 import { PriceFormatter } from "../lib/pricing/price-formatter";
 import { DatabaseService } from "../services/database-service";
 import { processLiquidityMetrics } from "./liquidity-metrics-processor";
@@ -46,14 +48,29 @@ export async function processLiquidityChange(params: {
     totalValueLockedToken1: poolEntity.totalValueLockedToken1.plus(amount1Formatted),
   };
 
+  const isToken0DiscoveryEligible = PriceDiscover.isTokenDiscoveryEligible(token0Entity, poolEntity);
+  const isToken1DiscoveryEligible = PriceDiscover.isTokenDiscoveryEligible(token1Entity, poolEntity);
+
   token0Entity = {
     ...token0Entity,
     tokenTotalValuePooled: token0Entity.tokenTotalValuePooled.plus(amount0Formatted),
+    priceDiscoveryTokenAmount:
+      isToken1DiscoveryEligible && amount1Formatted.gt(ZERO_BIG_DECIMAL)
+        ? token0Entity.priceDiscoveryTokenAmount.plus(
+            PriceDiscover.calculateDiscoveryAmountFromOtherToken(amount1Formatted, poolEntity.tokens0PerToken1),
+          )
+        : token0Entity.priceDiscoveryTokenAmount,
   };
 
   token1Entity = {
     ...token1Entity,
     tokenTotalValuePooled: token1Entity.tokenTotalValuePooled.plus(amount1Formatted),
+    priceDiscoveryTokenAmount:
+      isToken0DiscoveryEligible && amount0Formatted.gt(ZERO_BIG_DECIMAL)
+        ? token1Entity.priceDiscoveryTokenAmount.plus(
+            PriceDiscover.calculateDiscoveryAmountFromOtherToken(amount0Formatted, poolEntity.tokens1PerToken0),
+          )
+        : token1Entity.priceDiscoveryTokenAmount,
   };
 
   const newUsdLockedAmounts = calculateNewLockedAmountsUSD({

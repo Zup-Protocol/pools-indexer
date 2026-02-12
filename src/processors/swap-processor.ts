@@ -5,7 +5,7 @@ import {
   type SingleChainToken as SingleChainTokenEntity,
 } from "generated";
 import type { HandlerContext } from "generated/src/Types";
-import { STATS_TIMEFRAME_IN_DAYS } from "../core/constants";
+import { STATS_TIMEFRAME_IN_DAYS, ZERO_BIG_DECIMAL } from "../core/constants";
 import { Id } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import type { PoolPrices } from "../core/types";
@@ -106,16 +106,20 @@ export async function processSwap(params: {
   const didToken0TrackedUsdPriceUpdate = !trackedToken0MarketUsdPrice.eq(token0Entity.trackedUsdPrice);
   const didToken1TrackedUsdPriceUpdate = !trackedToken1MarketUsdPrice.eq(token1Entity.trackedUsdPrice);
 
+  const isToken0DiscoveryEligible = PriceDiscover.isTokenDiscoveryEligible(token0Entity, poolEntity);
+  const isToken1DiscoveryEligible = PriceDiscover.isTokenDiscoveryEligible(token1Entity, poolEntity);
+
   token0Entity = {
     ...token0Entity,
     usdPrice: PriceFormatter.formatUsdPrice(token0MarketUsdPrice),
     trackedUsdPrice: PriceFormatter.formatUsdPrice(trackedToken0MarketUsdPrice),
 
-    priceDiscoveryTokenAmount: didToken0TrackedUsdPriceUpdate
-      ? token0Entity.priceDiscoveryTokenAmount.plus(
-          poolEntity.totalValueLockedToken1.times(poolEntity.tokens0PerToken1),
-        )
-      : token0Entity.priceDiscoveryTokenAmount,
+    priceDiscoveryTokenAmount:
+      isToken1DiscoveryEligible && amount1Formatted.gt(ZERO_BIG_DECIMAL)
+        ? token0Entity.priceDiscoveryTokenAmount.plus(
+            PriceDiscover.calculateDiscoveryAmountFromOtherToken(amount1Formatted, poolEntity.tokens0PerToken1),
+          )
+        : token0Entity.priceDiscoveryTokenAmount,
   };
 
   token1Entity = {
@@ -123,11 +127,12 @@ export async function processSwap(params: {
     usdPrice: PriceFormatter.formatUsdPrice(token1MarketUsdPrice),
     trackedUsdPrice: PriceFormatter.formatUsdPrice(trackedToken1MarketUsdPrice),
 
-    priceDiscoveryTokenAmount: didToken1TrackedUsdPriceUpdate
-      ? token1Entity.priceDiscoveryTokenAmount.plus(
-          poolEntity.totalValueLockedToken0.times(poolEntity.tokens1PerToken0),
-        )
-      : token1Entity.priceDiscoveryTokenAmount,
+    priceDiscoveryTokenAmount:
+      isToken0DiscoveryEligible && amount0Formatted.gt(ZERO_BIG_DECIMAL)
+        ? token1Entity.priceDiscoveryTokenAmount.plus(
+            PriceDiscover.calculateDiscoveryAmountFromOtherToken(amount0Formatted, poolEntity.tokens1PerToken0),
+          )
+        : token1Entity.priceDiscoveryTokenAmount,
   };
 
   const newLockedAmounts = calculateNewLockedAmountsUSD({

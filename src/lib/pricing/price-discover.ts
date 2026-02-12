@@ -23,6 +23,8 @@ import { TokenDecimalMath } from "../math/token/token-decimal-math";
 export const PriceDiscover = {
   discoverTokenUsdPrices,
   discoverUsdPricesFromPoolPrices,
+  isTokenDiscoveryEligible,
+  calculateDiscoveryAmountFromOtherToken,
 };
 
 export function discoverTokenUsdPrices(params: {
@@ -313,4 +315,15 @@ function _canPoolDiscoverTokenPrice(params: { poolEntity: PoolEntity; tokenEntit
       : params.poolEntity.totalValueLockedToken1;
 
   return amountInPool.gte(averageLiquidityPerPool);
+}
+
+function isTokenDiscoveryEligible(token: SingleChainTokenEntity, pool: PoolEntity): boolean {
+  const isWhitelisted = isPoolTokenWhitelisted(token, pool.chainId);
+  const tvlInPool = token.id === pool.token0_id ? pool.totalValueLockedToken0 : pool.totalValueLockedToken1;
+  const isSufficientlyDiscovered = token.priceDiscoveryTokenAmount.gt(tvlInPool);
+  return isWhitelisted || isSufficientlyDiscovered;
+}
+
+function calculateDiscoveryAmountFromOtherToken(amountOther: BigDecimal, ratioXPerY: BigDecimal): BigDecimal {
+  return amountOther.times(ratioXPerY);
 }

@@ -12,6 +12,8 @@ import { processSwap } from "./swap-processor";
 vi.mock("../lib/pricing/price-discover", () => ({
   PriceDiscover: {
     discoverTokenUsdPrices: vi.fn(),
+    isTokenDiscoveryEligible: vi.fn(),
+    calculateDiscoveryAmountFromOtherToken: vi.fn(),
   },
 }));
 
@@ -372,12 +374,18 @@ describe("processSwap", () => {
       trackedToken1UsdPrice: OLD_PRICE,
     });
 
+    // Mock helpers
+    vi.mocked(PriceDiscover.isTokenDiscoveryEligible).mockReturnValue(true);
+    vi.mocked(PriceDiscover.calculateDiscoveryAmountFromOtherToken).mockImplementation((amt, ratio) =>
+      amt.times(ratio),
+    );
+
     await processSwap({
       context,
       poolAddress: POOL_ADDRESS,
       network: NETWORK,
-      amount0: 0n, // No swap amount to keep math simple
-      amount1: 0n,
+      amount0: 0n,
+      amount1: 10n * 10n ** 18n, // 10 Token1 IN
       eventBlock: { number: 125, timestamp: 2002 } as any,
       newPoolPrices: { tokens0PerToken1: RATE_0_PER_1, tokens1PerToken0: RATE_1_PER_0 },
       rawSwapFee: 0,
