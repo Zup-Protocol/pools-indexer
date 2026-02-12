@@ -201,8 +201,13 @@ export function discoverUsdPricesFromPoolPrices(params: {
     return [params.poolPrices.tokens1PerToken0, params.poolPrices.tokens0PerToken1];
   }
 
-  let p0 = params.useTrackedPrices ? params.poolToken0Entity.trackedUsdPrice : params.poolToken0Entity.usdPrice;
-  let p1 = params.useTrackedPrices ? params.poolToken1Entity.trackedUsdPrice : params.poolToken1Entity.usdPrice;
+  let p0: BigDecimal = params.useTrackedPrices
+    ? params.poolToken0Entity.trackedUsdPrice
+    : params.poolToken0Entity.usdPrice;
+
+  let p1: BigDecimal = params.useTrackedPrices
+    ? params.poolToken1Entity.trackedUsdPrice
+    : params.poolToken1Entity.usdPrice;
 
   const isToken0Priced = params.useTrackedPrices
     ? !params.poolToken0Entity.trackedUsdPrice.eq(ZERO_BIG_DECIMAL)

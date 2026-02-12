@@ -7,6 +7,7 @@ import type { HandlerContext } from "generated/src/Types";
 import { Id } from "../core/entity";
 import { IndexerNetwork } from "../core/network";
 import { calculateNewLockedAmountsUSD, TokenDecimalMath } from "../lib/math";
+import { PriceFormatter } from "../lib/pricing/price-formatter";
 import { DatabaseService } from "../services/database-service";
 import { processLiquidityMetrics } from "./liquidity-metrics-processor";
 import { processPoolTimeframedStatsUpdate } from "./pool-timeframed-stats-update-processor";
@@ -63,14 +64,18 @@ export async function processLiquidityChange(params: {
 
   poolEntity = {
     ...poolEntity,
-    totalValueLockedToken0Usd: newUsdLockedAmounts.newPoolTotalValueLockedToken0USD,
-    trackedTotalValueLockedToken0Usd: newUsdLockedAmounts.newTrackedPoolTotalValueLockedToken0USD,
+    totalValueLockedToken0Usd: PriceFormatter.formatUsdValue(newUsdLockedAmounts.newPoolTotalValueLockedToken0USD),
+    trackedTotalValueLockedToken0Usd: PriceFormatter.formatUsdValue(
+      newUsdLockedAmounts.newTrackedPoolTotalValueLockedToken0USD,
+    ),
 
-    totalValueLockedToken1Usd: newUsdLockedAmounts.newPoolTotalValueLockedToken1USD,
-    trackedTotalValueLockedToken1Usd: newUsdLockedAmounts.newTrackedPoolTotalValueLockedToken1USD,
+    totalValueLockedToken1Usd: PriceFormatter.formatUsdValue(newUsdLockedAmounts.newPoolTotalValueLockedToken1USD),
+    trackedTotalValueLockedToken1Usd: PriceFormatter.formatUsdValue(
+      newUsdLockedAmounts.newTrackedPoolTotalValueLockedToken1USD,
+    ),
 
-    totalValueLockedUsd: newUsdLockedAmounts.newPoolTotalValueLockedUSD,
-    trackedTotalValueLockedUsd: newUsdLockedAmounts.newTrackedPoolTotalValueLockedUSD,
+    totalValueLockedUsd: PriceFormatter.formatUsdValue(newUsdLockedAmounts.newPoolTotalValueLockedUSD),
+    trackedTotalValueLockedUsd: PriceFormatter.formatUsdValue(newUsdLockedAmounts.newTrackedPoolTotalValueLockedUSD),
 
     lastActivityDayId: Id.buildLastActivityDayId(BigInt(params.eventBlock.number), params.network),
     lastActivityBlock: BigInt(params.eventBlock.number),
@@ -79,14 +84,14 @@ export async function processLiquidityChange(params: {
 
   token0Entity = {
     ...token0Entity,
-    totalValuePooledUsd: newUsdLockedAmounts.newToken0TotalPooledAmountUSD,
-    trackedTotalValuePooledUsd: newUsdLockedAmounts.newTrackedToken0TotalPooledAmountUSD,
+    totalValuePooledUsd: PriceFormatter.formatUsdValue(newUsdLockedAmounts.newToken0TotalPooledAmountUSD),
+    trackedTotalValuePooledUsd: PriceFormatter.formatUsdValue(newUsdLockedAmounts.newTrackedToken0TotalPooledAmountUSD),
   };
 
   token1Entity = {
     ...token1Entity,
-    totalValuePooledUsd: newUsdLockedAmounts.newToken1TotalPooledAmountUSD,
-    trackedTotalValuePooledUsd: newUsdLockedAmounts.newTrackedToken1TotalPooledAmountUSD,
+    totalValuePooledUsd: PriceFormatter.formatUsdValue(newUsdLockedAmounts.newToken1TotalPooledAmountUSD),
+    trackedTotalValuePooledUsd: PriceFormatter.formatUsdValue(newUsdLockedAmounts.newTrackedToken1TotalPooledAmountUSD),
   };
 
   poolHistoricalDataEntities = poolHistoricalDataEntities.map((historicalDataEntity) => ({

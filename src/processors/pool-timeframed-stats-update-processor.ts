@@ -3,6 +3,7 @@ import type { HandlerContext } from "generated/src/Types";
 import { STATS_TIMEFRAME_IN_DAYS, STATS_TIMEFRAME_IN_HOURS } from "../core/constants";
 import { InitialPoolTimeframedStatsEntity } from "../core/entity";
 import { YieldMath } from "../lib/math";
+import { PriceFormatter } from "../lib/pricing/price-formatter";
 import { isSecondsTimestampMoreThanDaysAgo, isSecondsTimestampMoreThanHoursAgo } from "../lib/timestamp";
 import { DatabaseService } from "../services/database-service";
 
@@ -69,18 +70,26 @@ async function _updatePoolTimeframedStat(
     return {
       ...stat,
       dataPointTimestamp: dataAgo.timestampAtStart,
-      liquidityVolumeUsd: params.poolEntity.liquidityVolumeUsd.minus(dataAgo.liquidityVolumeUsdAtStart),
-      trackedLiquidityVolumeUsd: params.poolEntity.trackedLiquidityVolumeUsd.minus(
-        dataAgo.trackedLiquidityVolumeUsdAtStart,
+      liquidityVolumeUsd: PriceFormatter.formatUsdValue(
+        params.poolEntity.liquidityVolumeUsd.minus(dataAgo.liquidityVolumeUsdAtStart),
       ),
-      liquidityNetInflowUsd: params.poolEntity.liquidityNetInflowUsd.minus(dataAgo.liquidityNetInflowUsdAtStart),
-      trackedLiquidityNetInflowUsd: params.poolEntity.trackedLiquidityNetInflowUsd.minus(
-        dataAgo.trackedLiquidityNetInflowUsdAtStart,
+      trackedLiquidityVolumeUsd: PriceFormatter.formatUsdValue(
+        params.poolEntity.trackedLiquidityVolumeUsd.minus(dataAgo.trackedLiquidityVolumeUsdAtStart),
       ),
-      feesUsd: params.poolEntity.feesUsd.minus(dataAgo.feesUsdAtStart),
-      trackedFeesUsd: params.poolEntity.trackedFeesUsd.minus(dataAgo.trackedFeesUsdAtStart),
-      swapVolumeUsd: params.poolEntity.swapVolumeUsd.minus(dataAgo.swapVolumeUsdAtStart),
-      trackedSwapVolumeUsd: params.poolEntity.trackedSwapVolumeUsd.minus(dataAgo.trackedSwapVolumeUsdAtStart),
+      liquidityNetInflowUsd: PriceFormatter.formatUsdValue(
+        params.poolEntity.liquidityNetInflowUsd.minus(dataAgo.liquidityNetInflowUsdAtStart),
+      ),
+      trackedLiquidityNetInflowUsd: PriceFormatter.formatUsdValue(
+        params.poolEntity.trackedLiquidityNetInflowUsd.minus(dataAgo.trackedLiquidityNetInflowUsdAtStart),
+      ),
+      feesUsd: PriceFormatter.formatUsdValue(params.poolEntity.feesUsd.minus(dataAgo.feesUsdAtStart)),
+      trackedFeesUsd: PriceFormatter.formatUsdValue(
+        params.poolEntity.trackedFeesUsd.minus(dataAgo.trackedFeesUsdAtStart),
+      ),
+      swapVolumeUsd: PriceFormatter.formatUsdValue(params.poolEntity.swapVolumeUsd.minus(dataAgo.swapVolumeUsdAtStart)),
+      trackedSwapVolumeUsd: PriceFormatter.formatUsdValue(
+        params.poolEntity.trackedSwapVolumeUsd.minus(dataAgo.trackedSwapVolumeUsdAtStart),
+      ),
       accumulatedYield,
       yearlyYield: YieldMath.yearlyYieldFromAccumulated({
         accumulatedYield,
