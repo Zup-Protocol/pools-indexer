@@ -112,7 +112,7 @@ export async function processSwap(params: {
 
     priceDiscoveryTokenAmount: didToken0TrackedUsdPriceUpdate
       ? token0Entity.priceDiscoveryTokenAmount.plus(
-          poolEntity.totalValueLockedToken1.times(poolEntity.tokens1PerToken0),
+          poolEntity.totalValueLockedToken1.times(poolEntity.tokens0PerToken1),
         )
       : token0Entity.priceDiscoveryTokenAmount,
   };
@@ -124,7 +124,7 @@ export async function processSwap(params: {
 
     priceDiscoveryTokenAmount: didToken1TrackedUsdPriceUpdate
       ? token1Entity.priceDiscoveryTokenAmount.plus(
-          poolEntity.totalValueLockedToken0.times(poolEntity.tokens0PerToken1),
+          poolEntity.totalValueLockedToken0.times(poolEntity.tokens1PerToken0),
         )
       : token1Entity.priceDiscoveryTokenAmount,
   };
