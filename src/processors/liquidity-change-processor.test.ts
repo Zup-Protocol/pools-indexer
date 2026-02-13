@@ -19,6 +19,9 @@ vi.mock("../services/database-service", () => ({
   DatabaseService: {
     getOrCreateHistoricalPoolDataEntities: vi.fn().mockResolvedValue([]),
     getAllPooltimeframedStatsEntities: vi.fn().mockResolvedValue([]),
+    setTokenWithNativeCompatibility: vi.fn().mockImplementation(async (context, token) => {
+      context.SingleChainToken.set(token);
+    }),
   },
 }));
 

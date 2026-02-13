@@ -9,6 +9,7 @@ import { Id } from "../../core/entity";
 import { IndexerNetwork } from "../../core/network";
 import { ConcentratedSqrtPriceMath } from "../../lib/math/concentrated-liquidity/concentrated-sqrt-price-math";
 import { FeeMath } from "../../lib/math/fee-math";
+import { DatabaseService } from "../../services/database-service";
 import { processSwap } from "../swap-processor";
 import { AlgebraMath } from "./utils/algebra-math";
 
@@ -60,12 +61,12 @@ export async function processAlgebraSwap(params: {
     currentFeeTierPercentage: FeeMath.convertRawSwapFeeToPercentage(newRawFeeTier),
   });
 
-  params.context.SingleChainToken.set({
+  await DatabaseService.setTokenWithNativeCompatibility(params.context, {
     ...token0Entity,
     tokenTotalValuePooled: token0Entity.tokenTotalValuePooled.minus(nonLPFeesTokenAmount.token0FeeAmount),
   });
 
-  params.context.SingleChainToken.set({
+  await DatabaseService.setTokenWithNativeCompatibility(params.context, {
     ...token1Entity,
     tokenTotalValuePooled: token1Entity.tokenTotalValuePooled.minus(nonLPFeesTokenAmount.token1FeeAmount),
   });

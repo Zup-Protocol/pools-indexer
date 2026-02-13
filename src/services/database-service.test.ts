@@ -231,4 +231,125 @@ describe("DatabaseService", () => {
       });
     });
   });
+
+  describe("setTokenWithNativeCompatibility", () => {
+    it("should save token and not look for companion if neither native nor wrapped", async () => {
+      const { DatabaseService } = await import("./database-service");
+      const token = mockToken("0x123");
+
+      await DatabaseService.setTokenWithNativeCompatibility(context, token);
+
+      expect(context.SingleChainToken.set).toHaveBeenCalledTimes(1);
+      expect(context.SingleChainToken.set).toHaveBeenCalledWith(token);
+      expect(context.SingleChainToken.get).not.toHaveBeenCalled();
+    });
+
+    it("should save native token and update existing wrapped companion", async () => {
+      const { DatabaseService } = await import("./database-service");
+      const nativeToken = mockToken(ZERO_ADDRESS);
+      // Native token normally has ETH metadata
+      (nativeToken as any).name = "Ether";
+      (nativeToken as any).symbol = "ETH";
+
+      const wrappedAddress = IndexerNetwork.wrappedNativeAddress[network];
+      const wrappedToken = mockToken(wrappedAddress);
+      // Wrapped token has WETH metadata
+      (wrappedToken as any).name = "Wrapped Ether";
+      (wrappedToken as any).symbol = "WETH";
+      (wrappedToken as any).normalizedSymbol = "WETH";
+      (wrappedToken as any).normalizedName = "WRAPPEDETHER";
+
+      vi.mocked(context.SingleChainToken.get).mockResolvedValue(wrappedToken);
+
+      await DatabaseService.setTokenWithNativeCompatibility(context, nativeToken);
+
+      expect(context.SingleChainToken.set).toHaveBeenCalledTimes(2);
+      expect(context.SingleChainToken.set).toHaveBeenCalledWith(nativeToken);
+
+      // Verify second call updates wrapped token with native stats but keeps wrapped metadata
+      const expectedWrappedUpdate = {
+        ...nativeToken,
+        id: wrappedToken.id,
+        tokenAddress: wrappedToken.tokenAddress,
+        symbol: wrappedToken.symbol,
+        name: wrappedToken.name,
+        decimals: wrappedToken.decimals,
+        normalizedSymbol: wrappedToken.normalizedSymbol,
+        normalizedName: wrappedToken.normalizedName,
+      };
+
+      expect(context.SingleChainToken.set).toHaveBeenCalledWith(expectedWrappedUpdate);
+    });
+
+    it("should save wrapped token and update existing native companion", async () => {
+      const { DatabaseService } = await import("./database-service");
+      const wrappedAddress = IndexerNetwork.wrappedNativeAddress[network];
+      const wrappedToken = mockToken(wrappedAddress);
+      (wrappedToken as any).name = "Wrapped Ether";
+      (wrappedToken as any).symbol = "WETH";
+
+      const nativeToken = mockToken(ZERO_ADDRESS);
+      (nativeToken as any).name = "Ether";
+      (nativeToken as any).symbol = "ETH";
+      (nativeToken as any).normalizedSymbol = "ETH";
+      (nativeToken as any).normalizedName = "ETHER";
+
+      vi.mocked(context.SingleChainToken.get).mockResolvedValue(nativeToken);
+
+      await DatabaseService.setTokenWithNativeCompatibility(context, wrappedToken);
+
+      expect(context.SingleChainToken.set).toHaveBeenCalledTimes(2);
+      expect(context.SingleChainToken.set).toHaveBeenCalledWith(wrappedToken);
+
+      const expectedNativeUpdate = {
+        ...wrappedToken,
+        id: nativeToken.id,
+        tokenAddress: nativeToken.tokenAddress,
+        symbol: nativeToken.symbol,
+        name: nativeToken.name,
+        decimals: nativeToken.decimals,
+        normalizedSymbol: nativeToken.normalizedSymbol,
+        normalizedName: nativeToken.normalizedName,
+      };
+
+      expect(context.SingleChainToken.set).toHaveBeenCalledWith(expectedNativeUpdate);
+    });
+
+    it("should create native companion if it does not exist when saving wrapped token", async () => {
+      const { DatabaseService } = await import("./database-service");
+      const wrappedAddress = IndexerNetwork.wrappedNativeAddress[network];
+      const wrappedToken = mockToken(wrappedAddress);
+
+      vi.mocked(context.SingleChainToken.get).mockResolvedValue(undefined);
+
+      await DatabaseService.setTokenWithNativeCompatibility(context, wrappedToken);
+
+      expect(context.SingleChainToken.set).toHaveBeenCalledTimes(2);
+      expect(context.SingleChainToken.set).toHaveBeenCalledWith(wrappedToken);
+
+      // Native companion should be created using static metadata from IndexerNetwork.nativeToken
+      const nativeMetadata = IndexerNetwork.nativeToken[network];
+      const calls = vi.mocked(context.SingleChainToken.set).mock.calls;
+      if (!calls[1]) throw new Error("Expected second call to SingleChainToken.set");
+      const companionCall = calls[1][0];
+
+      expect(companionCall.tokenAddress).toBe(ZERO_ADDRESS);
+      expect(companionCall.symbol).toBe(nativeMetadata.symbol);
+      expect(companionCall.name).toBe(nativeMetadata.name);
+      // And it should have the stats from wrappedToken
+      expect(companionCall.totalValuePooledUsd).toBe(wrappedToken.totalValuePooledUsd);
+    });
+
+    it("should NOT create wrapped companion if it does not exist when saving native token", async () => {
+      const { DatabaseService } = await import("./database-service");
+      const nativeToken = mockToken(ZERO_ADDRESS);
+
+      vi.mocked(context.SingleChainToken.get).mockResolvedValue(undefined);
+
+      await DatabaseService.setTokenWithNativeCompatibility(context, nativeToken);
+
+      expect(context.SingleChainToken.set).toHaveBeenCalledTimes(1);
+      expect(context.SingleChainToken.set).toHaveBeenCalledWith(nativeToken);
+    });
+  });
 });

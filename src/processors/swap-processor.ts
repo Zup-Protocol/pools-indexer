@@ -302,8 +302,8 @@ export async function processSwap(params: {
   });
 
   params.context.Pool.set(poolEntity);
-  params.context.SingleChainToken.set(token0Entity);
-  params.context.SingleChainToken.set(token1Entity);
+  await DatabaseService.setTokenWithNativeCompatibility(params.context, token0Entity);
+  await DatabaseService.setTokenWithNativeCompatibility(params.context, token1Entity);
   statsEntities.forEach((entity) => params.context.PoolTimeframedStats.set(entity));
   poolHistoricalDataEntities.forEach((entity) => params.context.PoolHistoricalData.set(entity));
 

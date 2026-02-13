@@ -11,6 +11,7 @@ import { getMultiTokenMetadataEffect } from "../core/effects/token-metadata-effe
 import { Id, InitialPoolHistoricalDataEntity, InitialPoolTimeframedStatsEntity } from "../core/entity";
 import { InitialTokenEntity } from "../core/entity/initial-token-entity";
 import { IndexerNetwork } from "../core/network";
+import { String } from "../lib/string-utils";
 import { subtractDaysFromSecondsTimestamp, subtractHoursFromSecondsTimestamp } from "../lib/timestamp";
 
 export const DatabaseService = {
@@ -22,7 +23,66 @@ export const DatabaseService = {
   getOrCreateHistoricalPoolDataEntities,
   getAllPooltimeframedStatsEntities,
   resetAllPoolTimeframedStats,
+  setTokenWithNativeCompatibility,
 };
+
+async function setTokenWithNativeCompatibility(context: HandlerContext, tokenToSet: SingleChainTokenEntity) {
+  context.SingleChainToken.set(tokenToSet);
+
+  const network = tokenToSet.chainId as IndexerNetwork;
+  const wrappedNativeAddress = IndexerNetwork.wrappedNativeAddress[network];
+  const isNative = tokenToSet.tokenAddress === ZERO_ADDRESS;
+  const isWrappedNative = String.lowercasedEquals(tokenToSet.tokenAddress, wrappedNativeAddress);
+
+  if (!isNative && !isWrappedNative) return;
+
+  const compatibleAddress = isNative ? wrappedNativeAddress : ZERO_ADDRESS;
+  const compatibleToken = await context.SingleChainToken.get(Id.fromAddress(network, compatibleAddress));
+
+  if (compatibleToken) {
+    const updatedCompatibleToken: SingleChainTokenEntity = {
+      id: compatibleToken.id,
+      tokenAddress: compatibleToken.tokenAddress,
+      symbol: compatibleToken.symbol,
+      name: compatibleToken.name,
+      decimals: compatibleToken.decimals,
+      normalizedSymbol: compatibleToken.normalizedSymbol,
+      normalizedName: compatibleToken.normalizedName,
+      chainId: tokenToSet.chainId,
+      feesUsd: tokenToSet.feesUsd,
+      liquidityVolumeUsd: tokenToSet.liquidityVolumeUsd,
+      poolsCount: tokenToSet.poolsCount,
+      swapsCount: tokenToSet.swapsCount,
+      priceDiscoveryTokenAmount: tokenToSet.priceDiscoveryTokenAmount,
+      swapsInCount: tokenToSet.swapsInCount,
+      swapsOutCount: tokenToSet.swapsOutCount,
+      swapVolumeUsd: tokenToSet.swapVolumeUsd,
+      tokenFees: tokenToSet.tokenFees,
+      tokenLiquidityVolume: tokenToSet.tokenLiquidityVolume,
+      tokenSwapVolume: tokenToSet.tokenSwapVolume,
+      tokenTotalValuePooled: tokenToSet.tokenTotalValuePooled,
+      totalValuePooledUsd: tokenToSet.totalValuePooledUsd,
+      trackedFeesUsd: tokenToSet.trackedFeesUsd,
+      trackedLiquidityVolumeUsd: tokenToSet.trackedLiquidityVolumeUsd,
+      trackedSwapVolumeUsd: tokenToSet.trackedSwapVolumeUsd,
+      trackedTotalValuePooledUsd: tokenToSet.trackedTotalValuePooledUsd,
+      trackedUsdPrice: tokenToSet.trackedUsdPrice,
+      usdPrice: tokenToSet.usdPrice,
+    };
+
+    context.SingleChainToken.set(updatedCompatibleToken);
+  } else if (isWrappedNative) {
+    const nativeMetadata = IndexerNetwork.nativeToken[network];
+
+    context.SingleChainToken.set(
+      new InitialTokenEntity({
+        ...nativeMetadata,
+        network,
+        tokenAddress: ZERO_ADDRESS,
+      }),
+    );
+  }
+}
 
 async function getOrCreatePoolTokenEntities(params: {
   context: HandlerContext;
