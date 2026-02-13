@@ -321,4 +321,4 @@ chains:
 
 rollback_on_reorg: true
 address_format: lowercase
-full_batch_size: 10000
+full_batch_size: 5000
