@@ -69,5 +69,61 @@ describe("TokenService", () => {
       expect(result[0]!.symbol).toBe("MT");
       expect(result[0]!.decimals).toBe(6);
     });
+
+    it("should safely truncate mixed content that would break with naive slicing", async () => {
+      // 255 'A's (1 byte each) + 1 '💩' (4 bytes).
+      // Total bytes: 255 + 4 = 259.
+      // Limit: 256 bytes.
+      // Correct truncation: Keeps 255 'A's, drops 💩 entirely (start byte 0xF0 is at index 255).
+      const symbolPrefix = "A".repeat(255);
+      const toughSymbol = symbolPrefix + "💩";
+
+      // 2047 'B's + 1 '💩'.
+      // Total bytes: 2047 + 4 = 2051.
+      // Limit: 2048 bytes.
+      // Correct truncation: Keeps 2047 'B's, drops 💩 entirely.
+      const namePrefix = "B".repeat(2047);
+      const toughName = namePrefix + "💩";
+
+      const mockMulticallResult = [
+        { status: "success", result: toughName },
+        { status: "success", result: toughSymbol },
+        { status: "failure" },
+        { status: "failure" },
+        { status: "failure" },
+        { status: "failure" },
+        { status: "success", result: 18 },
+      ];
+
+      const client = BlockchainService.getClient(network);
+      // Cast to ensure we can mock the return value on the spy object
+      (client.multicall as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockMulticallResult);
+
+      const result = await TokenService.getMultiRemoteMetadata([tokenAddress], network);
+      const metadata = result[0]!;
+
+      // Verify Symbol Truncation
+      // Expect 255 chars. The emoji should be completely removed.
+      expect(metadata.symbol).toBe(symbolPrefix);
+      expect(Buffer.byteLength(metadata.symbol)).toBe(255);
+
+      // Verify Name Truncation
+      // Expect 2047 chars.
+      expect(metadata.name).toBe(namePrefix);
+      expect(Buffer.byteLength(metadata.name)).toBe(2047);
+
+      // --- Demonstration of why this is necessary (User Request) ---
+      // A naive slice at 256 characters would include the High Surrogate of the emoji
+      // JS String length of toughSymbol is 255 + 2 = 257.
+      // slice(0, 256) keeps index 255, which is \uD83D (High Surrogate).
+      const naiveSlice = toughSymbol.slice(0, 256);
+      const lastChar = naiveSlice.charCodeAt(255);
+      // 0xD800 - 0xDBFF are High Surrogates
+      const isLoneSurrogate = lastChar >= 0xd800 && lastChar <= 0xdbff;
+
+      expect(naiveSlice.length).toBe(256);
+      expect(isLoneSurrogate).toBe(true); // Proves naive slice creates invalid string
+      expect(metadata.symbol).not.toBe(naiveSlice); // Proves our solution is different/better
+    });
   });
 });

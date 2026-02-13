@@ -15,6 +15,34 @@ export const String = {
     return value.slice(0, maxLength - 3) + "...";
   },
 
+  truncateToBytes: (value: string, maxBytes: number): string => {
+    let buffer = Buffer.from(value);
+    if (buffer.length <= maxBytes) return value;
+
+    buffer = buffer.subarray(0, maxBytes);
+
+    let i = buffer.length - 1;
+    while (i >= 0) {
+      const byte = buffer[i]!;
+      if ((byte & 0xc0) === 0x80) {
+        i--;
+        continue;
+      }
+
+      let charLength = 1;
+      if ((byte & 0xe0) === 0xc0) charLength = 2;
+      else if ((byte & 0xf0) === 0xe0) charLength = 3;
+      else if ((byte & 0xf8) === 0xf0) charLength = 4;
+
+      if (i + charLength > buffer.length) {
+        return buffer.subarray(0, i).toString("utf-8");
+      } else {
+        return buffer.toString("utf-8");
+      }
+    }
+    return buffer.toString("utf-8");
+  },
+
   transliterate: (value: string, options: { ignoreEmojis?: boolean } = {}): string => {
     if (!value) return "";
 

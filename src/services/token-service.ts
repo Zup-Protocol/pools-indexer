@@ -145,14 +145,12 @@ export const TokenService = {
         }
       }
 
-      if (isNaN(decimals) || decimals > 255 || decimals < 0) {
-        decimals = 18;
-      }
+      if (isNaN(decimals) || decimals > 255 || decimals < 0) decimals = 18;
 
       return {
         decimals: decimals,
-        symbol: String.sanitize(symbol),
-        name: String.sanitize(name),
+        symbol: String.truncateToBytes(String.sanitize(symbol), 256),
+        name: String.truncateToBytes(String.sanitize(name), 2048),
       };
     });
   },
