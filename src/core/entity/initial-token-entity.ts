@@ -42,8 +42,6 @@ export class InitialTokenEntity implements SingleChainTokenEntity {
   readonly trackedSwapVolumeUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly trackedLiquidityVolumeUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly trackedFeesUsd: BigDecimal = ZERO_BIG_DECIMAL;
-  readonly liquidityQualityBackedScore: BigDecimal = ZERO_BIG_DECIMAL;
-  readonly liquidityQualitySeedScore: BigDecimal = ZERO_BIG_DECIMAL;
   readonly feesUsd: BigDecimal = ZERO_BIG_DECIMAL;
   readonly tokenFees: BigDecimal = ZERO_BIG_DECIMAL;
   readonly liquidityVolumeUsd: BigDecimal = ZERO_BIG_DECIMAL;

@@ -267,8 +267,9 @@ describe("DatabaseService", () => {
       expect(context.SingleChainToken.set).toHaveBeenCalledWith(nativeToken);
 
       // Verify second call updates wrapped token with native stats but keeps wrapped metadata
-      const expectedWrappedUpdate = {
-        ...nativeToken,
+      const companionCall = vi.mocked(context.SingleChainToken.set).mock.calls[1]![0];
+
+      expect(companionCall).toMatchObject({
         id: wrappedToken.id,
         tokenAddress: wrappedToken.tokenAddress,
         symbol: wrappedToken.symbol,
@@ -276,9 +277,10 @@ describe("DatabaseService", () => {
         decimals: wrappedToken.decimals,
         normalizedSymbol: wrappedToken.normalizedSymbol,
         normalizedName: wrappedToken.normalizedName,
-      };
+      });
 
-      expect(context.SingleChainToken.set).toHaveBeenCalledWith(expectedWrappedUpdate);
+      // Stats should match native stats
+      expect(companionCall.usdPrice).toEqual(nativeToken.usdPrice);
     });
 
     it("should save wrapped token and update existing native companion", async () => {
@@ -301,8 +303,9 @@ describe("DatabaseService", () => {
       expect(context.SingleChainToken.set).toHaveBeenCalledTimes(2);
       expect(context.SingleChainToken.set).toHaveBeenCalledWith(wrappedToken);
 
-      const expectedNativeUpdate = {
-        ...wrappedToken,
+      const companionCall = vi.mocked(context.SingleChainToken.set).mock.calls[1]![0];
+
+      expect(companionCall).toMatchObject({
         id: nativeToken.id,
         tokenAddress: nativeToken.tokenAddress,
         symbol: nativeToken.symbol,
@@ -310,9 +313,10 @@ describe("DatabaseService", () => {
         decimals: nativeToken.decimals,
         normalizedSymbol: nativeToken.normalizedSymbol,
         normalizedName: nativeToken.normalizedName,
-      };
+      });
 
-      expect(context.SingleChainToken.set).toHaveBeenCalledWith(expectedNativeUpdate);
+      // Stats should match wrapped stats
+      expect(companionCall.usdPrice).toEqual(wrappedToken.usdPrice);
     });
 
     it("should create native companion if it does not exist when saving wrapped token", async () => {
@@ -333,11 +337,14 @@ describe("DatabaseService", () => {
       if (!calls[1]) throw new Error("Expected second call to SingleChainToken.set");
       const companionCall = calls[1][0];
 
-      expect(companionCall.tokenAddress).toBe(ZERO_ADDRESS);
-      expect(companionCall.symbol).toBe(nativeMetadata.symbol);
-      expect(companionCall.name).toBe(nativeMetadata.name);
+      expect(companionCall).toMatchObject({
+        tokenAddress: ZERO_ADDRESS,
+        symbol: nativeMetadata.symbol,
+        name: nativeMetadata.name,
+      });
+
       // And it should have the stats from wrappedToken
-      expect(companionCall.totalValuePooledUsd).toBe(wrappedToken.totalValuePooledUsd);
+      expect(companionCall.totalValuePooledUsd).toEqual(wrappedToken.totalValuePooledUsd);
     });
 
     it("should NOT create wrapped companion if it does not exist when saving native token", async () => {

@@ -41,46 +41,81 @@ async function setTokenWithNativeCompatibility(context: HandlerContext, tokenToS
 
   if (compatibleToken) {
     const updatedCompatibleToken: SingleChainTokenEntity = {
+      // Keep Identity/Metadata from the target token
       id: compatibleToken.id,
       tokenAddress: compatibleToken.tokenAddress,
       symbol: compatibleToken.symbol,
       name: compatibleToken.name,
-      decimals: compatibleToken.decimals,
       normalizedSymbol: compatibleToken.normalizedSymbol,
       normalizedName: compatibleToken.normalizedName,
-      chainId: tokenToSet.chainId,
-      feesUsd: tokenToSet.feesUsd,
+      decimals: compatibleToken.decimals,
+      chainId: compatibleToken.chainId,
+
+      // Synchronize Stats from the source token
+      usdPrice: tokenToSet.usdPrice,
+      trackedUsdPrice: tokenToSet.trackedUsdPrice,
+      priceDiscoveryTokenAmount: tokenToSet.priceDiscoveryTokenAmount,
+      totalValuePooledUsd: tokenToSet.totalValuePooledUsd,
+      trackedTotalValuePooledUsd: tokenToSet.trackedTotalValuePooledUsd,
+      tokenTotalValuePooled: tokenToSet.tokenTotalValuePooled,
+      swapVolumeUsd: tokenToSet.swapVolumeUsd,
+      trackedSwapVolumeUsd: tokenToSet.trackedSwapVolumeUsd,
+      tokenSwapVolume: tokenToSet.tokenSwapVolume,
       liquidityVolumeUsd: tokenToSet.liquidityVolumeUsd,
+      trackedLiquidityVolumeUsd: tokenToSet.trackedLiquidityVolumeUsd,
+      tokenLiquidityVolume: tokenToSet.tokenLiquidityVolume,
+      tokenFees: tokenToSet.tokenFees,
+      feesUsd: tokenToSet.feesUsd,
+      trackedFeesUsd: tokenToSet.trackedFeesUsd,
       poolsCount: tokenToSet.poolsCount,
       swapsCount: tokenToSet.swapsCount,
-      priceDiscoveryTokenAmount: tokenToSet.priceDiscoveryTokenAmount,
       swapsInCount: tokenToSet.swapsInCount,
       swapsOutCount: tokenToSet.swapsOutCount,
-      swapVolumeUsd: tokenToSet.swapVolumeUsd,
-      tokenFees: tokenToSet.tokenFees,
-      tokenLiquidityVolume: tokenToSet.tokenLiquidityVolume,
-      tokenSwapVolume: tokenToSet.tokenSwapVolume,
-      tokenTotalValuePooled: tokenToSet.tokenTotalValuePooled,
-      totalValuePooledUsd: tokenToSet.totalValuePooledUsd,
-      trackedFeesUsd: tokenToSet.trackedFeesUsd,
-      trackedLiquidityVolumeUsd: tokenToSet.trackedLiquidityVolumeUsd,
-      trackedSwapVolumeUsd: tokenToSet.trackedSwapVolumeUsd,
-      trackedTotalValuePooledUsd: tokenToSet.trackedTotalValuePooledUsd,
-      trackedUsdPrice: tokenToSet.trackedUsdPrice,
-      usdPrice: tokenToSet.usdPrice,
     };
 
     context.SingleChainToken.set(updatedCompatibleToken);
   } else if (isWrappedNative) {
     const nativeMetadata = IndexerNetwork.nativeToken[network];
+    const initialNative = new InitialTokenEntity({
+      ...nativeMetadata,
+      network,
+      tokenAddress: ZERO_ADDRESS,
+    });
 
-    context.SingleChainToken.set(
-      new InitialTokenEntity({
-        ...nativeMetadata,
-        network,
-        tokenAddress: ZERO_ADDRESS,
-      }),
-    );
+    const newNativeToken: SingleChainTokenEntity = {
+      // Identity from static metadata
+      id: initialNative.id,
+      tokenAddress: initialNative.tokenAddress,
+      symbol: initialNative.symbol,
+      name: initialNative.name,
+      normalizedSymbol: initialNative.normalizedSymbol,
+      normalizedName: initialNative.normalizedName,
+      decimals: initialNative.decimals,
+      chainId: initialNative.chainId,
+
+      // Stats from the wrapped token we just processed
+      usdPrice: tokenToSet.usdPrice,
+      trackedUsdPrice: tokenToSet.trackedUsdPrice,
+      priceDiscoveryTokenAmount: tokenToSet.priceDiscoveryTokenAmount,
+      totalValuePooledUsd: tokenToSet.totalValuePooledUsd,
+      trackedTotalValuePooledUsd: tokenToSet.trackedTotalValuePooledUsd,
+      tokenTotalValuePooled: tokenToSet.tokenTotalValuePooled,
+      swapVolumeUsd: tokenToSet.swapVolumeUsd,
+      trackedSwapVolumeUsd: tokenToSet.trackedSwapVolumeUsd,
+      tokenSwapVolume: tokenToSet.tokenSwapVolume,
+      liquidityVolumeUsd: tokenToSet.liquidityVolumeUsd,
+      trackedLiquidityVolumeUsd: tokenToSet.trackedLiquidityVolumeUsd,
+      tokenLiquidityVolume: tokenToSet.tokenLiquidityVolume,
+      tokenFees: tokenToSet.tokenFees,
+      feesUsd: tokenToSet.feesUsd,
+      trackedFeesUsd: tokenToSet.trackedFeesUsd,
+      poolsCount: tokenToSet.poolsCount,
+      swapsCount: tokenToSet.swapsCount,
+      swapsInCount: tokenToSet.swapsInCount,
+      swapsOutCount: tokenToSet.swapsOutCount,
+    };
+
+    context.SingleChainToken.set(newNativeToken);
   }
 }
 
