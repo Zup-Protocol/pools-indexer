@@ -20,7 +20,7 @@ export namespace IndexerNetwork {
     [IndexerNetwork.UNICHAIN]: "https://mainnet.unichain.org",
     [IndexerNetwork.HYPER_EVM]: "https://hyperliquid.drpc.org",
     [IndexerNetwork.PLASMA]: "https://rpc.plasma.to",
-    [IndexerNetwork.MONAD]: "https://rpc-mainnet.monadinfra.com",
+    [IndexerNetwork.MONAD]: "https://rpc.monad.xyz",
   };
 
   export const paidRPCUrl: Record<IndexerNetwork, string> = {

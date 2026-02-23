@@ -78,8 +78,8 @@ export const TokenService = {
       // If multicall fails entirely, return empty metadata for all addresses
       return addresses.map(() => ({
         decimals: 18,
-        symbol: "",
-        name: "",
+        symbol: "ERROR",
+        name: "ERROR",
       }));
     }
 
