@@ -1,10 +1,10 @@
 import type {
+  Enums_HistoricalDataInterval_t,
   Pool as PoolEntity,
   PoolHistoricalData as PoolHistoricalDataEntity,
   PoolTimeframedStats as PoolTimeframedStatsEntity,
   SingleChainToken as SingleChainTokenEntity,
 } from "generated";
-import type { HistoricalDataInterval_t } from "generated/src/db/Enums.gen";
 import type { HandlerContext } from "generated/src/Types";
 import { ZERO_ADDRESS, ZERO_BIG_INT } from "../core/constants";
 import { getMultiTokenMetadataEffect } from "../core/effects/token-metadata-effect";
@@ -267,7 +267,7 @@ async function getOrCreateHistoricalPoolDataEntities(params: {
   pool: PoolEntity;
   eventTimestamp: bigint;
 }): Promise<PoolHistoricalDataEntity[]> {
-  const intervalsToFetch: HistoricalDataInterval_t[] = ["DAILY", "HOURLY"];
+  const intervalsToFetch: Enums_HistoricalDataInterval_t[] = ["DAILY", "HOURLY"];
 
   return Promise.all(
     intervalsToFetch.map((interval) =>

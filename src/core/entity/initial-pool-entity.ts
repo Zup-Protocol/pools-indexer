@@ -1,5 +1,5 @@
-import { BigDecimal, type Pool as PoolEntity } from "generated";
-import type { PoolType_t } from "generated/src/db/Enums.gen";
+import { BigDecimal, type Enums_PoolType_t, type Pool as PoolEntity } from "generated";
+
 import { FeeMath } from "../../lib/math/fee-math";
 import { ZERO_BIG_DECIMAL } from "../constants";
 import { Id } from "../id";
@@ -67,7 +67,7 @@ export class InitialPoolEntity implements PoolEntity {
   readonly chainId: number;
   readonly poolAddress: string;
   readonly isDynamicFee: boolean;
-  readonly poolType: PoolType_t;
+  readonly poolType: Enums_PoolType_t;
   readonly positionManager: string;
   readonly protocol_id: string;
   readonly token0_id: string;

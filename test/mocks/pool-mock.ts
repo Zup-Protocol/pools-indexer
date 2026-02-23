@@ -1,5 +1,4 @@
-import type { BigDecimal, Pool } from "generated";
-import type { PoolType_t } from "generated/src/db/Enums.gen";
+import type { BigDecimal, Enums_PoolType_t, Pool } from "generated";
 import { ZERO_BIG_DECIMAL, ZERO_BIG_INT } from "../../src/core/constants";
 import { Id } from "../../src/core/id";
 
@@ -88,7 +87,7 @@ export class PoolMock implements Pool {
   readonly initialFeeTierPercentage: number;
   readonly positionManager: string;
   readonly protocol_id: string;
-  readonly poolType: PoolType_t;
+  readonly poolType: Enums_PoolType_t;
   readonly v4PoolData_id: string | undefined;
   readonly v3PoolData_id: string | undefined;
   readonly algebraPoolData_id: string | undefined;

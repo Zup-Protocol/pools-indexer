@@ -1,5 +1,4 @@
-import { BigDecimal } from "generated";
-import type { StatsTimeframe_t } from "generated/src/db/Enums.gen";
+import { BigDecimal, type Enums_StatsTimeframe_t } from "generated";
 
 export const ZERO_BIG_DECIMAL = BigDecimal(0);
 
@@ -41,14 +40,14 @@ export const OUTLIER_TOKEN_PRICE_PERCENT_THRESHOLD = 10;
 
 export const MAX_TVL_IMBALANCE_PERCENTAGE = 10_000; // 10k%
 
-export const STATS_TIMEFRAME_IN_DAYS: Record<StatsTimeframe_t, number> = {
+export const STATS_TIMEFRAME_IN_DAYS: Record<Enums_StatsTimeframe_t, number> = {
   DAY: 1,
   WEEK: 7,
   MONTH: 30,
   QUARTER: 90,
 };
 
-export const STATS_TIMEFRAME_IN_HOURS: Record<StatsTimeframe_t, number> = {
+export const STATS_TIMEFRAME_IN_HOURS: Record<Enums_StatsTimeframe_t, number> = {
   DAY: ONE_DAY_IN_HOURS,
   WEEK: ONE_DAY_IN_HOURS * STATS_TIMEFRAME_IN_DAYS.WEEK,
   MONTH: ONE_DAY_IN_HOURS * STATS_TIMEFRAME_IN_DAYS.MONTH,

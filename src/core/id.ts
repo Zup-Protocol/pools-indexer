@@ -1,4 +1,4 @@
-import type { StatsTimeframe_t } from "generated/src/db/Enums.gen";
+import type { Enums_StatsTimeframe_t } from "generated";
 import { ONE_DAY_IN_SECONDS_BI, ONE_HOUR_IN_SECONDS_BI } from "./constants";
 import { IndexerNetwork } from "./network/indexer-network";
 
@@ -50,7 +50,7 @@ export const Id = {
     address: string,
   ): {
     id: string;
-    timeframe: StatsTimeframe_t;
+    timeframe: Enums_StatsTimeframe_t;
   }[] {
     return [
       {

@@ -1,5 +1,9 @@
-import type { BigDecimal, Pool as PoolEntity, PoolHistoricalData as PoolHistoricalDataEntity } from "generated";
-import type { HistoricalDataInterval_t } from "generated/src/db/Enums.gen";
+import type {
+  BigDecimal,
+  Enums_HistoricalDataInterval_t,
+  Pool as PoolEntity,
+  PoolHistoricalData as PoolHistoricalDataEntity,
+} from "generated";
 import { ZERO_BIG_DECIMAL } from "../constants";
 import { Id } from "../id";
 
@@ -7,7 +11,7 @@ export class InitialPoolHistoricalDataEntity implements PoolHistoricalDataEntity
   constructor(
     readonly params: {
       poolEntity: PoolEntity;
-      interval: HistoricalDataInterval_t;
+      interval: Enums_HistoricalDataInterval_t;
       eventTimestamp: bigint;
     },
   ) {
@@ -68,7 +72,7 @@ export class InitialPoolHistoricalDataEntity implements PoolHistoricalDataEntity
 
   readonly id: string;
   readonly pool_id: string;
-  readonly interval: HistoricalDataInterval_t;
+  readonly interval: Enums_HistoricalDataInterval_t;
   readonly timestampAtStart: bigint;
   readonly timestampAtEnd: bigint;
   readonly accumulatedYieldAtStart: BigDecimal;

@@ -39,9 +39,11 @@ indexer.chainIds.forEach((chainId) => {
         const targetDayId = Math.floor(Number(targetBlock) / oneDayInBlocks);
         if (targetDayId < startDayId || targetBlock < 0n) break;
 
-        const poolsInDay = await context.Pool.getWhere.lastActivityDayId.eq(
-          Id.buildLastActivityDayId(targetBlock, chainId),
-        );
+        const poolsInDay = await context.Pool.getWhere({
+          lastActivityDayId: {
+            _eq: Id.buildLastActivityDayId(targetBlock, chainId),
+          },
+        });
 
         if (poolsInDay.length > 0) {
           await Promise.all(

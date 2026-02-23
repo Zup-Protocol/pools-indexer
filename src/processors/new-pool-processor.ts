@@ -1,5 +1,9 @@
-import type { Block_t, Pool as PoolEntity, SingleChainToken as SingleChainTokenEntity } from "generated";
-import type { PoolType_t } from "generated/src/db/Enums.gen";
+import type {
+  Block_t,
+  Enums_PoolType_t,
+  Pool as PoolEntity,
+  SingleChainToken as SingleChainTokenEntity,
+} from "generated";
 import type { HandlerContext } from "generated/src/Types";
 import { POSITION_MANAGER_ADDRESS } from "../core/address/position-manager-address";
 import { Id, InitialPoolEntity, InitialPoolTimeframedStatsEntity } from "../core/entity";
@@ -17,7 +21,7 @@ export async function processNewPool(params: {
   protocol: SupportedProtocol;
   isDynamicFee: boolean;
   eventBlock: Block_t;
-  poolType: PoolType_t;
+  poolType: Enums_PoolType_t;
 }): Promise<{
   poolEntity: PoolEntity;
   token0Entity: SingleChainTokenEntity;
